@@ -117,7 +117,7 @@ const Extension = () => {
             saved++;
           }
         } catch (e) {
-          console.error("Bulk add row failed", e);
+          console.error("Bulk add row failed", e); 
         }
       }
       if (saved > 0) {
