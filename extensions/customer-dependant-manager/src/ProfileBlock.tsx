@@ -119,7 +119,7 @@ const Extension = () => {
         } catch (e) {
           console.error("Bulk add row failed", e);
         }
-      }
+      } 
       if (saved > 0) {
         setNewRows([{ id: 1, fn: "", ln: "" }]);
         setNextRowId(2);
