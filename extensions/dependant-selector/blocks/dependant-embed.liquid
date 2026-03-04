@@ -1,0 +1,47 @@
+{%- comment -%}
+  dependant-embed.liquid — App Embed Block (target: body)
+  Injects __DependantConfig + loads JS/CSS via asset_url.
+  NOTE: Schema does NOT declare "javascript"/"stylesheet" to avoid double-loading.
+  Size limit: 100KB liquid, 10KB JS, 100KB CSS
+{%- endcomment -%}
+
+{%- if template contains 'product' -%}
+{{- 'dependant-selector.css' | asset_url | stylesheet_tag -}}
+
+<script>
+window.__DependantConfig = {
+  {%- if customer and customer.id -%}
+  customerId: "gid://shopify/Customer/{{ customer.id }}",
+  loggedIn: true,
+  {%- else -%}
+  customerId: "",
+  loggedIn: false,
+  {%- endif -%}
+  proxyBase: "/apps/eyesupply",
+  i18n: {
+    label:        "{{ 'dependant.label' | t }}",
+    placeholder:  "{{ 'dependant.select_placeholder' | t }}",
+    addNew:       "{{ 'dependant.add_new' | t }}",
+    firstName:    "{{ 'dependant.first_name' | t }}",
+    lastName:     "{{ 'dependant.last_name' | t }}",
+    save:         "{{ 'dependant.save' | t }}",
+    cancel:       "{{ 'dependant.cancel' | t }}",
+    saving:       "{{ 'dependant.saving' | t }}",
+    saved:        "{{ 'dependant.saved' | t }}",
+    errRequired:  "{{ 'dependant.error_required' | t }}",
+    errSave:      "{{ 'dependant.error_save' | t }}",
+    loginRequired:"{{ 'dependant.login_required' | t }}"
+  }
+};
+</script>
+
+<script src="{{ 'dependant-selector.js' | asset_url }}" defer></script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Dependant Selector",
+  "target": "body",
+  "settings": []
+}
+{% endschema %}

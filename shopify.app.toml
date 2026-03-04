@@ -1,0 +1,85 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "add219b28c799342102235b88cddd193"
+name = "Eye Supply"
+application_url = "https://hung-common-education-fails.trycloudflare.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+
+[app_proxy]
+url = "https://hung-common-education-fails.trycloudflare.com"
+subpath = "eyesupply"
+prefix = "apps"
+
+[webhooks]
+api_version = "2026-04"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_metaobject_definitions,write_metaobjects,write_products,read_metaobjects,read_metaobject_definitions"
+
+[auth]
+redirect_urls = [ "https://hung-common-education-fails.trycloudflare.com/api/auth" ]
+
+[product.metafields.app.demo_info]
+type = "single_line_text_field"
+name = "Demo Source Info"
+description = "Tracks products created by the Shopify app template for development"
+
+  [product.metafields.app.demo_info.access]
+  admin = "merchant_read_write"
+
+[metaobjects.app.example]
+name = "Example"
+description = "An example metaobject definition created by this template"
+
+  [metaobjects.app.example.access]
+  admin = "merchant_read_write"
+
+[metaobjects.app.example.fields.title]
+name = "Title"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.example.fields.description]
+name = "Description"
+type = "multi_line_text_field"
+
+# ─── Dependant Metaobject ────────────────────────────────────────────────────
+# Note: access.customer_account and field filterable are NOT supported in TOML.
+# They are applied programmatically via /api/setup after deploy.
+[metaobjects.app.dependant]
+name = "Dependant"
+description = "Stores a customer's saved dependants for product attribution"
+access.admin = "merchant_read_write"
+access.storefront = "none"
+
+[metaobjects.app.dependant.fields.d_first_name]
+name = "First Name"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.dependant.fields.d_last_name]
+name = "Last Name"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.dependant.fields.d_full_name]
+name = "Full Name"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.dependant.fields.d_customer_id]
+name = "Customer ID"
+type = "single_line_text_field"
+required = true

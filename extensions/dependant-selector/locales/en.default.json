@@ -1,0 +1,16 @@
+{
+  "dependant": {
+    "label": "Add / Select Your Dependant",
+    "select_placeholder": "— Select a saved dependant —",
+    "add_new": "Add New Dependant",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "save": "Save & Select",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "saved": "Dependant saved!",
+    "error_required": "Please enter both first and last name.",
+    "error_save": "Could not save dependant. Please try again.",
+    "login_required": "Please log in to select or add a dependant."
+  }
+}

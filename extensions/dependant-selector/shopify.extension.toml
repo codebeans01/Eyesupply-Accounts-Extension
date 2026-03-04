@@ -1,0 +1,11 @@
+name = "dependant-selector"
+type = "theme"
+uid = "ce40e31b-c68d-469a-7ebf-3ca6538c4666c67ff78e"
+
+[[extensions]]
+type = "theme"
+name = "Dependant Selector"
+handle = "dependant-selector"
+
+[[extensions.targeting]]
+target = "body"

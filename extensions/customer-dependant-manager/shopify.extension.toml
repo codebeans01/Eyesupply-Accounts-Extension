@@ -1,0 +1,27 @@
+api_version = "2026-01"
+
+[[extensions]]
+name = "customer-dependant-manager"
+handle = "customer-dependant-manager"
+type = "ui_extension"
+uid = "67783ab3-bb94-5ac2-957e-89a99f2ea94d8515843b"
+
+# Order Status page — shows dependants attached to the order
+[[extensions.targeting]]
+module = "./src/OrderStatusBlock.jsx"
+target = "customer-account.order-status.block.render"
+
+# Profile page — lists & adds dependants (Dynamic Block)
+[[extensions.targeting]]
+module = "./src/ProfileBlock.jsx"
+target = "customer-account.profile.block.render"
+
+# Profile page - Static fallback
+[[extensions.targeting]]
+module = "./src/ProfileBlock.jsx"
+target = "customer-account.profile.addresses.render-after"
+
+[extensions.capabilities]
+api_access = true
+# Required for fetch() to App Proxy (/apps/eyesupply/...)
+network_access = true
