@@ -1,4 +1,4 @@
-api_version = "2026-04"
+api_version = "2026-01"
 
 [[extensions]]
 name = "customer-dependant-manager"
@@ -8,17 +8,17 @@ uid = "67783ab3-bb94-5ac2-957e-89a99f2ea94d8515843b"
 
 # Order Status page — shows dependants attached to the order
 [[extensions.targeting]]
-module = "./src/OrderStatusBlock.jsx"
+module = "./src/OrderStatusBlock.tsx"
 target = "customer-account.order-status.block.render"
 
 # Profile page — lists & adds dependants (Dynamic Block)
 [[extensions.targeting]]
-module = "./src/ProfileBlock.jsx"
+module = "./src/ProfileBlock.tsx"
 target = "customer-account.profile.block.render"
 
 # Profile page - Static fallback
 [[extensions.targeting]]
-module = "./src/ProfileBlock.jsx"
+module = "./src/ProfileBlock.tsx"
 target = "customer-account.profile.addresses.render-after"
 
 [extensions.capabilities]
@@ -27,21 +27,19 @@ api_access = true
 network_access = true
 
 [extensions.settings]
-[[extensions.settings.fields]]
-key = "pagination_previous_text"
-type = "single_line_text_field"
-name = "Previous Button Text"
-default = "Previous"
 
-[[extensions.settings.fields]]
-key = "pagination_next_text"
-type = "single_line_text_field"
-name = "Next Button Text"
-default = "Next"
+  [[extensions.settings.fields]]
+  key = "pagination_previous_text"
+  type = "single_line_text_field"
+  name = "Previous Button Text"
 
-[[extensions.settings.fields]]
-key = "pagination_enabled"
-type = "boolean"
-name = "Enable Pagination"
-default = true
+  [[extensions.settings.fields]]
+  key = "pagination_next_text"
+  type = "single_line_text_field"
+  name = "Next Button Text"
+
+  [[extensions.settings.fields]]
+  key = "pagination_enabled"
+  type = "boolean"
+  name = "Enable Pagination"
 

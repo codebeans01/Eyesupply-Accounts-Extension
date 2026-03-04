@@ -1,60 +1,73 @@
 /**
- * ProfileBlock.jsx — Customer Account UI Extension
+ * ProfileBlock.tsx — Customer Account UI Extension
  * Target: customer-account.profile.block.render
  */
 import "@shopify/ui-extensions/preact";
 import { render } from "preact";
 import { useState, useEffect, useRef } from "preact/hooks";
 
+interface Dependant {
+  id: number;
+  first_name: string;
+  last_name: string;
+  full_name?: string;
+}
+
+interface NewRow {
+  id: number;
+  fn: string;
+  ln: string;
+}
+
+// Declare shopify global
+declare const shopify: any;
+
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://restoration-equality-contacted-warming.trycloudflare.com";
+const APP_URL = "https://erik-emphasis-italia-tournaments.trycloudflare.com";
 
 const Extension = () => {
-  const [dependants, setDependants] = useState(/** @type {any[]} */ ([]));
+  const [dependants, setDependants] = useState<Dependant[]>([]);
   const [loading, setLoading] = useState(true);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [newRows, setNewRows] = useState(/** @type {{id: number, fn: string, ln: string}[]} */ ([{ id: 1, fn: "", ln: "" }]));
+  const [newRows, setNewRows] = useState<NewRow[]>([{ id: 1, fn: "", ln: "" }]);
   const [nextRowId, setNextRowId] = useState(2);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [pageLoading, setPageLoading] = useState(false);
-  const [removingItem, setRemovingItem] = useState(/** @type {any} */ (null));
-  const [editingItem, setEditingItem] = useState(/** @type {any} */ (null));
+  const [removingItem, setRemovingItem] = useState<Dependant | null>(null);
+  const [editingItem, setEditingItem] = useState<Dependant | null>(null);
 
-  
   // Extension Settings & Metafields
-  const settings = (/** @type {any} */ (shopify)).settings?.current?.value || {};
-  const meta = (/** @type {any} */ (shopify)).extension?.metafields?.current?.value || [];
+  const settings = shopify.settings?.current?.value || {};
+  const meta = shopify.extension?.metafields?.current?.value || [];
   
-  const m = (key) => meta.find(f => f.key === key)?.value;
+  const m = (key: string) => meta.find((f: any) => f.key === key)?.value;
 
   const prevLabel = m("pagination_previous_text") || settings.pagination_previous_text || "Previous";
   const nextLabel = m("pagination_next_text") || settings.pagination_next_text || "Next";
   const paginationEnabled = (m("pagination_enabled") ?? settings.pagination_enabled) !== false;
 
-  
-  const modalRef = useRef(/** @type {any} */ (null));
-  const confirmModalRef = useRef(/** @type {any} */ (null));
+  const modalRef = useRef<any>(null);
+  const confirmModalRef = useRef<any>(null);
 
   const directUrl = `${APP_URL}/api/dependant/me`;
 
-
-  const handlePageChange = (/** @type {number} */ newPage) => {
+  const handlePageChange = (newPage: number) => {
     setPageLoading(true);
     setTimeout(() => {
       setCurrentPage(newPage);
       setPageLoading(false);
-    }, 400); // Simulated delay for better UX
+    }, 400);
   };
 
   useEffect(() => {
     async function init() {
       try {
-        const token = await (/** @type {any} */ (shopify)).sessionToken.get();
-        const customerId = (/** @type {any} */ (shopify)).authenticatedAccount?.customer?.current?.id;
+        const token = await shopify.sessionToken.get();
+        const customerId = shopify.authenticatedAccount?.customer?.current?.id;
         
         const res = await fetch(directUrl, {
           headers: { 
@@ -65,7 +78,6 @@ const Extension = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          // Reverse the list to show latest (newest) at the top
           setDependants(Array.isArray(data) ? data.reverse() : []);
         }
       } catch (e) {
@@ -74,58 +86,20 @@ const Extension = () => {
         setLoading(false);
       }
     }
-
     init();
   }, [directUrl]);
-
-
-  const handleAdd = async (closeOnSuccess = true) => {
-    if (!firstName.trim() || !lastName.trim()) return;
-    setSaving(true);
-    try {
-      const token = await (/** @type {any} */ (shopify)).sessionToken.get();
-      const customerId = (/** @type {any} */ (shopify)).authenticatedAccount?.customer?.current?.id;
-
-      const res = await fetch(directUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          "x-customer-id": customerId || ""
-        },
-        body: JSON.stringify({ firstName, lastName }),
-      });
-       if (res.ok) {
-         const data = await res.json();
-         setDependants((prev) => [data, ...prev]);
-         setFirstName("");
-        setLastName("");
-        if (closeOnSuccess) {
-          modalRef.current?.hideOverlay();
-          (/** @type {any} */ (shopify)).toast.show("Dependant added successfully");
-        } else {
-          (/** @type {any} */ (shopify)).toast.show("Dependant added. You can add another one.");
-        }
-      }
-    } catch (e) {
-      console.error("Add failed", e);
-      (/** @type {any} */ (shopify)).toast.show("Failed to add dependant");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleBulkAdd = async () => {
     const valid = newRows.filter(r => r.fn.trim() && r.ln.trim());
     if (valid.length === 0) {
-      (/** @type {any} */ (shopify)).toast.show("Please fill in at least one row.");
+      shopify.toast.show("Please fill in at least one row.");
       return;
     }
     setSaving(true);
     let saved = 0;
     try {
-      const token = await (/** @type {any} */ (shopify)).sessionToken.get();
-      const customerId = (/** @type {any} */ (shopify)).authenticatedAccount?.customer?.current?.id;
+      const token = await shopify.sessionToken.get();
+      const customerId = shopify.authenticatedAccount?.customer?.current?.id;
       for (const row of valid) {
         try {
           const res = await fetch(directUrl, {
@@ -150,11 +124,11 @@ const Extension = () => {
         setNewRows([{ id: 1, fn: "", ln: "" }]);
         setNextRowId(2);
         modalRef.current?.hideOverlay();
-        (/** @type {any} */ (shopify)).toast.show(`${saved} dependant${saved > 1 ? "s" : ""} added successfully`);
+        shopify.toast.show(`${saved} dependant${saved > 1 ? "s" : ""} added successfully`);
       }
     } catch (e) {
       console.error("Bulk add failed", e);
-      (/** @type {any} */ (shopify)).toast.show("Failed to add dependants");
+      shopify.toast.show("Failed to add dependants");
     } finally {
       setSaving(false);
     }
@@ -165,11 +139,11 @@ const Extension = () => {
     setNextRowId(prev => prev + 1);
   };
 
-  const removeRow = (/** @type {number} */ rowId) => {
+  const removeRow = (rowId: number) => {
     setNewRows(prev => prev.filter(r => r.id !== rowId));
   };
 
-  const updateRow = (/** @type {number} */ rowId, /** @type {string} */ field, /** @type {string} */ value) => {
+  const updateRow = (rowId: number, field: "fn" | "ln", value: string) => {
     setNewRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r));
   };
 
@@ -177,8 +151,8 @@ const Extension = () => {
     if (!editingItem || !firstName.trim() || !lastName.trim()) return;
     setSaving(true);
     try {
-      const token = await (/** @type {any} */ (shopify)).sessionToken.get();
-      const customerId = (/** @type {any} */ (shopify)).authenticatedAccount?.customer?.current?.id;
+      const token = await shopify.sessionToken.get();
+      const customerId = shopify.authenticatedAccount?.customer?.current?.id;
 
       const res = await fetch(directUrl, {
         method: "PUT",
@@ -193,20 +167,20 @@ const Extension = () => {
         const data = await res.json();
         setDependants((prev) => prev.map((d) => (d.id === data.id ? data : d)));
         modalRef.current?.hideOverlay();
-        (/** @type {any} */ (shopify)).toast.show("Dependant updated successfully");
+        shopify.toast.show("Dependant updated successfully");
         setEditingItem(null);
         setFirstName("");
         setLastName("");
       }
     } catch (e) {
       console.error("Edit failed", e);
-      (/** @type {any} */ (shopify)).toast.show("Failed to update dependant");
+      shopify.toast.show("Failed to update dependant");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleOpenEdit = (/** @type {any} */ item) => {
+  const handleOpenEdit = (item: Dependant) => {
     setEditingItem(item);
     setFirstName(item.first_name);
     setLastName(item.last_name);
@@ -225,8 +199,8 @@ const Extension = () => {
     const { id } = removingItem;
     setSaving(true);
     try {
-      const token = await (/** @type {any} */ (shopify)).sessionToken.get();
-      const customerId = (/** @type {any} */ (shopify)).authenticatedAccount?.customer?.current?.id;
+      const token = await shopify.sessionToken.get();
+      const customerId = shopify.authenticatedAccount?.customer?.current?.id;
 
       const res = await fetch(directUrl, {
         method: "DELETE",
@@ -239,13 +213,13 @@ const Extension = () => {
       });
       if (res.ok) {
         setDependants((prev) => prev.filter((d) => d.id !== id));
-        (/** @type {any} */ (shopify)).toast.show("Dependant removed");
+        shopify.toast.show("Dependant removed");
         confirmModalRef.current?.hideOverlay();
         setRemovingItem(null);
       }
     } catch (e) {
       console.error("Remove failed", e);
-      (/** @type {any} */ (shopify)).toast.show("Failed to remove dependant");
+      shopify.toast.show("Failed to remove dependant");
     } finally {
       setSaving(false);
     }
@@ -267,12 +241,9 @@ const Extension = () => {
             <s-text-field
               label="Search"
               value={search}
-              onInput={(e) => {
-                const target = /** @type {any} */ (e.currentTarget);
-                if (target) {
-                  setSearch(target.value);
-                  setCurrentPage(1);
-                }
+              onInput={(e: any) => {
+                setSearch(e.currentTarget.value);
+                setCurrentPage(1);
               }}
               icon="search"
             />
@@ -296,7 +267,6 @@ const Extension = () => {
           <s-text color="subdued">No dependants found.</s-text>
         ) : (
           <s-stack gap="none">
-            {/* Table Header */}
             <s-grid gridTemplateColumns="1fr 1fr 120px 120px" gap="base" padding="base" background="subdued" borderWidth="base none none none" borderRadius="base base none none">
               <s-text type="strong">First Name</s-text>
               <s-text type="strong">Last Name</s-text>
@@ -304,7 +274,6 @@ const Extension = () => {
               <s-text type="strong"></s-text>
             </s-grid>
             
-            {/* Table Body Area */}
             {pageLoading ? (
               <s-box padding="base">
                 <s-grid alignItems="center" justifyContent="center">
@@ -346,7 +315,6 @@ const Extension = () => {
               </s-stack>
             )}
 
-            {/* Pagination Controls */}
             {paginationEnabled && totalPages > 1 && (
               <s-box padding="base" borderWidth="base none none none">
                 <s-grid gridTemplateColumns="1fr auto 1fr" gap="base" alignItems="center">
@@ -375,7 +343,6 @@ const Extension = () => {
           </s-stack>
         )}
 
-        {/* Add/Edit Dependant Modal */}
         <s-modal id="add-dependant-modal" ref={modalRef} heading={editingItem ? "Edit Dependant" : "Add New Dependant"}>
           <s-stack gap="base" padding="base">
             {editingItem ? (
@@ -383,19 +350,13 @@ const Extension = () => {
                 <s-text-field
                   label="First Name"
                   value={firstName}
-                  onInput={(e) => {
-                    const target = /** @type {any} */ (e.currentTarget);
-                    if (target) setFirstName(target.value);
-                  }}
+                  onInput={(e: any) => setFirstName(e.currentTarget.value)}
                   required
                 />
                 <s-text-field
                   label="Last Name"
                   value={lastName}
-                  onInput={(e) => {
-                    const target = /** @type {any} */ (e.currentTarget);
-                    if (target) setLastName(target.value);
-                  }}
+                  onInput={(e: any) => setLastName(e.currentTarget.value)}
                   required
                 />
               </>
@@ -407,20 +368,14 @@ const Extension = () => {
                       label={idx === 0 ? "First Name" : ""}
                       placeholder="First Name"
                       value={row.fn}
-                      onInput={(e) => {
-                        const target = /** @type {any} */ (e.currentTarget);
-                        if (target) updateRow(row.id, "fn", target.value);
-                      }}
+                      onInput={(e: any) => updateRow(row.id, "fn", e.currentTarget.value)}
                       required
                     />
                     <s-text-field
                       label={idx === 0 ? "Last Name" : ""}
                       placeholder="Last Name"
                       value={row.ln}
-                      onInput={(e) => {
-                        const target = /** @type {any} */ (e.currentTarget);
-                        if (target) updateRow(row.id, "ln", target.value);
-                      }}
+                      onInput={(e: any) => updateRow(row.id, "ln", e.currentTarget.value)}
                       required
                     />
                     {newRows.length > 1 && (
@@ -469,7 +424,6 @@ const Extension = () => {
           </s-button>
         </s-modal>
 
-        {/* Remove Confirmation Modal */}
         <s-modal id="confirm-remove-modal" ref={confirmModalRef} heading="Confirm Removal">
           <s-stack gap="base" padding="base">
             <s-text>

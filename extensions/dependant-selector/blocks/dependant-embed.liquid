@@ -6,7 +6,7 @@
 {%- endcomment -%}
 
 
-{{- 'dependant-selector.css' | asset_url | stylesheet_tag -}}
+{{ 'dependant-selector.css' | asset_url | stylesheet_tag }}
 
 <script>
 window.__DependantConfig = window.__DependantConfig || {
@@ -35,7 +35,9 @@ window.__DependantConfig = window.__DependantConfig || {
 };
 </script>
 
-<script src="{{ 'dependant-selector.js' | asset_url }}" defer></script>
+<script src="{{ 'dependant-selector.js' | asset_url }}" type="text/javascript" defer></script>
+
+
 
 
 {% schema %}

@@ -1,21 +1,28 @@
 /**
- * OrderStatusBlock.jsx — Customer Account UI Extension
+ * OrderStatusBlock.tsx — Customer Account UI Extension
  * Target: customer-account.order-status.block.render
  */
 import "@shopify/ui-extensions/preact";
 import { render } from "preact";
 import { useState, useEffect } from "preact/hooks";
 
+interface Dependant {
+  id: number;
+  full_name: string;
+}
+
+// Declare shopify global
+declare const shopify: any;
+
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-// If your tunnel URL changes, please update this constant!
-const APP_URL = "https://restoration-equality-contacted-warming.trycloudflare.com";
+const APP_URL = "https://erik-emphasis-italia-tournaments.trycloudflare.com";
 
 const Extension = () => {
-  const [dependants, setDependants] = useState([]);
+  const [dependants, setDependants] = useState<Dependant[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Extension Settings
-  const settings = (/** @type {any} */ (shopify)).settings?.current?.value || {};
+  const settings = shopify.settings?.current?.value || {};
 
   const directUrl = `${APP_URL}/api/dependant/me`;
 
