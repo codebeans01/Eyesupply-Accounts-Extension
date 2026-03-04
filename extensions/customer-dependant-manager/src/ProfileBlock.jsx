@@ -7,7 +7,7 @@ import { render } from "preact";
 import { useState, useEffect, useRef } from "preact/hooks";
 
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://restoration-equality-contacted-warming.trycloudflare.com";
+const APP_URL = "https://convenience-pole-haven-prime.trycloudflare.com";
 
 const Extension = () => {
   const [dependants, setDependants] = useState(/** @type {any[]} */ ([]));

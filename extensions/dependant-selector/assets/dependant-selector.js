@@ -1,6 +1,6 @@
 (function(){"use strict";
   console.log("[Dependant] Script loaded");
-
+  
   var c = window.__DependantConfig;
   if (!c || c.proxyBase === undefined) {
     console.warn("[Dependant] __DependantConfig not found. App Embed may not be enabled.");
