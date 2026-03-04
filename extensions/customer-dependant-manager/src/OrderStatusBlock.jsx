@@ -8,11 +8,14 @@ import { useState, useEffect } from "preact/hooks";
 
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
 // If your tunnel URL changes, please update this constant!
-const APP_URL = "https://investors-reduction-missed-tcp.trycloudflare.com";
+const APP_URL = "https://restoration-equality-contacted-warming.trycloudflare.com";
 
 const Extension = () => {
   const [dependants, setDependants] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Extension Settings
+  const settings = (/** @type {any} */ (shopify)).settings?.current?.value || {};
 
   const directUrl = `${APP_URL}/api/dependant/me`;
 

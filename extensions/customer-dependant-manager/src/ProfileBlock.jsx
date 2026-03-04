@@ -7,7 +7,7 @@ import { render } from "preact";
 import { useState, useEffect, useRef } from "preact/hooks";
 
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://investors-reduction-missed-tcp.trycloudflare.com";
+const APP_URL = "https://restoration-equality-contacted-warming.trycloudflare.com";
 
 const Extension = () => {
   const [dependants, setDependants] = useState(/** @type {any[]} */ ([]));
@@ -15,17 +15,32 @@ const Extension = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [newRows, setNewRows] = useState(/** @type {{id: number, fn: string, ln: string}[]} */ ([{ id: 1, fn: "", ln: "" }]));
+  const [nextRowId, setNextRowId] = useState(2);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [pageLoading, setPageLoading] = useState(false);
   const [removingItem, setRemovingItem] = useState(/** @type {any} */ (null));
   const [editingItem, setEditingItem] = useState(/** @type {any} */ (null));
+
+  
+  // Extension Settings & Metafields
+  const settings = (/** @type {any} */ (shopify)).settings?.current?.value || {};
+  const meta = (/** @type {any} */ (shopify)).extension?.metafields?.current?.value || [];
+  
+  const m = (key) => meta.find(f => f.key === key)?.value;
+
+  const prevLabel = m("pagination_previous_text") || settings.pagination_previous_text || "Previous";
+  const nextLabel = m("pagination_next_text") || settings.pagination_next_text || "Next";
+  const paginationEnabled = (m("pagination_enabled") ?? settings.pagination_enabled) !== false;
+
   
   const modalRef = useRef(/** @type {any} */ (null));
   const confirmModalRef = useRef(/** @type {any} */ (null));
 
   const directUrl = `${APP_URL}/api/dependant/me`;
+
 
   const handlePageChange = (/** @type {number} */ newPage) => {
     setPageLoading(true);
@@ -49,7 +64,9 @@ const Extension = () => {
           },
         });
         if (res.ok) {
-          setDependants(await res.json());
+          const data = await res.json();
+          // Reverse the list to show latest (newest) at the top
+          setDependants(Array.isArray(data) ? data.reverse() : []);
         }
       } catch (e) {
         console.error("Initialization failed", e);
@@ -57,8 +74,10 @@ const Extension = () => {
         setLoading(false);
       }
     }
+
     init();
   }, [directUrl]);
+
 
   const handleAdd = async (closeOnSuccess = true) => {
     if (!firstName.trim() || !lastName.trim()) return;
@@ -76,10 +95,10 @@ const Extension = () => {
         },
         body: JSON.stringify({ firstName, lastName }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setDependants((prev) => [...prev, data]);
-        setFirstName("");
+       if (res.ok) {
+         const data = await res.json();
+         setDependants((prev) => [data, ...prev]);
+         setFirstName("");
         setLastName("");
         if (closeOnSuccess) {
           modalRef.current?.hideOverlay();
@@ -94,6 +113,64 @@ const Extension = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBulkAdd = async () => {
+    const valid = newRows.filter(r => r.fn.trim() && r.ln.trim());
+    if (valid.length === 0) {
+      (/** @type {any} */ (shopify)).toast.show("Please fill in at least one row.");
+      return;
+    }
+    setSaving(true);
+    let saved = 0;
+    try {
+      const token = await (/** @type {any} */ (shopify)).sessionToken.get();
+      const customerId = (/** @type {any} */ (shopify)).authenticatedAccount?.customer?.current?.id;
+      for (const row of valid) {
+        try {
+          const res = await fetch(directUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+              "x-customer-id": customerId || ""
+            },
+            body: JSON.stringify({ firstName: row.fn.trim(), lastName: row.ln.trim() }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setDependants((prev) => [data, ...prev]);
+            saved++;
+          }
+        } catch (e) {
+          console.error("Bulk add row failed", e);
+        }
+      }
+      if (saved > 0) {
+        setNewRows([{ id: 1, fn: "", ln: "" }]);
+        setNextRowId(2);
+        modalRef.current?.hideOverlay();
+        (/** @type {any} */ (shopify)).toast.show(`${saved} dependant${saved > 1 ? "s" : ""} added successfully`);
+      }
+    } catch (e) {
+      console.error("Bulk add failed", e);
+      (/** @type {any} */ (shopify)).toast.show("Failed to add dependants");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addNewRow = () => {
+    setNewRows(prev => [...prev, { id: nextRowId, fn: "", ln: "" }]);
+    setNextRowId(prev => prev + 1);
+  };
+
+  const removeRow = (/** @type {number} */ rowId) => {
+    setNewRows(prev => prev.filter(r => r.id !== rowId));
+  };
+
+  const updateRow = (/** @type {number} */ rowId, /** @type {string} */ field, /** @type {string} */ value) => {
+    setNewRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r));
   };
 
   const handleEdit = async () => {
@@ -139,6 +216,8 @@ const Extension = () => {
     setEditingItem(null);
     setFirstName("");
     setLastName("");
+    setNewRows([{ id: 1, fn: "", ln: "" }]);
+    setNextRowId(2);
   };
 
   const handleRemove = async () => {
@@ -185,18 +264,18 @@ const Extension = () => {
     <s-section heading="Manage Dependants">
       <s-stack gap="base">
         <s-grid gridTemplateColumns="1fr" gap="base" alignItems="end" justifyContent="space-between">
-          <s-text-field
-            label="Search"
-            value={search}
-            onInput={(e) => {
-              const target = e.currentTarget;
-              if (target) {
-                setSearch(target.value);
-                setCurrentPage(1);
-              }
-            }}
-            icon="search"
-          />
+            <s-text-field
+              label="Search"
+              value={search}
+              onInput={(e) => {
+                const target = /** @type {any} */ (e.currentTarget);
+                if (target) {
+                  setSearch(target.value);
+                  setCurrentPage(1);
+                }
+              }}
+              icon="search"
+            />
           <s-box inlineSize="100%">
             <s-grid justifyContent="end">
               <s-button 
@@ -268,14 +347,14 @@ const Extension = () => {
             )}
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {paginationEnabled && totalPages > 1 && (
               <s-box padding="base" borderWidth="base none none none">
                 <s-grid gridTemplateColumns="1fr auto 1fr" gap="base" alignItems="center">
                   <s-button
                     disabled={currentPage === 1 || pageLoading}
                     onClick={() => handlePageChange(currentPage - 1)}
                   >
-                    Previous
+                    {prevLabel}
                   </s-button>
                   <s-text>
                     Page {currentPage} of {totalPages}
@@ -286,7 +365,7 @@ const Extension = () => {
                         disabled={currentPage === totalPages || pageLoading}
                         onClick={() => handlePageChange(currentPage + 1)}
                       >
-                        Next
+                        {nextLabel}
                       </s-button>
                     </s-grid>
                   </s-box>
@@ -299,24 +378,70 @@ const Extension = () => {
         {/* Add/Edit Dependant Modal */}
         <s-modal id="add-dependant-modal" ref={modalRef} heading={editingItem ? "Edit Dependant" : "Add New Dependant"}>
           <s-stack gap="base" padding="base">
-            <s-text-field
-              label="First Name"
-              value={firstName}
-              onInput={(e) => {
-                const target = e.currentTarget;
-                if (target) setFirstName(target.value);
-              }}
-              required
-            />
-            <s-text-field
-              label="Last Name"
-              value={lastName}
-              onInput={(e) => {
-                const target = e.currentTarget;
-                if (target) setLastName(target.value);
-              }}
-              required
-            />
+            {editingItem ? (
+              <>
+                <s-text-field
+                  label="First Name"
+                  value={firstName}
+                  onInput={(e) => {
+                    const target = /** @type {any} */ (e.currentTarget);
+                    if (target) setFirstName(target.value);
+                  }}
+                  required
+                />
+                <s-text-field
+                  label="Last Name"
+                  value={lastName}
+                  onInput={(e) => {
+                    const target = /** @type {any} */ (e.currentTarget);
+                    if (target) setLastName(target.value);
+                  }}
+                  required
+                />
+              </>
+            ) : (
+              <>
+                {newRows.map((row, idx) => (
+                  <s-grid key={row.id} gridTemplateColumns={newRows.length > 1 ? "1fr 1fr auto" : "1fr 1fr"} gap="base" alignItems="end">
+                    <s-text-field
+                      label={idx === 0 ? "First Name" : ""}
+                      placeholder="First Name"
+                      value={row.fn}
+                      onInput={(e) => {
+                        const target = /** @type {any} */ (e.currentTarget);
+                        if (target) updateRow(row.id, "fn", target.value);
+                      }}
+                      required
+                    />
+                    <s-text-field
+                      label={idx === 0 ? "Last Name" : ""}
+                      placeholder="Last Name"
+                      value={row.ln}
+                      onInput={(e) => {
+                        const target = /** @type {any} */ (e.currentTarget);
+                        if (target) updateRow(row.id, "ln", target.value);
+                      }}
+                      required
+                    />
+                    {newRows.length > 1 && (
+                      <s-button
+                        tone="critical"
+                        variant="tertiary"
+                        onClick={() => removeRow(row.id)}
+                      >
+                        ✕
+                      </s-button>
+                    )}
+                  </s-grid>
+                ))}
+                <s-button
+                  variant="tertiary"
+                  onClick={addNewRow}
+                >
+                  + Add Another Dependant
+                </s-button>
+              </>
+            )}
           </s-stack>
           {editingItem ? (
             <s-button
@@ -329,25 +454,15 @@ const Extension = () => {
               Save Changes
             </s-button>
           ) : (
-            <>
-              <s-button
-                slot="primary-action"
-                variant="primary"
-                onClick={() => handleAdd(true)}
-                loading={saving}
-                disabled={!firstName.trim() || !lastName.trim() || saving}
-              >
-                Add & Close
-              </s-button>
-              <s-button
-                slot="secondary-actions"
-                onClick={() => handleAdd(false)}
-                loading={saving}
-                disabled={!firstName.trim() || !lastName.trim() || saving}
-              >
-                Add & Add More
-              </s-button>
-            </>
+            <s-button
+              slot="primary-action"
+              variant="primary"
+              onClick={handleBulkAdd}
+              loading={saving}
+              disabled={saving || newRows.every(r => !r.fn.trim() || !r.ln.trim())}
+            >
+              Save & Close
+            </s-button>
           )}
           <s-button slot="secondary-actions" command="--hide" commandFor="add-dependant-modal">
             Cancel

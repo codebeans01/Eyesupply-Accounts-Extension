@@ -3,6 +3,8 @@
   This block can be added specifically to the product page via the Theme Editor.
 {% endcomment %}
 
+{{- 'dependant-selector.css' | asset_url | stylesheet_tag -}}
+
 <div 
   id="dep-block-root" 
   class="dep-block-root"
@@ -11,6 +13,34 @@
 >
   {% comment %} The JS will inject the widget here if this element exists {% endcomment %}
 </div>
+
+<script>
+window.__DependantConfig = window.__DependantConfig || {
+  {%- if customer and customer.id -%}
+  customerId: "gid://shopify/Customer/{{ customer.id }}",
+  loggedIn: true,
+  {%- else -%}
+  customerId: "",
+  loggedIn: false,
+  {%- endif -%}
+  proxyBase: "/apps/eyesupply",
+  i18n: {
+    label:        "{{ block.settings.heading | escape }}",
+    placeholder:  "{{ 'dependant.select_placeholder' | t }}",
+    addNew:       "{{ 'dependant.add_new' | t }}",
+    firstName:    "{{ 'dependant.first_name' | t }}",
+    lastName:     "{{ 'dependant.last_name' | t }}",
+    save:         "{{ 'dependant.save' | t }}",
+    cancel:       "{{ 'dependant.cancel' | t }}",
+    saving:       "{{ 'dependant.saving' | t }}",
+    saved:        "{{ 'dependant.saved' | t }}",
+    errRequired:  "{{ 'dependant.error_required' | t }}",
+    errSave:      "{{ 'dependant.error_save' | t }}",
+    loginRequired:"{{ 'dependant.login_required' | t }}"
+  }
+};
+</script>
+<script src="{{ 'dependant-selector.js' | asset_url }}" defer></script>
 
 {% schema %}
 {
