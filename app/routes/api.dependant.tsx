@@ -31,9 +31,9 @@ function fv(fields: MetaobjectField[], key: string) {
 function toEntry(n: MetaobjectNode) {
   return {
     id: n.id,
-    first_name: fv(n.fields, "first_name"),
-    last_name: fv(n.fields, "last_name"),
-    full_name: fv(n.fields, "full_name"),
+    first_name: fv(n.fields, "d_first_name"),
+    last_name: fv(n.fields, "d_last_name"),
+    full_name: fv(n.fields, "d_full_name"),
   };
 }
 
@@ -97,7 +97,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const json = await res.json();
     const nodes: MetaobjectNode[] = json?.data?.metaobjects?.nodes ?? [];
     const filtered = nodes
-      .filter((n) => getNumericCustomerId(fv(n.fields, "customer_id")) === customerId)
+      .filter((n) => getNumericCustomerId(fv(n.fields, "d_customer_id")) === customerId)
       .map(toEntry);
     return ok(filtered);
   } catch (e) {
@@ -140,10 +140,10 @@ export async function action({ request }: ActionFunctionArgs) {
         input: {
           type: "$app:dependant",
           fields: [
-            { key: "first_name", value: firstName.trim() },
-            { key: "last_name", value: lastName.trim() },
-            { key: "full_name", value: fullName },
-            { key: "customer_id", value: getNumericCustomerId(customerId.trim()) },
+            { key: "d_first_name", value: firstName.trim() },
+            { key: "d_last_name", value: lastName.trim() },
+            { key: "d_full_name", value: fullName },
+            { key: "d_customer_id", value: getNumericCustomerId(customerId.trim()) },
           ],
         },
       },

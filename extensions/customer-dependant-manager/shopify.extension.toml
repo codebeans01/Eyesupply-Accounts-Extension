@@ -1,4 +1,4 @@
-api_version = "2026-01"
+api_version = "2026-04"
 
 [[extensions]]
 name = "customer-dependant-manager"
@@ -25,3 +25,23 @@ target = "customer-account.profile.addresses.render-after"
 api_access = true
 # Required for fetch() to App Proxy (/apps/eyesupply/...)
 network_access = true
+
+[extensions.settings]
+[[extensions.settings.fields]]
+key = "pagination_previous_text"
+type = "single_line_text_field"
+name = "Previous Button Text"
+default = "Previous"
+
+[[extensions.settings.fields]]
+key = "pagination_next_text"
+type = "single_line_text_field"
+name = "Next Button Text"
+default = "Next"
+
+[[extensions.settings.fields]]
+key = "pagination_enabled"
+type = "boolean"
+name = "Enable Pagination"
+default = true
+

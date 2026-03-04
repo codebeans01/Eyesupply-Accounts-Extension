@@ -5,11 +5,11 @@
   Size limit: 100KB liquid, 10KB JS, 100KB CSS
 {%- endcomment -%}
 
-{%- if template contains 'product' -%}
+
 {{- 'dependant-selector.css' | asset_url | stylesheet_tag -}}
 
 <script>
-window.__DependantConfig = {
+window.__DependantConfig = window.__DependantConfig || {
   {%- if customer and customer.id -%}
   customerId: "gid://shopify/Customer/{{ customer.id }}",
   loggedIn: true,
@@ -36,7 +36,7 @@ window.__DependantConfig = {
 </script>
 
 <script src="{{ 'dependant-selector.js' | asset_url }}" defer></script>
-{%- endif -%}
+
 
 {% schema %}
 {

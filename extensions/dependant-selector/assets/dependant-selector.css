@@ -96,7 +96,7 @@
   padding: var(--dep-spacing-sm) var(--dep-spacing-md);
   border: 1px solid var(--dep-color-border);
   border-radius: var(--dep-radius);
-  font-size: 0.9375rem;
+  font-size: 14px;
   background-color: transparent;
   transition: border-color var(--dep-transition), box-shadow var(--dep-transition);
 }
@@ -114,13 +114,13 @@
 /* ── Feedback ───────────────────────────────────────────────────────────── */
 .dep-error {
   color: var(--dep-color-error);
-  font-size: 0.8125rem;
+  font-size: 14px;
   margin-block: var(--dep-spacing-xs) 0;
 }
 
 .dep-success {
   color: var(--dep-color-success);
-  font-size: 0.8125rem;
+  font-size: 14px;
   margin-block: var(--dep-spacing-xs) 0;
 }
 
@@ -135,7 +135,7 @@
 .dep-btn {
   padding: var(--dep-spacing-sm) var(--dep-spacing-lg);
   border-radius: var(--dep-radius);
-  font-size: 0.875rem;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: opacity var(--dep-transition), background-color var(--dep-transition);
@@ -174,7 +174,7 @@
 
 /* ── Login Prompt ───────────────────────────────────────────────────────── */
 .dep-login-msg {
-  font-size: 0.875rem;
+  font-size: 14px;
   color: #555;
   margin: var(--dep-spacing-xs) 0 0;
 }
@@ -192,4 +192,227 @@
 .dep-cart-label span {
   color: rgb(var(--color-foreground));
   margin-right: 4px;
+}
+
+/* ── Select + Add New Button Row ───────────────────────────────────────── */
+.dep-select-row {
+  display: flex;
+  gap: var(--dep-spacing-sm);
+  align-items: stretch;
+}
+
+.dep-select-row .dep-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.dep-btn--add-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 1px dashed var(--dep-color-border);
+  color: var(--dep-color-btn-ghost-fg);
+  padding: var(--dep-spacing-sm) var(--dep-spacing-md);
+  font-size: 14px;
+  border-radius: var(--dep-radius);
+  cursor: pointer;
+  transition: border-color var(--dep-transition), background-color var(--dep-transition);
+}
+
+.dep-btn--add-new:hover {
+  border-color: var(--dep-color-border-focus);
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.dep-btn__icon {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Modal Overlay ─────────────────────────────────────────────────────── */
+.dep-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dep-modal-overlay--visible {
+  opacity: 1;
+}
+
+/* ── Modal Dialog ──────────────────────────────────────────────────────── */
+.dep-modal {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  transform: translateY(10px);
+  transition: transform 0.2s ease;
+}
+
+.dep-modal-overlay--visible .dep-modal {
+  transform: translateY(0);
+}
+
+/* ── Modal Header ──────────────────────────────────────────────────────── */
+.dep-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.dep-modal__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #111;
+}
+
+.dep-modal__close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #888;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color var(--dep-transition);
+}
+
+.dep-modal__close:hover {
+  color: #111;
+}
+
+/* ── Modal Body ────────────────────────────────────────────────────────── */
+.dep-modal__body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.dep-modal__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Individual Row ────────────────────────────────────────────────────── */
+.dep-modal__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  animation: dep-row-in 0.2s ease;
+}
+
+.dep-modal__row--removing {
+  animation: dep-row-out 0.2s ease forwards;
+}
+
+.dep-modal__row--error {
+  border-color: var(--dep-color-error);
+  background: #fef5f5;
+}
+
+.dep-modal__row-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dep-modal__row-remove {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #bbb;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color var(--dep-transition), background-color var(--dep-transition);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.dep-modal__row-remove:hover {
+  color: var(--dep-color-error);
+  background: rgba(192, 57, 43, 0.08);
+}
+
+/* ── Add Another Row Button ────────────────────────────────────────────── */
+.dep-btn--add-row {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-style: dashed;
+  width: 100%;
+  justify-content: center;
+  padding: 10px;
+}
+
+/* ── Modal Footer ──────────────────────────────────────────────────────── */
+.dep-modal__footer {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  justify-content: flex-end;
+}
+
+/* ── Row Animations ────────────────────────────────────────────────────── */
+@keyframes dep-row-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dep-row-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); height: 0; padding: 0; margin: 0; border: 0; overflow: hidden; }
+}
+
+/* ── Mobile Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .dep-select-row {
+    flex-direction: column;
+  }
+
+  .dep-modal {
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .dep-modal__row-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .dep-modal__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dep-modal__row-remove {
+    align-self: flex-end;
+  }
 }
