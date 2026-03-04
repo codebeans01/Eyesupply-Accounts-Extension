@@ -8,17 +8,17 @@ uid = "67783ab3-bb94-5ac2-957e-89a99f2ea94d8515843b"
 
 # Order Status page — shows dependants attached to the order
 [[extensions.targeting]]
-module = "./src/OrderStatusBlock.jsx"
+module = "./src/OrderStatusBlock.tsx"
 target = "customer-account.order-status.block.render"
 
 # Profile page — lists & adds dependants (Dynamic Block)
 [[extensions.targeting]]
-module = "./src/ProfileBlock.jsx"
+module = "./src/ProfileBlock.tsx"
 target = "customer-account.profile.block.render"
 
 # Profile page - Static fallback
 [[extensions.targeting]]
-module = "./src/ProfileBlock.jsx"
+module = "./src/ProfileBlock.tsx"
 target = "customer-account.profile.addresses.render-after"
 
 [extensions.capabilities]
