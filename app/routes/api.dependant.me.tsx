@@ -121,7 +121,7 @@ async function getDependants(admin: any, customerId: string, shop: string): Prom
   const cacheKey = `dependants:${shop}:${numericId}`;
   
   try {
-    const json = await safeGraphql(admin, GET_CUSTOMER_METAFIELD_ADMIN, { id: gid }, { cacheKey });
+    const json = await safeGraphql(admin, GET_CUSTOMER_METAFIELD_ADMIN, { id: gid });
     const value = json?.data?.customer?.metafield?.value;
     if (!value) return [];
     return JSON.parse(value);
