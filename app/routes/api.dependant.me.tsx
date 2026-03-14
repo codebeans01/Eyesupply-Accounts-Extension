@@ -3,66 +3,67 @@
  * Updated for Hybrid Auth with Direct Fetch + JWT fallback parsing
  */
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import shopify, { authenticate, unauthenticated } from "../shopify.server";
+import { authenticate, unauthenticated } from "../shopify.server";
+import { safeGraphql } from "../utils/graphqlHandler";
+import { adminCache } from "../utils/cache.server";
+import { batchMetafieldUpdate } from "../utils/batchHandler";
+
 
 interface MetaobjectField { key: string; value: string; }
-interface MetaobjectNode { id: string; fields: MetaobjectField[]; }
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-customer-id",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-customer-id, x-shop-domain",
   "Content-Type": "application/json",
 } as const;
 
-function fv(fields: MetaobjectField[], key: string) {
-  return fields.find((f) => f.key === key)?.value ?? "";
-}
-
-function toEntry(n: MetaobjectNode) {
-  return {
-    id: n.id,
-    first_name: fv(n.fields, "d_first_name"),
-    last_name: fv(n.fields, "d_last_name"),
-    full_name: fv(n.fields, "d_full_name"),
-  };
+interface DependantEntry {
+  id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
 }
 
 function ok(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS });
 }
 
-const LIST_QUERY = `#graphql
-  query ListDeps($type: String!, $first: Int!) {
-    metaobjects(type: $type, first: $first) {
-      nodes { id fields { key value } }
+const GET_CUSTOMER_METAFIELD_ADMIN = `#graphql
+  query GetCustomerMetafield($id: ID!) {
+    customer(id: $id) {
+      metafield(namespace: "custom", key: "dependants") {
+        id
+        value
+      }
     }
   }
 `;
 
-const CREATE_MUTATION = `#graphql
-  mutation CreateDep($input: MetaobjectCreateInput!) {
-    metaobjectCreate(metaobject: $input) {
-      metaobject { id fields { key value } }
-      userErrors { field message }
+const GET_CUSTOMER_METAFIELD_STOREFRONT = `#graphql
+  query GetCustomerMetafield($id: ID!) {
+    node(id: $id) {
+      ... on Customer {
+        metafield(namespace: "custom", key: "dependants") {
+          value
+        }
+      }
     }
   }
 `;
 
-const DELETE_MUTATION = `#graphql
-  mutation DeleteMetaobject($id: ID!) {
-    metaobjectDelete(id: $id) {
-      deletedId
-      userErrors { field message }
-    }
-  }
-`;
-
-const UPDATE_MUTATION = `#graphql
-  mutation UpdateDep($id: ID!, $fields: [MetaobjectFieldInput!]!) {
-    metaobjectUpdate(id: $id, metaobject: { fields: $fields }) {
-      metaobject { id fields { key value } }
-      userErrors { field message }
+const SET_METAFIELDS = `#graphql
+  mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
+    metafieldsSet(metafields: $metafields) {
+      metafields {
+        key
+        value
+      }
+      userErrors {
+        field
+        message
+        code
+      }
     }
   }
 `;
@@ -70,13 +71,16 @@ const UPDATE_MUTATION = `#graphql
 async function getContext(request: Request) {
   // 1. Try App Proxy (Official path)
   try {
-    const { admin } = await authenticate.public.appProxy(request);
-    if (admin) {
+    const result = (await authenticate.public.appProxy(request)) as any;
+    const { admin, session, payload } = result;
+    if (admin && (session?.shop || payload?.dest)) {
+      const shop = session?.shop || (payload?.dest ? new URL(payload.dest).hostname : "");
       const { customerId } = getInfoFromToken(request);
-      return { admin, customerId };
+      console.log("[api.dependant.me] App Proxy Auth SUCCESS:", shop);
+      return { admin, customerId: customerId || payload?.sub || "", shop };
     }
   } catch (e) {
-    // Falls through
+    // Falls through to direct fetch auth
   }
 
   // 2. Direct Fetch Fallback (Manual JWT validation)
@@ -90,69 +94,69 @@ async function getContext(request: Request) {
 
   try {
     const { admin } = await unauthenticated.admin(shop);
-    return { admin, customerId };
+    console.log("[api.dependant.me] Direct Auth SUCCESS:", shop);
+    return { admin, customerId, shop };
   } catch (e) {
-    console.error("[api.dependant.me] unauthenticated.admin failed:", e);
+    console.error("[api.dependant.me] unauthenticated.admin failed for shop:", shop, e);
     return null;
   }
 }
 
 // ─── GET /api/dependant/me ────────────────────────────────────────────────────
 
-/** ─── SELF-HEALING: Auto-Create Missing Metaobject Definition ──────────────── */
-
-function isMissingDef(json: any) {
-  if (!json) return false;
-  const msg = "No metaobject definition exists";
-  // 1. Check top-level errors
-  if (json.errors?.some((e: any) => e.message?.includes(msg))) return true;
-  // 2. Check userErrors in various mutations
-  const data = json.data || {};
-  for (const key in data) {
-    if (data[key]?.userErrors?.some((e: any) => e.message?.includes(msg))) return true;
+function getNumericCustomerId(id: string): string {
+  if (!id) return "";
+  if (id.includes("gid://shopify/Customer/")) {
+    return id.split("/").pop() || "";
   }
-  return false;
+  return id;
 }
 
-async function ensureDefinition(admin: any) {
-  console.log("[api.dependant.me] Attempting to auto-create missing definition...");
-  const mutation = `#graphql
-    mutation AutoCreateDef($input: MetaobjectDefinitionCreateInput!) {
-      metaobjectDefinitionCreate(definition: $input) {
-        metaobjectDefinition { id }
-        userErrors { message code }
-      }
-    }
-  `;
+/** ─── Helper: Fetch and Parse JSON Metafield ─── */
+async function getDependants(admin: any, customerId: string, shop: string): Promise<DependantEntry[]> {
+  const numericId = getNumericCustomerId(customerId);
+  const gid = `gid://shopify/Customer/${numericId}`;
+  
+  // Cache key unique to this shop and customer
+  const cacheKey = `dependants:${shop}:${numericId}`;
+  
   try {
-    const res = await admin.graphql(mutation, {
-      variables: {
-        input: {
-          name: "Dependant",
-          type: "$app:dependant",
-          access: { admin: "MERCHANT_READ_WRITE", storefront: "NONE" },
-          fieldDefinitions: [
-            { name: "First Name", key: "d_first_name", type: "single_line_text_field" },
-            { name: "Last Name", key: "d_last_name", type: "single_line_text_field" },
-            { name: "Full Name", key: "d_full_name", type: "single_line_text_field" },
-            { name: "Customer ID", key: "d_customer_id", type: "single_line_text_field" }
-          ]
-        }
-      }
-    });
-    const json = (await res.json()) as any;
-    const { userErrors } = json?.data?.metaobjectDefinitionCreate ?? {};
-    if (userErrors?.length) {
-      console.error("[api.dependant.me] Auto-create failed:", JSON.stringify(userErrors));
-      return false;
-    }
-    console.log("[api.dependant.me] Auto-create SUCCESS.");
-    return true;
+    const json = await safeGraphql(admin, GET_CUSTOMER_METAFIELD_ADMIN, { id: gid }, { cacheKey });
+    const value = json?.data?.customer?.metafield?.value;
+    if (!value) return [];
+    return JSON.parse(value);
   } catch (e) {
-    console.error("[api.dependant.me] Auto-create exception:", e);
-    return false;
+    console.error("[api.dependant.me] getDependants error:", e);
+    return [];
   }
 }
+
+/** ─── Helper: Save JSON Metafield ─── */
+async function saveDependants(admin: any, customerId: string, dependants: DependantEntry[], shop: string) {
+  const numericId = getNumericCustomerId(customerId);
+  const gid = `gid://shopify/Customer/${numericId}`;
+  
+  const json = await batchMetafieldUpdate(admin, [
+    {
+      ownerId: gid,
+      namespace: "custom",
+      key: "dependants",
+      type: "json",
+      value: JSON.stringify(dependants)
+    }
+  ]);
+
+  // Invalidate cache on write
+  const cacheKey = `dependants:${shop}:${numericId}`;
+  adminCache.delete(cacheKey);
+
+  const errors = (json?.data as any)?.metafieldsSet?.userErrors;
+  if (errors?.length) {
+    throw new Error(errors[0].message);
+  }
+  return dependants;
+}
+
 
 // ─── GET /api/dependant/me ────────────────────────────────────────────────────
 
@@ -161,30 +165,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const ctx = await getContext(request);
   if (!ctx) return ok({ error: "Unauthorized" }, 401);
-  const { admin, customerId } = ctx;
-
-  const fetchDeps = async () => {
-    const res = await admin.graphql(LIST_QUERY, {
-      variables: { type: "$app:dependant", first: 250 },
-    });
-    return (await res.json()) as any;
-  };
+  const { admin, customerId, shop } = ctx;
 
   try {
-    let json = await fetchDeps();
-    
-    // Check for missing definition error
-    if (isMissingDef(json)) {
-      const created = await ensureDefinition(admin);
-      if (created) json = await fetchDeps(); // Retry
-      else return ok({ error: "Database definition missing and auto-repair failed." }, 404);
-    }
-
-    const nodes: MetaobjectNode[] = json?.data?.metaobjects?.nodes ?? [];
-    const filtered = nodes
-      .filter((n: any) => fv(n.fields, "d_customer_id").includes(customerId))
-      .map(toEntry);
-    return ok(filtered);
+    const dependants = await getDependants(admin, customerId, shop);
+    return ok(dependants);
   } catch (e) {
     console.error("[api.dependant.me] loader error:", e);
     return ok([]);
@@ -198,7 +183,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const ctx = await getContext(request);
   if (!ctx) return ok({ error: "Unauthorized" }, 401);
-  const { admin, customerId } = ctx;
+  const { admin, customerId, shop } = ctx;
+
+  const dependants = await getDependants(admin, customerId, shop);
 
   if (request.method === "POST") {
     let body: { firstName?: string; lastName?: string };
@@ -210,69 +197,26 @@ export async function action({ request }: ActionFunctionArgs) {
       return ok({ error: "firstName and lastName required" }, 400);
     }
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`;
-    const createInput = {
-      type: "$app:dependant",
-      fields: [
-        { key: "d_first_name", value: firstName.trim() },
-        { key: "d_last_name", value: lastName.trim() },
-        { key: "d_full_name", value: fullName },
-        { key: "d_customer_id", value: customerId },
-      ],
+    console.log('body', body)
+
+    const newDep: DependantEntry = {
+      id: Date.now(), // Unique numeric ID
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      full_name: `${firstName.trim()} ${lastName.trim()}`
     };
 
+    const updated = [newDep, ...dependants];
     try {
-      let res = await admin.graphql(CREATE_MUTATION, { variables: { input: createInput } });
-      let json = (await res.json()) as any;
-
-      if (isMissingDef(json)) {
-        const created = await ensureDefinition(admin);
-        if (created) {
-          res = await admin.graphql(CREATE_MUTATION, { variables: { input: createInput } });
-          json = (await res.json()) as any;
-        }
-      }
-
-      const { metaobject, userErrors } = json?.data?.metaobjectCreate ?? {};
-      if (userErrors?.length) return ok({ errors: userErrors }, 422);
-      return ok(toEntry(metaobject as MetaobjectNode), 201);
-    } catch (e) {
-      console.error("[api.dependant.me] POST error:", e);
-      return ok({ error: "Server error" }, 500);
-    }
-  }
-
-  if (request.method === "DELETE") {
-    let body: { id?: string };
-    try { body = await request.json(); }
-    catch { return ok({ error: "Invalid JSON" }, 400); }
-
-    const { id } = body;
-    if (!id) return ok({ error: "id required" }, 400);
-
-    try {
-      let res = await admin.graphql(DELETE_MUTATION, { variables: { id } });
-      let json = (await res.json()) as any;
-
-      if (isMissingDef(json)) {
-        const created = await ensureDefinition(admin);
-        if (created) {
-          res = await admin.graphql(DELETE_MUTATION, { variables: { id } });
-          json = (await res.json()) as any;
-        }
-      }
-
-      const { userErrors } = json?.data?.metaobjectDelete ?? {};
-      if (userErrors?.length) return ok({ errors: userErrors }, 422);
-      return ok({ success: true });
-    } catch (e) {
-      console.error("[api.dependant.me] DELETE error:", e);
-      return ok({ error: "Server error" }, 500);
+      await saveDependants(admin, customerId, updated, shop);
+      return ok(newDep, 201);
+    } catch (e: any) {
+      return ok({ error: e.message || "Failed to save" }, 422);
     }
   }
 
   if (request.method === "PUT") {
-    let body: { id?: string; firstName?: string; lastName?: string };
+    let body: { id?: number; firstName?: string; lastName?: string };
     try { body = await request.json(); }
     catch { return ok({ error: "Invalid JSON" }, 400); }
 
@@ -281,31 +225,45 @@ export async function action({ request }: ActionFunctionArgs) {
       return ok({ error: "id, firstName and lastName required" }, 400);
     }
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`;
-    const updateFields = [
-      { key: "d_first_name", value: firstName.trim() },
-      { key: "d_last_name", value: lastName.trim() },
-      { key: "d_full_name", value: fullName },
-    ];
+    const index = dependants.findIndex(d => d.id === id);
+    if (index === -1) return ok({ error: "Not found" }, 404);
+
+    const updatedDep = {
+      ...dependants[index],
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      full_name: `${firstName.trim()} ${lastName.trim()}`
+    };
+
+    const updatedList = [...dependants];
+    updatedList[index] = updatedDep;
 
     try {
-      let res = await admin.graphql(UPDATE_MUTATION, { variables: { id, fields: updateFields } });
-      let json = (await res.json()) as any;
+      await saveDependants(admin, customerId, updatedList, shop);
+      return ok(updatedDep);
+    } catch (e: any) {
+      return ok({ error: e.message || "Failed to save" }, 422);
+    }
+  }
 
-      if (isMissingDef(json)) {
-        const created = await ensureDefinition(admin);
-        if (created) {
-          res = await admin.graphql(UPDATE_MUTATION, { variables: { id, fields: updateFields } });
-          json = (await res.json()) as any;
-        }
-      }
+  if (request.method === "DELETE") {
+    let body: { id?: number; ids?: number[] };
+    try { body = await request.json(); }
+    catch { return ok({ error: "Invalid JSON" }, 400); }
 
-      const { metaobject, userErrors } = json?.data?.metaobjectUpdate ?? {};
-      if (userErrors?.length) return ok({ errors: userErrors }, 422);
-      return ok(toEntry(metaobject as MetaobjectNode));
-    } catch (e) {
-      console.error("[api.dependant.me] PUT error:", e);
-      return ok({ error: "Server error" }, 500);
+    const { id, ids } = body;
+    if (!id && (!ids || !Array.isArray(ids) || ids.length === 0)) {
+      return ok({ error: "id or ids array required" }, 400);
+    }
+
+    const idsToRemove = ids || [id!];
+    const filtered = dependants.filter(d => !idsToRemove.includes(d.id));
+    
+    try {
+      await saveDependants(admin, customerId, filtered, shop);
+      return ok({ success: true, removedCount: idsToRemove.length });
+    } catch (e: any) {
+      return ok({ error: e.message || "Failed to update" }, 422);
     }
   }
 
@@ -318,29 +276,51 @@ function getInfoFromToken(request: Request) {
   try {
     const auth = request.headers.get("Authorization") ?? "";
     const token = auth.replace(/^Bearer\s+/, "").trim();
-    if (!token) return {};
+    
+    // Fallback headers if token fails or is minimal
+    const shopHeader = request.headers.get("x-shop-domain") || "";
+    const customerHeader = request.headers.get("x-customer-id") || "";
+    if (!token) {
+      return { 
+        customerId: customerHeader.includes("/") ? customerHeader.split("/").pop() : customerHeader, 
+        shop: shopHeader 
+      };
+    }
+
     const parts = token.split(".");
-    if (parts.length < 2) return {};
+    if (parts.length < 2) return { customerId: customerHeader, shop: shopHeader };
     
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
+    // Use base64url-safe parsing
+    const payloadStr = Buffer.from(parts[1], "base64").toString("utf-8");
+    const payload = JSON.parse(payloadStr);
     
-    // 1. Customer ID (Try header first, then payload.sub)
-    let customerId = request.headers.get("x-customer-id") || payload?.sub || "";
+    // 1. Customer ID
+    let customerId = customerHeader || payload?.sub || "";
     if (customerId.includes("gid://shopify/Customer/")) {
       customerId = customerId.split("/").pop() || "";
     }
     
-    // 2. Shop domain (Handle missing protocols in dest/iss)
-    let shop = "";
-    const dest = payload?.dest || "";
-    const iss = payload?.iss || "";
-    
-    if (dest) {
-       shop = dest.includes("://") ? new URL(dest).hostname : dest.split("/")[0];
-    } else if (iss) {
-       shop = iss.includes("://") ? new URL(iss).hostname : iss.split("/")[0];
+    // 2. Shop domain
+    let shop = shopHeader;
+    if (!shop) {
+      const dest = payload?.dest || "";
+      const iss = payload?.iss || "";
+      const target = dest || iss;
+      
+      if (target) {
+        if (target.includes("://")) {
+          shop = new URL(target).hostname;
+        } else {
+          shop = target.split("/")[0];
+        }
+      }
     }
     
+    // Final cleanup: ensure it's a .myshopify.com domain if it looks like one
+    if (shop && !shop.includes(".")) {
+      shop = `${shop}.myshopify.com`;
+    }
+
     return { customerId, shop };
   } catch (e) {
     console.error("[api.dependant.me] getInfoFromToken error:", e);

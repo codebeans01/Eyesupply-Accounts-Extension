@@ -1,7 +1,3 @@
-/**
- * ProfileBlock.tsx — Customer Account UI Extension
- * Target: customer-account.profile.block.render
- */
 import "@shopify/ui-extensions/preact";
 import { render } from "preact";
 import { useState, useEffect, useRef } from "preact/hooks";
@@ -19,13 +15,24 @@ interface NewRow {
   ln: string;
 }
 
-// Declare shopify global
-declare const shopify: any;
-
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://erik-emphasis-italia-tournaments.trycloudflare.com";
+const APP_URL = "https://choices-linux-senior-oct.trycloudflare.com";
+
+// The extension uses the module's default export to render the UI.
+// The 'shopify' object is available globally within the extension environment.
+export default async () => {
+  render(<Extension />, document.body);
+};
+
+
 
 const Extension = () => {
+  // @ts-expect-error shopify is global
+  const api = shopify;
+  if (!api) {
+    console.error("Extension rendered without shopify global");
+    return null;
+  }
   const [dependants, setDependants] = useState<Dependant[]>([]);
   const [loading, setLoading] = useState(true);
   const [firstName, setFirstName] = useState("");
@@ -39,16 +46,17 @@ const Extension = () => {
   const [pageLoading, setPageLoading] = useState(false);
   const [removingItem, setRemovingItem] = useState<Dependant | null>(null);
   const [editingItem, setEditingItem] = useState<Dependant | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // Extension Settings & Metafields
-  const settings = shopify.settings?.current?.value || {};
-  const meta = shopify.extension?.metafields?.current?.value || [];
+  // Extension Settings & Metafields from API
+  const settings = api.settings?.current || {};
+  // Note: Metafields are handled via the extension API in the callback if needed, 
+  // but for now we follow the user's logic using settings.
   
-  const m = (key: string) => meta.find((f: any) => f.key === key)?.value;
-
-  const prevLabel = m("pagination_previous_text") || settings.pagination_previous_text || "Previous";
-  const nextLabel = m("pagination_next_text") || settings.pagination_next_text || "Next";
-  const paginationEnabled = (m("pagination_enabled") ?? settings.pagination_enabled) !== false;
+  const prevLabel = settings.pagination_previous_text || "Previous";
+  const nextLabel = settings.pagination_next_text || "Next";
+  const paginationEnabled = settings.pagination_enabled !== false;
 
   const modalRef = useRef<any>(null);
   const confirmModalRef = useRef<any>(null);
@@ -66,8 +74,8 @@ const Extension = () => {
   useEffect(() => {
     async function init() {
       try {
-        const token = await shopify.sessionToken.get();
-        const customerId = shopify.authenticatedAccount?.customer?.current?.id;
+        const token = await api.sessionToken.get();
+        const customerId = api.authenticatedAccount?.customer?.current?.id;
         
         const res = await fetch(directUrl, {
           headers: { 
@@ -87,19 +95,19 @@ const Extension = () => {
       }
     }
     init();
-  }, [directUrl]);
+  }, [api, directUrl]);
 
   const handleBulkAdd = async () => {
     const valid = newRows.filter(r => r.fn.trim() && r.ln.trim());
     if (valid.length === 0) {
-      shopify.toast.show("Please fill in at least one row.");
+      api.toast.show("Please fill in at least one row.");
       return;
     }
     setSaving(true);
     let saved = 0;
     try {
-      const token = await shopify.sessionToken.get();
-      const customerId = shopify.authenticatedAccount?.customer?.current?.id;
+      const token = await api.sessionToken.get();
+      const customerId = api.authenticatedAccount?.customer?.current?.id;
       for (const row of valid) {
         try {
           const res = await fetch(directUrl, {
@@ -124,11 +132,11 @@ const Extension = () => {
         setNewRows([{ id: 1, fn: "", ln: "" }]);
         setNextRowId(2);
         modalRef.current?.hideOverlay();
-        shopify.toast.show(`${saved} dependant${saved > 1 ? "s" : ""} added successfully`);
+        api.toast.show(`${saved} dependant${saved > 1 ? "s" : ""} added successfully`);
       }
     } catch (e) {
       console.error("Bulk add failed", e);
-      shopify.toast.show("Failed to add dependants");
+      api.toast.show("Failed to add dependants");
     } finally {
       setSaving(false);
     }
@@ -151,8 +159,8 @@ const Extension = () => {
     if (!editingItem || !firstName.trim() || !lastName.trim()) return;
     setSaving(true);
     try {
-      const token = await shopify.sessionToken.get();
-      const customerId = shopify.authenticatedAccount?.customer?.current?.id;
+      const token = await api.sessionToken.get();
+      const customerId = api.authenticatedAccount?.customer?.current?.id;
 
       const res = await fetch(directUrl, {
         method: "PUT",
@@ -167,14 +175,14 @@ const Extension = () => {
         const data = await res.json();
         setDependants((prev) => prev.map((d) => (d.id === data.id ? data : d)));
         modalRef.current?.hideOverlay();
-        shopify.toast.show("Dependant updated successfully");
+        api.toast.show("Dependant updated successfully");
         setEditingItem(null);
         setFirstName("");
         setLastName("");
       }
     } catch (e) {
       console.error("Edit failed", e);
-      shopify.toast.show("Failed to update dependant");
+      api.toast.show("Failed to update dependant");
     } finally {
       setSaving(false);
     }
@@ -199,8 +207,8 @@ const Extension = () => {
     const { id } = removingItem;
     setSaving(true);
     try {
-      const token = await shopify.sessionToken.get();
-      const customerId = shopify.authenticatedAccount?.customer?.current?.id;
+      const token = await api.sessionToken.get();
+      const customerId = api.authenticatedAccount?.customer?.current?.id;
 
       const res = await fetch(directUrl, {
         method: "DELETE",
@@ -213,15 +221,60 @@ const Extension = () => {
       });
       if (res.ok) {
         setDependants((prev) => prev.filter((d) => d.id !== id));
-        shopify.toast.show("Dependant removed");
+        setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+        api.toast.show("Dependant removed");
         confirmModalRef.current?.hideOverlay();
         setRemovingItem(null);
       }
     } catch (e) {
       console.error("Remove failed", e);
-      shopify.toast.show("Failed to remove dependant");
+      api.toast.show("Failed to remove dependant");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBulkRemove = async () => {
+    if (selectedIds.length === 0) return;
+    setSaving(true);
+    setBulkDeleting(true);
+    try {
+      const token = await api.sessionToken.get();
+      const customerId = api.authenticatedAccount?.customer?.current?.id;
+
+      const res = await fetch(directUrl, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "x-customer-id": customerId || ""
+        },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      if (res.ok) {
+        setDependants((prev) => prev.filter((d) => !selectedIds.includes(d.id)));
+        api.toast.show(`${selectedIds.length} dependants removed`);
+        setSelectedIds([]);
+        confirmModalRef.current?.hideOverlay();
+      }
+    } catch (e) {
+      console.error("Bulk remove failed", e);
+      api.toast.show("Failed to remove dependants");
+    } finally {
+      setSaving(false);
+      setBulkDeleting(false);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === currentItems.length && currentItems.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(currentItems.map(d => d.id));
     }
   };
 
@@ -237,18 +290,30 @@ const Extension = () => {
   return (
     <s-section heading="Manage Dependants">
       <s-stack gap="base">
-        <s-grid gridTemplateColumns="1fr" gap="base" alignItems="end" justifyContent="space-between">
+        <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="end" justifyContent="space-between">
             <s-text-field
               label="Search"
               value={search}
               onInput={(e: any) => {
                 setSearch(e.currentTarget.value);
                 setCurrentPage(1);
+                setSelectedIds([]);
               }}
               icon="search"
             />
           <s-box inlineSize="100%">
-            <s-grid justifyContent="end">
+            <s-grid justifyContent="end" gap="small">
+              {selectedIds.length > 1 && (
+                <s-button 
+                  tone="critical" 
+                  variant="secondary"
+                  command="--show"
+                  commandFor="confirm-remove-modal"
+                  onClick={() => setRemovingItem(null)}
+                >
+                  Delete ({selectedIds.length}) Selected
+                </s-button>
+              )}
               <s-button 
                 variant="primary" 
                 onClick={handleOpenAdd}
@@ -267,7 +332,14 @@ const Extension = () => {
           <s-text color="subdued">No dependants found.</s-text>
         ) : (
           <s-stack gap="none">
-            <s-grid gridTemplateColumns="1fr 1fr 120px 120px" gap="base" padding="base" background="subdued" borderWidth="base none none none" borderRadius="base base none none">
+            <s-grid gridTemplateColumns="40px 1fr 1fr 120px 120px" gap="base" padding="base" background="subdued" borderWidth="base none none none" borderRadius="base base none none">
+              <s-grid alignItems="center" justifyContent="center">
+                <s-checkbox 
+                  checked={selectedIds.length === currentItems.length && currentItems.length > 0} 
+                  onChange={toggleSelectAll}
+                  defaultIndeterminate={selectedIds.length > 0 && selectedIds.length < currentItems.length}
+                />
+              </s-grid>
               <s-text type="strong">First Name</s-text>
               <s-text type="strong">Last Name</s-text>
               <s-text type="strong">Action</s-text>
@@ -285,12 +357,18 @@ const Extension = () => {
                 {currentItems.map((d, index) => (
                   <s-grid 
                     key={d.id} 
-                    gridTemplateColumns="1fr 1fr 120px 120px" 
+                    gridTemplateColumns="40px 1fr 1fr 120px 120px" 
                     gap="base" 
                     padding="base" 
                     borderWidth="base none none none"
                     background={index % 2 === 0 ? "transparent" : "subdued"}
                   >
+                    <s-grid alignItems="center" justifyContent="center">
+                      <s-checkbox 
+                        checked={selectedIds.includes(d.id)} 
+                        onChange={() => toggleSelect(d.id)}
+                      />
+                    </s-grid>
                     <s-text>{d.first_name}</s-text>
                     <s-text>{d.last_name}</s-text>
                     <s-button 
@@ -428,9 +506,15 @@ const Extension = () => {
           <s-stack gap="base" padding="base">
             <s-text>
               Are you sure you want to remove{" "}
-              <s-text type="strong">
-                {removingItem?.first_name} {removingItem?.last_name}
-              </s-text>
+              {removingItem ? (
+                <s-text type="strong">
+                  {removingItem.first_name} {removingItem.last_name}
+                </s-text>
+              ) : (
+                <s-text type="strong">
+                  {selectedIds.length} selected dependants
+                </s-text>
+              )}
               ? This action cannot be undone.
             </s-text>
           </s-stack>
@@ -438,7 +522,7 @@ const Extension = () => {
             slot="primary-action"
             tone="critical"
             variant="primary"
-            onClick={handleRemove}
+            onClick={removingItem ? handleRemove : handleBulkRemove}
             loading={saving}
           >
             Remove
@@ -453,6 +537,4 @@ const Extension = () => {
   );
 };
 
-export default async () => {
-  render(<Extension />, document.body);
-};
+// End of extension
