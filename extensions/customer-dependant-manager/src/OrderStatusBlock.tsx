@@ -38,7 +38,7 @@ function Extension() {
           return;
         }
 
-        const res = await fetch(`${APP_URL}/api/dependant/me?shop=${shop}&order_id=${orderId}`);
+        const res = await fetch(`${APP_URL}/api/dependant/me?shop=${shop}&order_id=${orderId}&_ts=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
           if (data && Array.isArray(data.dependants)) {

@@ -16,7 +16,7 @@ interface NewRow {
 }
 
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://choices-linux-senior-oct.trycloudflare.com";
+const APP_URL = "https://editor-assumes-wizard-set.trycloudflare.com";
 
 // The extension uses the module's default export to render the UI.
 // The 'shopify' object is available globally within the extension environment.
@@ -77,7 +77,7 @@ const Extension = () => {
         const token = await api.sessionToken.get();
         const customerId = api.authenticatedAccount?.customer?.current?.id;
         
-        const res = await fetch(directUrl, {
+        const res = await fetch(`${directUrl}?_ts=${Date.now()}`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -86,7 +86,7 @@ const Extension = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          setDependants(Array.isArray(data) ? data.reverse() : []);
+          setDependants(Array.isArray(data) ? data : []);
         }
       } catch (e) {
         console.error("Initialization failed", e);
