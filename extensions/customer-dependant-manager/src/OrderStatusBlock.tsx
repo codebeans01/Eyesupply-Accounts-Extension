@@ -1,84 +1,84 @@
-/**
- * OrderStatusBlock.tsx — Customer Account UI Extension
- * Target: customer-account.order-status.block.render
- */
-import "@shopify/ui-extensions/preact";
-import { render } from "preact";
-import { useState, useEffect } from "preact/hooks";
+import '@shopify/ui-extensions/preact';
+import { render } from 'preact';
+import { useEffect, useState } from 'preact/hooks';
 
-interface Dependant {
-  id: number;
-  full_name: string;
-}
+// Registry for the extension targets defined in shopify.extension.toml
+// The extension uses the module's default export to render the UI.
+// The 'shopify' object is available globally within the extension environment.
+export default async () => {
+  render(<Extension />, document.body);
+};
 
-// Declare shopify global
-declare const shopify: any;
 
-// Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://erik-emphasis-italia-tournaments.trycloudflare.com";
 
-const Extension = () => {
-  const [dependants, setDependants] = useState<Dependant[]>([]);
+function Extension() {
+  // @ts-expect-error shopify is global
+  const api = shopify;
+  if (!api) {
+    console.error("Extension rendered without shopify global");
+    return null;
+  }
+  const [dependants, setDependants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Extension Settings
-  const settings = shopify.settings?.current?.value || {};
+  // Use a hardcoded URL for now as placeholder, similar to ProfileBlock
+  const APP_URL = "https://choices-linux-senior-oct.trycloudflare.com";
 
-  const directUrl = `${APP_URL}/api/dependant/me`;
 
   useEffect(() => {
-    async function init() {
+    async function fetchOrderDependants() {
       try {
-        const token = await shopify.sessionToken.get();
-        const customerId = shopify.authenticatedAccount?.customer?.current?.id;
-
-        const res = await fetch(directUrl, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "x-customer-id": customerId || ""
-          },
-        });
-        if (res.ok) {
-          setDependants(await res.json());
+        // api.order is a signal in Customer Account UI extensions
+        const order = api.order?.current;
+        const orderId = order?.id;
+        const shop = api.shop?.myshopifyDomain;
+        
+        if (!orderId || !shop) {
+          setLoading(false);
+          return;
         }
-      } catch (e) {
-        console.error("Initialization failed", e);
+
+        const res = await fetch(`${APP_URL}/api/dependant/me?shop=${shop}&order_id=${orderId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.dependants)) {
+            setDependants(data.dependants);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch order dependants:', err);
       } finally {
         setLoading(false);
       }
     }
-    init();
-  }, []);
+
+    fetchOrderDependants();
+  }, [api, APP_URL]);
+
+  if (loading) {
+    return (
+      <s-stack direction="block" gap="base">
+        <s-spinner size="small" />
+      </s-stack>
+    );
+  }
+
+  if (dependants.length === 0) return null;
 
   return (
     <s-section heading="Order Dependants">
-      <s-stack gap="base">
-        {loading ? (
-          <s-spinner />
-        ) : (
-          <s-stack gap="small-100">
-            {dependants.length === 0 ? (
-              <s-text color="subdued">No dependants found.</s-text>
-            ) : (
-              dependants.map((d) => (
-                <s-box
-                  key={d.id}
-                  padding="base"
-                  background="subdued"
-                  borderRadius="base"
-                >
-                  <s-text>• {d.full_name}</s-text>
-                </s-box>
-              ))
-            )}
-          </s-stack>
-        )}
+      <s-stack direction="block" gap="base">
+        <s-stack direction="block" gap="small">
+          {dependants.map((d, i) => (
+            <s-stack key={i} direction="inline" gap="small">
+               <s-text type="strong">{d.first_name} {d.last_name}</s-text>
+               {d.relation && <s-text color="subdued">({d.relation})</s-text>}
+            </s-stack>
+          ))}
+        </s-stack>
       </s-stack>
     </s-section>
   );
-};
+}
 
-export default async () => {
-  render(<Extension />, document.body);
-};
+// End of extension

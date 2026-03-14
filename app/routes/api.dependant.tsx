@@ -12,10 +12,15 @@
  */
 
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
+import { authenticate, unauthenticated } from "../shopify.server";
+import { safeGraphql } from "../utils/graphqlHandler";
 
-interface MetaobjectField { key: string; value: string; }
-interface MetaobjectNode { id: string; fields: MetaobjectField[]; }
+interface DependantEntry {
+  id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -24,40 +29,9 @@ const CORS = {
   "Content-Type": "application/json",
 } as const;
 
-function fv(fields: MetaobjectField[], key: string) {
-  return fields.find((f) => f.key === key)?.value ?? "";
-}
-
-function toEntry(n: MetaobjectNode) {
-  return {
-    id: n.id,
-    first_name: fv(n.fields, "d_first_name"),
-    last_name: fv(n.fields, "d_last_name"),
-    full_name: fv(n.fields, "d_full_name"),
-  };
-}
-
 function ok(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS });
 }
-
-// GraphQL queries validated ✅
-const LIST_QUERY = `#graphql
-  query ListDeps($type: String!, $first: Int!) {
-    metaobjects(type: $type, first: $first) {
-      nodes { id fields { key value } }
-    }
-  }
-`;
-
-const CREATE_MUTATION = `#graphql
-  mutation CreateDep($input: MetaobjectCreateInput!) {
-    metaobjectCreate(metaobject: $input) {
-      metaobject { id fields { key value } }
-      userErrors { field message }
-    }
-  }
-`;
 
 function getNumericCustomerId(id: string): string {
   if (!id) return "";
@@ -67,39 +41,93 @@ function getNumericCustomerId(id: string): string {
   return id;
 }
 
+const GET_CUSTOMER_METAFIELD_ADMIN = `#graphql
+  query GetCustomerMetafield($id: ID!) {
+    customer(id: $id) {
+      metafield(namespace: "custom", key: "dependants") {
+        id
+        value
+      }
+    }
+  }
+`;
+
+const GET_CUSTOMER_METAFIELD_STOREFRONT = `#graphql
+  query GetCustomerMetafield($id: ID!) {
+    node(id: $id) {
+      ... on Customer {
+        metafield(namespace: "custom", key: "dependants") {
+          value
+        }
+      }
+    }
+  }
+`;
+
+const SET_METAFIELDS = `#graphql
+  mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
+    metafieldsSet(metafields: $metafields) {
+      metafields {
+        key
+        value
+      }
+      userErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+const EXPOSE_METAFIELD_STOREFRONT = `#graphql
+  mutation metafieldStorefrontVisibilityCreate($input: MetafieldStorefrontVisibilityInput!) {
+    metafieldStorefrontVisibilityCreate(input: $input) {
+      metafieldStorefrontVisibility {
+        id
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
 // ─── GET /api/dependant?customerId=<gid> ──────────────────────────────────────
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS });
-  }
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
-  let admin: Awaited<ReturnType<typeof authenticate.public.appProxy>>["admin"];
+  let admin: any;
+  let shop: string;
   try {
-    const result = await authenticate.public.appProxy(request);
-    admin = result.admin;
+    const result = await authenticate.public.appProxy(request) as any;
+    admin = result?.admin;
+    shop = result?.session?.shop || "";
   } catch {
     return ok({ error: "Auth failed" }, 401);
   }
-
-  if (!admin) return ok([]);
+  if (!admin || !shop) return ok([]);
 
   const url = new URL(request.url);
   const rawCustomerId = url.searchParams.get("customerId");
+  console.log("[api.dependant] loader request for customerId:", rawCustomerId, "Shop:", shop);
   if (!rawCustomerId) return ok({ error: "customerId required" }, 400);
 
-  const customerId = getNumericCustomerId(rawCustomerId);
+  const gid = `gid://shopify/Customer/${getNumericCustomerId(rawCustomerId)}`;
 
   try {
-    const res = await admin.graphql(LIST_QUERY, {
-      variables: { type: "$app:dependant", first: 250 },
-    });
-    const json = await res.json();
-    const nodes: MetaobjectNode[] = json?.data?.metaobjects?.nodes ?? [];
-    const filtered = nodes
-      .filter((n) => getNumericCustomerId(fv(n.fields, "d_customer_id")) === customerId)
-      .map(toEntry);
-    return ok(filtered);
+    const json = await safeGraphql(admin, GET_CUSTOMER_METAFIELD_ADMIN, { id: gid });
+    
+    if (json.errors) {
+      console.error("[api.dependant] Admin GraphQL Errors:", JSON.stringify(json.errors, null, 2));
+      return ok([]);
+    }
+    const value = json?.data?.customer?.metafield?.value;
+    if (!value) return ok([]);
+    const dependants = JSON.parse(value);
+    return ok(dependants);
   } catch (e) {
     console.error("[api.dependant] loader error:", e);
     return ok([]);
@@ -109,12 +137,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // ─── POST /api/dependant ──────────────────────────────────────────────────────
 
 export async function action({ request }: ActionFunctionArgs) {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS });
-  }
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (request.method !== "POST") return ok({ error: "Method not allowed" }, 405);
 
-  let admin: Awaited<ReturnType<typeof authenticate.public.appProxy>>["admin"];
+  let admin: any;
   try {
     const result = await authenticate.public.appProxy(request);
     admin = result.admin;
@@ -132,28 +158,65 @@ export async function action({ request }: ActionFunctionArgs) {
     return ok({ error: "firstName, lastName and customerId required" }, 400);
   }
 
-  const fullName = `${firstName.trim()} ${lastName.trim()}`;
+  const numericId = getNumericCustomerId(customerId.trim());
+  const gid = `gid://shopify/Customer/${numericId}`;
 
   try {
-    const res = await admin.graphql(CREATE_MUTATION, {
-      variables: {
-        input: {
-          type: "$app:dependant",
-          fields: [
-            { key: "d_first_name", value: firstName.trim() },
-            { key: "d_last_name", value: lastName.trim() },
-            { key: "d_full_name", value: fullName },
-            { key: "d_customer_id", value: getNumericCustomerId(customerId.trim()) },
-          ],
-        },
-      },
+    // 1. Fetch current (using Admin for write consistency)
+    const getJson = await safeGraphql(admin, GET_CUSTOMER_METAFIELD_ADMIN, { id: gid });
+    const value = getJson?.data?.customer?.metafield?.value;
+    let dependants: DependantEntry[] = [];
+    if (value) {
+      try { dependants = JSON.parse(value); } catch {}
+    }
+
+    // 2. Add new
+    const newDep: DependantEntry = {
+      id: Date.now(),
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      full_name: `${firstName.trim()} ${lastName.trim()}`
+    };
+    const updated = [newDep, ...dependants];
+
+    // 3. Save
+    const updateJson = await safeGraphql(admin, SET_METAFIELDS, {
+      metafields: [
+        {
+          ownerId: gid,
+          namespace: "custom",
+          key: "dependants",
+          type: "json",
+          value: JSON.stringify(updated)
+        }
+      ]
     });
-    const json = await res.json();
-    const { metaobject, userErrors } = json?.data?.metaobjectCreate ?? {};
-    if (userErrors?.length) return ok({ errors: userErrors }, 422);
-    return ok(toEntry(metaobject as MetaobjectNode), 201);
+
+    const errors = updateJson?.data?.metafieldsSet?.userErrors;
+    if (errors?.length) return ok({ errors }, 422);
+
+    return ok(newDep, 201);
   } catch (e) {
     console.error("[api.dependant] action error:", e);
     return ok({ error: "Server error" }, 500);
+  }
+}
+
+// ─── POST /api/dependant/setup (Optional: Expose Metafield) ──────────────────
+// To be called once to allow Storefront API access
+export async function exposeToStorefront(admin: any) {
+  try {
+    const json = await safeGraphql(admin, EXPOSE_METAFIELD_STOREFRONT, {
+      input: {
+        namespace: "custom",
+        key: "dependants",
+        ownerType: "CUSTOMER"
+      }
+    });
+    console.log("[api.dependant] Storefront Visibility response:", JSON.stringify(json, null, 2));
+    return json;
+  } catch (e) {
+    console.error("[api.dependant] Failed to expose metafield:", e);
+    throw e;
   }
 }

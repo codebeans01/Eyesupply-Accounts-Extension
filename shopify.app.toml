@@ -2,14 +2,14 @@
 
 client_id = "add219b28c799342102235b88cddd193"
 name = "Eye Supply"
-application_url = "https://nor-arch-rear-classification.trycloudflare.com"
+application_url = "https://anymore-beverly-phoenix-mind.trycloudflare.com"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
 
 [app_proxy]
-url = "https://nor-arch-rear-classification.trycloudflare.com"
+url = "https://anymore-beverly-phoenix-mind.trycloudflare.com"
 subpath = "eyesupply"
 prefix = "apps"
 
@@ -26,37 +26,10 @@ api_version = "2026-01"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_metaobject_definitions,write_metaobjects,write_products,read_metaobjects,read_metaobject_definitions"
+scopes = "write_metaobject_definitions,write_metaobjects,write_products,read_metaobjects,read_metaobject_definitions,read_customers,write_customers"
 
 [auth]
-redirect_urls = [ "https://nor-arch-rear-classification.trycloudflare.com/api/auth" ]
+redirect_urls = [ "https://anymore-beverly-phoenix-mind.trycloudflare.com/api/auth" ]
 
 
-# ─── Dependant Metaobject ────────────────────────────────────────────────────
-# Note: access.customer_account and field filterable are NOT supported in TOML.
-# They are applied programmatically via /api/setup after deploy.
-[metaobjects.app.dependant]
-name = "Dependant"
-description = "Stores a customer's saved dependants for product attribution"
-access.admin = "merchant_read_write"
-access.storefront = "none"
 
-[metaobjects.app.dependant.fields.d_first_name]
-name = "First Name"
-type = "single_line_text_field"
-required = true
-
-[metaobjects.app.dependant.fields.d_last_name]
-name = "Last Name"
-type = "single_line_text_field"
-required = true
-
-[metaobjects.app.dependant.fields.d_full_name]
-name = "Full Name"
-type = "single_line_text_field"
-required = true
-
-[metaobjects.app.dependant.fields.d_customer_id]
-name = "Customer ID"
-type = "single_line_text_field"
-required = true

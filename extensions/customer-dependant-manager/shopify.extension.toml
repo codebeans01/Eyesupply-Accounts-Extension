@@ -21,6 +21,10 @@ target = "customer-account.profile.block.render"
 module = "./src/ProfileBlock.tsx"
 target = "customer-account.profile.addresses.render-after"
 
+[[extensions.metafields]]
+namespace = "custom"
+key = "dependants"
+
 [extensions.capabilities]
 api_access = true
 # Required for fetch() to App Proxy (/apps/eyesupply/...)
