@@ -16,7 +16,7 @@ interface NewRow {
 }
 
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://editor-assumes-wizard-set.trycloudflare.com";
+const APP_URL = "https://guardian-beatles-refined-hobby.trycloudflare.com";
 
 // The extension uses the module's default export to render the UI.
 // The 'shopify' object is available globally within the extension environment.
