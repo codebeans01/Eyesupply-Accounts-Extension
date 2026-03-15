@@ -1,0 +1,34 @@
+api_version = "2026-01"
+
+[[extensions]]
+name = "custom-profile-page"
+handle = "custom-profile-page"
+uid = "ea664419-a2b5-5496-6389-5dc984c4dad8a8587f09"
+type = "ui_extension"
+
+[[extensions.targeting]]
+module = "./src/ProfilePage.tsx"
+target = "customer-account.page.render"
+
+[extensions.capabilities]
+api_access = true
+network_access = true
+
+
+[extensions.settings]
+
+  [[extensions.settings.fields]]
+  key = "cb_pagination_prev_text"
+  type = "single_line_text_field"
+  name = "Previous Button Text"
+
+  [[extensions.settings.fields]]
+  key = "cb_pagination_next_text"
+  type = "single_line_text_field"
+  name = "Next Button Text"
+
+  [[extensions.settings.fields]]
+  key = "cb_pagination_enabled"
+  type = "boolean"
+  name = "Enable Pagination"
+
