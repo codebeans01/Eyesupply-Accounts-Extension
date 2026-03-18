@@ -12,9 +12,11 @@
     "esModuleInterop": true,
     "noEmit": true,
     "baseUrl": ".",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "paths": {
       "*": ["node_modules/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "shopify.d.ts"]
 }

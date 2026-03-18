@@ -1,184 +1,360 @@
-import "@shopify/ui-extensions/preact";
-import { render } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { h, render } from "preact";
+import { useState, useEffect } from "preact/hooks";
+import navigation from "./navigation.json";
+import type { Order } from "./interface";
+import { loadCustomerData, reorder} from "./loadCustomerData";
+import { fetchWithRetry, APP_URL, API_VERSION, getNumericId, fetchSmilePoints } from "./helpers";
 
-interface Dependant {
-  id: number;
-  first_name: string;
-  last_name: string;
-  full_name?: string;
-}
-
-// Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://guardian-beatles-refined-hobby.trycloudflare.com";
-
-export default async () => {
-  render(<Extension />, document.body);
+export default () => {
+  render(<ProfilePage />, document.body);
 };
 
-function Extension() {
-  // @ts-expect-error shopify is global
+
+const ProfilePage = () => {
   const api = shopify;
-  const [customer, setCustomer] = useState<any>(null);
-  const [dependants, setDependants] = useState<Dependant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dependantsLoading, setDependantsLoading] = useState(true);
   
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
-  // Settings
-  const settings = api.settings?.current || {};
-  const paginationEnabled = settings.cb_pagination_enabled !== false;
-  const prevLabel = settings.cb_pagination_prev_text || "Previous";
-  const nextLabel = settings.cb_pagination_next_text || "Next";
-
-  const directUrl = `${APP_URL}/api/dependant/me`;
+  if (!api) {
+    console.error("Extension rendered without shopify global");
+    return null;
+  }
+  
+  const [firstName, setFirstName] = useState("User");
+  const [lastName, setLastName] = useState("");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [settings, setSettings] = useState(api.settings?.value ?? {});
+  const [shopDomain, setShopDomain] = useState("");
+  const [points, setPoints] = useState<number | null>(null);
+  const [pointsLoading, setPointsLoading] = useState(false);
+  const limit = 50;
 
   useEffect(() => {
-    async function fetchProfile() {
+    async function init() {
+      setError(null);
+      setLoading(true);
       try {
-        const customerData = api.authenticatedAccount?.customer?.current;
-        if (customerData) {
-          setCustomer(customerData);
-        } else {
-          const unsubscribe = api.authenticatedAccount?.customer?.subscribe((newCustomer: any) => {
-            setCustomer(newCustomer);
-            setLoading(false);
-          });
-          return unsubscribe;
+        const { customer, orders: customerOrders, myshopifyDomain } = await loadCustomerData({
+          ordersLimit: limit,
+          lineItemsLimit: 20,
+        });
+
+        if (customer) { 
+          setFirstName(customer.firstName || "User");
+          setLastName(customer.lastName || "");
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
+        setOrders(customerOrders);
+        setShopDomain(myshopifyDomain);
+      } catch (err) {
+        console.error("Failed to fetch customer data", err);
+        setError(err as Error);
       } finally {
         setLoading(false);
       }
     }
+    init();
+  }, [api]);
 
-    async function fetchDependants() {
-      try {
-        const token = await api.sessionToken.get();
-        const customerId = api.authenticatedAccount?.customer?.current?.id;
-        
-        const res = await fetch(`${directUrl}?_ts=${Date.now()}`, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "x-customer-id": customerId || ""
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setDependants(Array.isArray(data) ? data : []);
+  useEffect(() => {
+    async function getPoints() {
+        if (!shopDomain) return;
+        setPointsLoading(true);
+        try {
+            const sessionToken = await api.sessionToken.get();
+            const data = await fetchSmilePoints(sessionToken, shopDomain);
+            if (data?.customer) {
+                setPoints(data.customer.points_balance);
+            }
+        } catch (err) {
+            console.error("Failed to fetch points", err);
+        } finally {
+            setPointsLoading(false);
         }
-      } catch (e) {
-        console.error("Error fetching dependants:", e);
-      } finally {
-        setDependantsLoading(false);
-      }
     }
+    getPoints();
+  }, [api, shopDomain]);
 
-    fetchProfile();
-    fetchDependants();
-  }, [api, directUrl]);
+  useEffect(() => {
+    const unsubscribe = api.settings?.subscribe?.((newSettings: any) => {
+      setSettings(newSettings ?? {});
+    });
+    return () => unsubscribe?.();
+  }, [api.settings]);
 
-  // Pagination Logic
-  const totalPages = Math.ceil(dependants.length / itemsPerPage);
-  const currentItems = paginationEnabled 
-    ? dependants.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : dependants;
+  const welcomeImageUrl = (settings?.cb_welcome_image_url as string) ?? "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_100x100.png";
+
+  const navSections = (navigation.sections || []).map((navSection: any) => {
+    return (
+      <s-box key={navSection.id} id={`section-${navSection.id}`} border="base" padding="base" background="base" borderRadius="base">
+        <s-stack gap="base">
+          <s-grid gridTemplateColumns="1fr auto">
+            <s-heading id={`heading-${navSection.id}`}>{navSection.title}</s-heading>
+            <s-icon type={navSection.icon as any} tone="neutral" />
+          </s-grid>
+          <s-stack gap="small">
+            {(navSection.links || []).map((link: any, index: number) => {
+              let dynamicSub = link.sub;
+              if (link.dynamicSub === "orderStatus") {
+                dynamicSub = loading ? "Loading..." : `${orders.length} order${orders.length !== 1 ? "s" : ""}`;
+              } else if (link.dynamicSub === "lastOrderName") {
+                dynamicSub = orders.length > 0 ? orders[0].name : "None";
+              }
+
+              let href = link.href;
+              if (navSection.id === "reviews") {
+                if (link.label === "Review Us on Google" && settings?.cb_review_google_url) {
+                  href = settings.cb_review_google_url as string;
+                } else if (link.label === "Review Us on Facebook" && settings?.cb_review_facebook_url) {
+                  href = settings.cb_review_facebook_url as string;
+                } else if (link.label === "Review Products") {
+                  if (settings?.cb_review_products_url) {
+                      href = settings.cb_review_products_url as string;
+                  }
+                  return (
+                    <s-stack gap="small" key={index}>
+                      <s-text tone="neutral" type="strong">{link.label}</s-text>
+                      {loading ? (
+                        <s-text>Loading products...</s-text>
+                      ) : orders.length > 0 ? (
+                        orders[0].lineItems.map((item: any) => (
+                          <s-grid key={item.id} gridTemplateColumns="auto 1fr auto" alignItems="center" gap="small">
+                            {item.image && (
+                              <s-product-thumbnail
+                                src={item.image.url}
+                                alt={item.name}
+                              />
+                            )}
+                            <s-text type="small">{item.name}</s-text>
+                            <s-clickable href={`https://${shopDomain}/products/${getNumericId(item.productId ?? undefined)}#reviews`} target="_blank">
+                              <s-text tone="info">Review</s-text>
+                            </s-clickable>
+                          </s-grid>
+                        ))
+                      ) : (
+                        <s-text tone="neutral">No products to review</s-text>
+                      )}
+                    </s-stack>
+                  );
+                }
+              }
+
+              return (
+                <s-grid key={index} gridTemplateColumns="1fr auto" alignItems="center">
+                   <s-clickable href={href} target="_blank">
+                     <s-text tone="info">{link.label}</s-text>
+                   </s-clickable>
+                   {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                </s-grid>
+              );
+            })}
+          </s-stack>
+        </s-stack>
+      </s-box>
+    );
+  });
 
   return (
-    <s-page heading="My Custom Account">
+    <s-page id="profile-dashboard" heading="My Dashboard">
       <s-stack gap="base">
-        {loading ? (
-          <s-spinner />
-        ) : customer ? (
-          <s-section heading="Profile Information">
-            <s-stack gap="small" padding="base">
-              <s-grid gridTemplateColumns="120px 1fr" gap="small">
-                <s-text type="strong">First Name:</s-text>
-                <s-text>{customer.firstName || "N/A"}</s-text>
-                
-                <s-text type="strong">Last Name:</s-text>
-                <s-text>{customer.lastName || "N/A"}</s-text>
-                
-                <s-text type="strong">Email:</s-text>
-                <s-text>{customer.email || "N/A"}</s-text>
+        <s-banner tone="info" id="hero-banner">
+          <s-grid gridTemplateColumns="1fr auto" alignItems="center" gap="base">
+            <s-stack gap="large">
+              <s-heading id="hero-title">Welcome Back</s-heading>
+              <s-text id="user-full-name" type="strong">
+                {loading ? "Loading..." : `${firstName} ${lastName}`}
+              </s-text>
+            </s-stack>
+            <s-box background="base" borderRadius="base" padding="large" inlineSize="120px">
+              <s-image
+                src={welcomeImageUrl}
+                alt="Welcome Back"
+                inlineSize="fill"
+              />
+            </s-box>
+          </s-grid>
+        </s-banner>
+
+         {(loading || (orders.length > 0)) && (
+          <s-box padding="base" background="base" borderRadius="base">
+            <s-stack gap="base">
+              <s-heading id="reorder-heading">Top 3 Recent Orders</s-heading>
+              <s-grid gridTemplateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap="base">
+                {loading ? (
+                  [1, 2, 3].map((i: number) => (
+                    <s-box key={i} padding="small" borderRadius="base" background="subdued">
+                      <s-stack gap="small" alignItems="center">
+                        <s-box background="subdued" blockSize="100px" inlineSize="100px" borderRadius="base" />
+                        <s-stack gap="small" alignItems="center">
+                          <s-box background="subdued" blockSize="20px" inlineSize="120px" />
+                          <s-box background="subdued" blockSize="15px" inlineSize="80px" />
+                        </s-stack>
+                        <s-button disabled variant="secondary" inlineSize="fill">Loading...</s-button>
+                      </s-stack>
+                    </s-box>
+                  ))
+                ) : (
+                  orders.slice(0, 3).map((order) => (
+                    <s-stack gap="small" key={order.id}>
+                      <s-text type="strong" tone="neutral">{order.name} - {new Date(order.processedAt).toLocaleDateString()}</s-text>
+                      <s-grid gridTemplateColumns="1fr" gap="base">
+                        {order.lineItems.map((item: any) => (
+                          <s-box key={item.id} padding="small" borderRadius="base" background="subdued">
+                            <s-stack gap="small" alignItems="center">
+                              {item.image && (
+                                <s-product-thumbnail
+                                  src={item.image.url}
+                                  alt={item.name}
+                                />
+                              )}
+                              <s-stack gap="large" alignItems="center">
+                                <s-text type="strong">{item.name}</s-text>
+                                {item.variantTitle && <s-text type="small" tone="neutral">{item.variantTitle}</s-text>}
+                                <s-text>
+                                  {api.i18n.formatCurrency(item.totalPrice.amount, {
+                                    currency: item.totalPrice.currencyCode,
+                                  })}
+                                </s-text>
+                                {item.variantId && (
+                                  <s-button
+                                    href={`https://${shopDomain}/cart/${getNumericId(item.variantId)}:1?attributes[from]=new-customer-account&storefront=true`}
+                                    variant="primary"
+                                    inlineSize="fill"
+                                  >
+                                    Reorder
+                                  </s-button>
+                                )}
+                              </s-stack>
+                            </s-stack>
+                          </s-box>
+                        ))}
+                      </s-grid>
+                    </s-stack>
+                  ))
+                )}
               </s-grid>
             </s-stack>
-          </s-section>
-        ) : (
-          <s-banner tone="warning">
-            Could not load profile data.
-          </s-banner>
+          </s-box>
         )}
 
-        <s-section heading="My Dependants">
-          {dependantsLoading ? (
-            <s-spinner />
-          ) : dependants.length === 0 ? (
-            <s-box padding="base">
-              <s-text color="subdued">No dependants found.</s-text>
-            </s-box>
-          ) : (
-            <s-stack gap="none">
-              <s-grid gridTemplateColumns="1fr 1fr" gap="base" padding="base" background="subdued" borderWidth="base none none none" borderRadius="base base none none">
-                <s-text type="strong">First Name</s-text>
-                <s-text type="strong">Last Name</s-text>
+        <s-query-container>
+          <s-grid
+            id="status-row"
+            gridTemplateColumns="repeat(auto-fit, minmax(250px, 1fr))"
+            gap="base"
+          >
+            <s-box padding="base" background="subdued" borderRadius="base">
+              <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+                <s-stack gap="small">
+                  <s-text tone="neutral">Ongoing Order Status</s-text>
+                  <s-text type="strong">
+                    {loading ? "Loading..." : orders.length > 0 ? orders[0].fulfillmentStatus : "No active orders"}
+                  </s-text>
+                </s-stack>
+                <s-icon type="cart" size="base" tone="neutral" />
               </s-grid>
-              {currentItems.map((d, index) => (
-                <s-grid 
-                  key={d.id} 
-                  gridTemplateColumns="1fr 1fr" 
-                  gap="base" 
-                  padding="base" 
-                  borderWidth="base none none none"
-                  background={index % 2 === 0 ? "transparent" : "subdued"}
-                >
-                  <s-text>{d.first_name}</s-text>
-                  <s-text>{d.last_name}</s-text>
-                </s-grid>
-              ))}
+            </s-box>
 
-              {paginationEnabled && totalPages > 1 && (
-                <s-box padding="base" borderWidth="base none none none">
-                  <s-grid gridTemplateColumns="1fr auto 1fr" gap="base" alignItems="center">
-                    <s-button
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                    >
-                      {prevLabel}
-                    </s-button>
-                    <s-text>
-                      Page {currentPage} of {totalPages}
-                    </s-text>
-                    <s-box inlineSize="100%">
-                      <s-grid justifyContent="end">
-                        <s-button
-                          disabled={currentPage === totalPages}
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                        >
-                          {nextLabel}
-                        </s-button>
-                      </s-grid>
-                    </s-box>
+             <s-box padding="base" background="subdued" borderRadius="base">
+               <s-stack gap="small">
+                 <s-text tone="neutral">
+                   {orders.length > 0 && orders[0].daysTillRunOut 
+                     ? `Days Till Run Out ${orders[0].daysTillRunOut} days` 
+                     : "Days Till Run Out --"}
+                 </s-text>
+                 <s-text type="strong">left of lenses</s-text>
+               </s-stack>
+             </s-box>
+          </s-grid>
+        </s-query-container>
+
+        {!loading && orders.length > 0 && (
+          <s-box padding="base" background="base" borderRadius="base">
+            <s-stack gap="base">
+              <s-heading id="last-order-details-heading">Last Order Details</s-heading>
+              <s-box padding="base" background="subdued" borderRadius="base">
+                <s-stack gap="base">
+                  <s-text type="strong" tone="neutral">
+                    Order {orders[0].name} - {new Date(orders[0].processedAt).toLocaleDateString()}
+                  </s-text>
+                  <s-grid gridTemplateColumns="1fr" gap="base">
+                    {orders[0].lineItems.map((item) => (
+                      <s-box key={item.id} padding="small" borderRadius="base" background="base" border="base">
+                        <s-grid gridTemplateColumns="auto 1fr" gap="base" alignItems="center">
+                          {item.image && (
+                            <s-product-thumbnail
+                              src={item.image.url}
+                              alt={item.name}
+                            />
+                          )}
+                          <s-stack gap="small">
+                            <s-text type="strong">{item.name}</s-text>
+                            {item.variantTitle && <s-text type="small" tone="neutral">{item.variantTitle}</s-text>}
+                            
+                            {item.variantOptions && item.variantOptions.length > 0 && (
+                              <s-stack gap="small">
+                                {item.variantOptions.map((opt, idx) => (
+                                  <s-text key={idx} type="small" tone="neutral">
+                                    {opt.name}: {opt.value}
+                                  </s-text>
+                                ))}
+                              </s-stack>
+                            )}
+
+                            {item.customAttributes && item.customAttributes.length > 0 && (
+                              <s-stack gap="small">
+                                {item.customAttributes.map((attr, idx) => (
+                                  <s-text key={idx} type="small" tone="neutral">
+                                    {attr.key}: {attr.value}
+                                  </s-text>
+                                ))}
+                              </s-stack>
+                            )}
+                          </s-stack>
+                        </s-grid>
+                      </s-box>
+                    ))}
                   </s-grid>
-                </s-box>
-              )}
+                </s-stack>
+              </s-box>
             </s-stack>
-          )}
-        </s-section>
-        
-        <s-section heading="Welcome">
-          <s-box padding="base">
-            <s-text>
-              Welcome to your custom account dashboard! Here you can see your basic profile and managed dependants.
-            </s-text>
           </s-box>
-        </s-section>
+        )}
+
+        <s-query-container>
+          <s-grid
+            id="quick-info-row"
+            gridTemplateColumns="1fr 1fr"
+            gap="base"
+          >
+            <s-box padding="base" background="subdued" borderRadius="base">
+              <s-grid gridTemplateColumns="auto 1fr auto" alignItems="center" gap="large">
+                <s-icon type="check-circle" tone="neutral" />
+                <s-text type="strong">Loyalty Points</s-text>
+                <s-text type="strong">
+                    {pointsLoading ? "..." : points !== null ? `${points} pts` : "0 pts"}
+                </s-text>
+              </s-grid>
+            </s-box>
+            <s-box padding="base" background="subdued" borderRadius="base">
+              <s-grid gridTemplateColumns="auto 1fr auto" alignItems="center" gap="small">
+                <s-icon type="note" tone="neutral" />
+                <s-text type="strong">Prescription Expiry</s-text>
+                <s-text type="strong">25/12/2025</s-text>
+              </s-grid>
+            </s-box>
+          </s-grid>
+        </s-query-container>
+
+        <s-query-container>
+          <s-grid
+            id="nav-grid"
+            gridTemplateColumns="1fr 1fr"
+            gap="base"
+          >
+            {navSections}
+          </s-grid>
+        </s-query-container>
       </s-stack>
     </s-page>
   );
-}
+};

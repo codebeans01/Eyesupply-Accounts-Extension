@@ -12,7 +12,6 @@ export default async () => {
 
 
 function Extension() {
-  // @ts-expect-error shopify is global
   const api = shopify;
   if (!api) {
     console.error("Extension rendered without shopify global");
@@ -58,7 +57,7 @@ function Extension() {
   if (loading) {
     return (
       <s-stack direction="block" gap="base">
-        <s-spinner size="small" />
+        <s-spinner size="base" />
       </s-stack>
     );
   }

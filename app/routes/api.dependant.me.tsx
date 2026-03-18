@@ -79,7 +79,8 @@ async function getContext(request: Request) {
       console.log("[api.dependant.me] App Proxy Auth SUCCESS:", shop);
       return { admin, customerId: customerId || payload?.sub || "", shop };
     }
-  } catch (e) {
+  } catch (e: any) {
+    // console.log("[api.dependant.me] App Proxy Auth skipped/failed:", e.message || e);
     // Falls through to direct fetch auth
   }
 
@@ -93,11 +94,30 @@ async function getContext(request: Request) {
   }
 
   try {
-    const { admin } = await unauthenticated.admin(shop);
-    console.log("[api.dependant.me] Direct Auth SUCCESS:", shop);
-    return { admin, customerId, shop };
-  } catch (e) {
-    console.error("[api.dependant.me] unauthenticated.admin failed for shop:", shop, e);
+    // Ensure shop is a clean myshopify.com domain
+    const cleanShop = shop.replace(/^https?:\/\//, "").split("/")[0];
+    
+    console.log("[api.dependant.me] Attempting unauthenticated.admin for:", cleanShop);
+    const result = await unauthenticated.admin(cleanShop);
+    
+    if (!result?.admin) {
+       console.error("[api.dependant.me] unauthenticated.admin returned no admin object for:", cleanShop);
+       return null;
+    }
+
+    console.log("[api.dependant.me] Direct Auth SUCCESS:", cleanShop);
+    return { admin: result.admin, customerId, shop: cleanShop };
+  } catch (e: any) {
+    console.error("[api.dependant.me] unauthenticated.admin CRITICAL failure for shop:", shop);
+    if (e instanceof Response) {
+      console.error("[api.dependant.line 100] Response Error Details:", {
+        status: e.status,
+        statusText: e.statusText,
+        url: e.url
+      });
+    } else {
+      console.error("[api.dependant.me] Error:", e.message || e);
+    }
     return null;
   }
 }
@@ -280,7 +300,9 @@ function getInfoFromToken(request: Request) {
     // Fallback headers if token fails or is minimal
     const shopHeader = request.headers.get("x-shop-domain") || "";
     const customerHeader = request.headers.get("x-customer-id") || "";
+    
     if (!token) {
+      console.log("[api.dependant.me] No token found, using headers.");
       return { 
         customerId: customerHeader.includes("/") ? customerHeader.split("/").pop() : customerHeader, 
         shop: shopHeader 
@@ -288,11 +310,20 @@ function getInfoFromToken(request: Request) {
     }
 
     const parts = token.split(".");
-    if (parts.length < 2) return { customerId: customerHeader, shop: shopHeader };
+    if (parts.length < 2) {
+      console.warn("[api.dependant.me] Invalid token format (parts < 2)");
+      return { customerId: customerHeader, shop: shopHeader };
+    }
     
     // Use base64url-safe parsing
-    const payloadStr = Buffer.from(parts[1], "base64").toString("utf-8");
-    const payload = JSON.parse(payloadStr);
+    let payload: any = {};
+    try {
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payloadStr = Buffer.from(base64, "base64").toString("utf-8");
+      payload = JSON.parse(payloadStr);
+    } catch (parseErr) {
+      console.error("[api.dependant.me] Payload parse error:", parseErr);
+    }
     
     // 1. Customer ID
     let customerId = customerHeader || payload?.sub || "";
@@ -309,9 +340,14 @@ function getInfoFromToken(request: Request) {
       
       if (target) {
         if (target.includes("://")) {
-          shop = new URL(target).hostname;
+          try {
+            shop = new URL(target).hostname;
+          } catch {
+            shop = target.split("/")[0];
+          }
         } else {
-          shop = target.split("/")[0];
+          shop = target.split("/")[target.includes("/") ? 0 : 0]; // simple split
+          if (shop.includes(":")) shop = shop.split(":")[0];
         }
       }
     }
