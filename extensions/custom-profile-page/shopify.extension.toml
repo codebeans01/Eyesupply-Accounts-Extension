@@ -15,6 +15,7 @@ api_access = true
 network_access = true
 
 
+
 [extensions.settings]
 
   [[extensions.settings.fields]]
@@ -31,4 +32,28 @@ network_access = true
   key = "cb_pagination_enabled"
   type = "boolean"
   name = "Enable Pagination"
+
+  [[extensions.settings.fields]]
+  key = "cb_welcome_image_url"
+  type = "single_line_text_field"
+  name = "Welcome Image URL"
+  description = "Provide a URL for the welcome image (e.g. from Content > Files)."
+
+  [[extensions.settings.fields]]
+  key = "cb_review_google_url"
+  type = "single_line_text_field"
+  name = "Google Review URL"
+  description = "URL for Google reviews"
+
+  [[extensions.settings.fields]]
+  key = "cb_review_facebook_url"
+  type = "single_line_text_field"
+  name = "Facebook Review URL"
+  description = "URL for Facebook reviews"
+
+  [[extensions.settings.fields]]
+  key = "cb_review_products_url"
+  type = "single_line_text_field"
+  name = "Product Review URL"
+  description = "URL for Product reviews"
 

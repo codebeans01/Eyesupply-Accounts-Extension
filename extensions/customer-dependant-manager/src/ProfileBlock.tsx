@@ -16,7 +16,7 @@ interface NewRow {
 }
 
 // Use the direct App URL to bypass Password-protected App Proxy redirects.
-const APP_URL = "https://guardian-beatles-refined-hobby.trycloudflare.com";
+const APP_URL = "https://planner-springer-postcards-thanksgiving.trycloudflare.com";
 
 // The extension uses the module's default export to render the UI.
 // The 'shopify' object is available globally within the extension environment.
@@ -27,7 +27,6 @@ export default async () => {
 
 
 const Extension = () => {
-  // @ts-expect-error shopify is global
   const api = shopify;
   if (!api) {
     console.error("Extension rendered without shopify global");
@@ -292,10 +291,13 @@ const Extension = () => {
       <s-stack gap="base">
         <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="end" justifyContent="space-between">
             <s-text-field
+              id="search-dependants"
+              name="search-dependants"
               label="Search"
               value={search}
               onInput={(e: any) => {
-                setSearch(e.currentTarget.value);
+                const val = (e?.currentTarget?.value ?? e) || "";
+                setSearch(val);
                 setCurrentPage(1);
                 setSelectedIds([]);
               }}
@@ -335,9 +337,11 @@ const Extension = () => {
             <s-grid gridTemplateColumns="40px 1fr 1fr 120px 120px" gap="base" padding="base" background="subdued" borderWidth="base none none none" borderRadius="base base none none">
               <s-grid alignItems="center" justifyContent="center">
                 <s-checkbox 
+                  id="select-all-checkbox"
+                  name="select-all-checkbox"
                   checked={selectedIds.length === currentItems.length && currentItems.length > 0} 
-                  onChange={toggleSelectAll}
-                  defaultIndeterminate={selectedIds.length > 0 && selectedIds.length < currentItems.length}
+                  onChange={() => toggleSelectAll()}
+                  indeterminate={selectedIds.length > 0 && selectedIds.length < currentItems.length}
                 />
               </s-grid>
               <s-text type="strong">First Name</s-text>
@@ -365,6 +369,8 @@ const Extension = () => {
                   >
                     <s-grid alignItems="center" justifyContent="center">
                       <s-checkbox 
+                        id={`select-item-${d.id}`}
+                        name={`select-item-${d.id}`}
                         checked={selectedIds.includes(d.id)} 
                         onChange={() => toggleSelect(d.id)}
                       />
@@ -426,15 +432,19 @@ const Extension = () => {
             {editingItem ? (
               <>
                 <s-text-field
+                  id="edit-first-name"
+                  name="edit-first-name"
                   label="First Name"
                   value={firstName}
-                  onInput={(e: any) => setFirstName(e.currentTarget.value)}
+                  onInput={(e: any) => setFirstName(e?.currentTarget?.value ?? e)}
                   required
                 />
                 <s-text-field
+                  id="edit-last-name"
+                  name="edit-last-name"
                   label="Last Name"
                   value={lastName}
-                  onInput={(e: any) => setLastName(e.currentTarget.value)}
+                  onInput={(e: any) => setLastName(e?.currentTarget?.value ?? e)}
                   required
                 />
               </>
@@ -443,17 +453,21 @@ const Extension = () => {
                 {newRows.map((row, idx) => (
                   <s-grid key={row.id} gridTemplateColumns={newRows.length > 1 ? "1fr 1fr auto" : "1fr 1fr"} gap="base" alignItems="end">
                     <s-text-field
+                      id={`row-fn-${row.id}`}
+                      name={`row-fn-${row.id}`}
                       label={idx === 0 ? "First Name" : ""}
                       placeholder="First Name"
                       value={row.fn}
-                      onInput={(e: any) => updateRow(row.id, "fn", e.currentTarget.value)}
+                      onInput={(e: any) => updateRow(row.id, "fn", e?.currentTarget?.value ?? e)}
                       required
                     />
                     <s-text-field
+                      id={`row-ln-${row.id}`}
+                      name={`row-ln-${row.id}`}
                       label={idx === 0 ? "Last Name" : ""}
                       placeholder="Last Name"
                       value={row.ln}
-                      onInput={(e: any) => updateRow(row.id, "ln", e.currentTarget.value)}
+                      onInput={(e: any) => updateRow(row.id, "ln", e?.currentTarget?.value ?? e)}
                       required
                     />
                     {newRows.length > 1 && (

@@ -1,0 +1,73 @@
+{
+  "sections": [
+    {
+      "id": "orders",
+      "title": "Orders",
+      "icon": "email",
+      "links": [
+        { "label": "Ongoing Order Status", "dynamicSub": "orderStatus", "href": "shopify://customer-account/orders" },
+        { "label": "Reorder", "dynamicSub": "lastOrderName", "href": "shopify://customer-account/orders" },
+        { "label": "Past Orders", "href": "shopify://customer-account/orders" },
+        { "label": "Invoices", "href": "shopify://customer-account/orders" }
+      ]
+    },
+    {
+      "id": "prescription",
+      "title": "Prescription",
+      "icon": "clipboard",
+      "links": [
+        { "label": "Reward Status", "sub": "Gold tier - 480 pts", "href": "extension:customer-account.rewards.page.render" },
+        { "label": "Upload My Prescription", "sub": "R120 off waiting", "href": "extension:customer-account.prescriptions.page.render" },
+        { "label": "How to Redeem More", "href": "extension:customer-account.rewards.page.render" },
+        { "label": "Coupons", "href": "extension:customer-account.rewards.page.render" }
+      ]
+    },
+    {
+      "id": "delivery",
+      "title": "Delivery",
+      "icon": "truck",
+      "links": [
+        { "label": "Delivery Address", "href": "shopify://customer-account/profile/addresses" },
+        { "label": "Delivery Charges", "href": "shopify://customer-account/profile/addresses" },
+        { "label": "Delivery FAQs", "href": "mailto:support@eyesupply.co.uk" }
+      ]
+    },
+    {
+      "id": "medical-aid",
+      "title": "Medical Aid",
+      "icon": "plus",
+      "links": [
+        { "label": "Medical Aid Info", "href": "mailto:support@eyesupply.co.uk" },
+        { "label": "Medical Aid Invoices", "href": "shopify://customer-account/orders" }
+      ]
+    },
+    {
+      "id": "profile",
+      "title": "Profile",
+      "icon": "profile",
+      "links": [
+        { "label": "Personal Details", "href": "shopify://customer-account/profile" },
+        { "label": "Address", "href": "shopify://customer-account/profile" }
+      ]
+    },
+    {
+      "id": "reviews",
+      "title": "Reviews",
+      "icon": "star",
+      "links": [
+        { "label": "Review Us on Google", "href": "https://google.com" },
+        { "label": "Review Us on Facebook", "href": "https://facebook.com" },
+        { "label": "Review Products", "href": "shopify://customer-account/orders" }
+      ]
+    },
+    {
+      "id": "support",
+      "title": "Support",
+      "icon": "email",
+      "links": [
+        { "label": "FAQs", "href": "mailto:support@eyesupply.co.uk" },
+        { "label": "Contact Us", "href": "mailto:support@eyesupply.co.uk" }
+      ]
+    }
+  ]
+}
