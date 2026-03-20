@@ -21,7 +21,7 @@ export async function loadCustomerData(
     body: JSON.stringify({
       query: CUSTOMER_DATA_QUERY,
       variables: {
-        ordersFirst: ordersLimit,
+        ordersFirst: ordersLimit, 
         lineItemsFirst: lineItemsLimit,
       },
     }),

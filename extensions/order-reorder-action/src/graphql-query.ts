@@ -58,3 +58,11 @@ export const CUSTOMER_DATA_QUERY = `
     }
   }
 `;
+
+export const SHOP_DOMAIN_QUERY = `
+  query {
+    shop {
+      myshopifyDomain
+    }
+  }
+`;

@@ -27,8 +27,8 @@
       "title": "Delivery",
       "icon": "truck",
       "links": [
-        { "label": "Delivery Address", "href": "shopify://customer-account/profile/addresses" },
-        { "label": "Delivery Charges", "href": "shopify://customer-account/profile/addresses" },
+        { "label": "Delivery Address", "href": "shopify://customer-account/profile" },
+        { "label": "Delivery Charges", "href": "shopify://customer-account/profile" },
         { "label": "Delivery FAQs", "href": "mailto:support@eyesupply.co.uk" }
       ]
     },

@@ -57,5 +57,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ["@shopify/app-bridge-react"],
+    exclude: [
+      "@shopify/shopify-app-react-router",
+      "@shopify/shopify-app-session-storage-prisma",
+      "@prisma/client",
+    ],
   },
 }) satisfies UserConfig;

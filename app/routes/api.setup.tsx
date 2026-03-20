@@ -1,22 +1,7 @@
-/**
- * api.setup.tsx — One-shot setup route for post-deploy configuration.
- *
- * Call ONCE after `shopify app deploy`:
- *   GET /api/setup
- *
- * What it does:
- *  1. Finds the $app:dependant metaobject definition by type.
- *  2. Runs metaobjectDefinitionUpdate to:
- *     a. Set `customer_account` access = READ  (not settable in TOML)
- *     b. Mark all 4 fields as filterable       (not settable in TOML)
- *
- * Idempotent — safe to call multiple times.
- */
-
 import type { LoaderFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
-
-// ─── GraphQL ─────────────────────────────────────────────────────────────────
+import { safeGraphql } from "app/utils/graphqlHandler";
+import { standardResponse, errorResponse } from "app/utils/response";
+import { authenticate } from "app/shopify.server";
 
 const QUERY_GET_DEFINITION = `#graphql
   query GetDependantDefinition {
@@ -55,28 +40,34 @@ const MUTATION_UPDATE_DEFINITION = `#graphql
   }
 `;
 
-// ─── Loader ───────────────────────────────────────────────────────────────────
-
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { admin } = await authenticate.admin(request);
+  let admin: any;
+  try {
+    const authResult = await authenticate.admin(request);
+    admin = authResult.admin;
+  } catch (e: any) {
+    return errorResponse("Admin authentication failed", { status: 401, details: e.message });
+  }
 
   let logs: string[] = [];
   let definitionId: string | null = null;
 
-  // 1. Check if the definition exists
-  logs.push("Step 1: Checking for existing metaobject definition...");
-  const defRes = await admin.graphql(QUERY_GET_DEFINITION);
-  const defJson = (await defRes.json()) as any;
-  let definition = defJson?.data?.metaobjectDefinitionByType;
+  try {
+    logs.push("Step 1: Checking for existing metaobject definition...");
+    const defJson = await safeGraphql(admin, QUERY_GET_DEFINITION);
+    
+    if (defJson.errors) {
+        return errorResponse("Failed to query metaobject definition", { status: 500, details: defJson.errors });
+    }
 
-  if (definition) {
-    logs.push(`Definition found: ${definition.id} (${definition.type})`);
-    definitionId = definition.id;
-  } else {
-    // 2. Create it if missing
-    logs.push("Step 2: Definition missing. Attempting to create it...");
-    const createRes = await admin.graphql(MUTATION_CREATE_DEFINITION, {
-      variables: {
+    let definition = defJson?.data?.metaobjectDefinitionByType;
+
+    if (definition) {
+      logs.push(`Definition found: ${definition.id} (${definition.type})`);
+      definitionId = definition.id;
+    } else {
+      logs.push("Step 2: Definition missing. Attempting to create it...");
+      const createJson = await safeGraphql(admin, MUTATION_CREATE_DEFINITION, {
         definition: {
           name: "Dependant",
           type: "$app:dependant",
@@ -92,33 +83,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
             { name: "Customer ID", key: "d_customer_id", type: "single_line_text_field" }
           ]
         }
+      });
+
+      const { metaobjectDefinition, userErrors } = createJson?.data?.metaobjectDefinitionCreate ?? {};
+      
+      if (userErrors?.length) {
+        logs.push("FAILED: Could not create definition.");
+        return standardResponse({ 
+          ok: false, 
+          message: "Failed to create metaobject definition", 
+          userErrors, 
+          logs 
+        }, { status: 422 });
       }
-    });
-
-    const createJson = (await createRes.json()) as any;
-    const { metaobjectDefinition, userErrors } = createJson?.data?.metaobjectDefinitionCreate ?? {};
-    
-    if (userErrors?.length) {
-      logs.push("FAILED: Could not create definition.");
-      return Response.json({ 
-        ok: false, 
-        message: "Failed to create metaobject definition", 
-        userErrors, 
-        logs 
-      }, { status: 422 });
+      
+      logs.push(`SUCCESS: Created definition ${metaobjectDefinition.id}`);
+      definitionId = metaobjectDefinition.id;
     }
-    
-    logs.push(`SUCCESS: Created definition ${metaobjectDefinition.id}`);
-    definitionId = metaobjectDefinition.id;
-  }
 
-  // 3. Patch/Sync - ensuring fields are filterable (optional but recommended)
-  // We can skip this if we just created it, but it's good for robustness.
-  logs.push("Step 3: Ensuring field configuration is synced...");
-  const fieldKeys = ["d_first_name", "d_last_name", "d_full_name", "d_customer_id"];
-  
-  const updateRes = await admin.graphql(MUTATION_UPDATE_DEFINITION, {
-    variables: {
+    logs.push("Step 3: Ensuring field configuration is synced...");
+    const fieldKeys = ["d_first_name", "d_last_name", "d_full_name", "d_customer_id"];
+    
+    const updateJson = await safeGraphql(admin, MUTATION_UPDATE_DEFINITION, {
       id: definitionId,
       definition: {
         fieldDefinitions: fieldKeys.map((key) => ({
@@ -128,22 +114,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
           },
         })),
       },
-    },
-  });
+    });
 
-  const updateJson = (await updateRes.json()) as any;
-  const { userErrors } = updateJson?.data?.metaobjectDefinitionUpdate ?? {};
+    const userErrors = updateJson?.data?.metaobjectDefinitionUpdate?.userErrors;
 
-  if (userErrors?.length) {
-    logs.push("Warning: Update mutation had userErrors (this might be normal if they're already setup).");
-  } else {
-    logs.push("SUCCESS: Fields synced.");
+    if (userErrors?.length) {
+      logs.push("Warning: Update mutation had userErrors (this might be normal if they're already setup).");
+    } else {
+      logs.push("SUCCESS: Fields synced.");
+    }
+
+    return standardResponse({
+      ok: true,
+      message: "Metaobject definition is ready!",
+      definitionId,
+      logs
+    });
+
+  } catch (error: any) {
+    console.error("[api.setup] Setup error:", error);
+    return errorResponse("Setup failed unexpectedy", { details: error.message, status: 500 });
   }
-
-  return Response.json({
-    ok: true,
-    message: "Metaobject definition is ready!",
-    definitionId,
-    logs
-  });
 }

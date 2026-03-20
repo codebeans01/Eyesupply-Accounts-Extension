@@ -1,16 +1,14 @@
-import { h, render } from "preact";
+import { render, Fragment } from "preact";
 import { useState, useEffect } from "preact/hooks";
-import navigation from "./navigation.json";
+import navConfig from "./navigation.json";
 import type { Order } from "./interface";
 import { loadCustomerData, reorder} from "./loadCustomerData";
 import { fetchWithRetry, APP_URL, API_VERSION, getNumericId, fetchSmilePoints } from "./helpers";
 
-export default () => {
-  render(<ProfilePage />, document.body);
-};
 
 
-const ProfilePage = () => {
+
+function ProfilePage() {
   const api = shopify;
   
   if (!api) {
@@ -27,6 +25,7 @@ const ProfilePage = () => {
   const [shopDomain, setShopDomain] = useState("");
   const [points, setPoints] = useState<number | null>(null);
   const [pointsLoading, setPointsLoading] = useState(false);
+  const [reorderLoadingId, setReorderLoadingId] = useState<string | null>(null);
   const limit = 50;
 
   useEffect(() => {
@@ -48,6 +47,7 @@ const ProfilePage = () => {
       } catch (err) {
         console.error("Failed to fetch customer data", err);
         setError(err as Error);
+        api.toast.show((err as Error).message || "Failed to load customer data");
       } finally {
         setLoading(false);
       }
@@ -67,6 +67,7 @@ const ProfilePage = () => {
             }
         } catch (err) {
             console.error("Failed to fetch points", err);
+            api.toast.show((err as Error).message || "Failed to fetch points");
         } finally {
             setPointsLoading(false);
         }
@@ -81,9 +82,25 @@ const ProfilePage = () => {
     return () => unsubscribe?.();
   }, [api.settings]);
 
+  const handleReorder = async (orderId: string) => {
+    setReorderLoadingId(orderId);
+    try {
+        const sessionToken = await api.sessionToken.get();
+        const { redirectUrl } = await reorder(orderId, sessionToken, shopDomain);
+        if (redirectUrl) {
+          navigation.navigate(redirectUrl);
+        }
+    } catch (err) {
+        console.error("Reorder failed", err);
+        api.toast.show((err as Error).message || "Reorder failed");
+    } finally {
+        setReorderLoadingId(null);
+    }
+  };
+
   const welcomeImageUrl = (settings?.cb_welcome_image_url as string) ?? "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_100x100.png";
 
-  const navSections = (navigation.sections || []).map((navSection: any) => {
+  const navSections = (navConfig.sections || []).map((navSection: any) => {
     return (
       <s-box key={navSection.id} id={`section-${navSection.id}`} border="base" padding="base" background="base" borderRadius="base">
         <s-stack gap="base">
@@ -158,7 +175,7 @@ const ProfilePage = () => {
       <s-stack gap="base">
         <s-banner tone="info" id="hero-banner">
           <s-grid gridTemplateColumns="1fr auto" alignItems="center" gap="base">
-            <s-stack gap="large">
+            <s-stack gap="small-200">
               <s-heading id="hero-title">Welcome Back</s-heading>
               <s-text id="user-full-name" type="strong">
                 {loading ? "Loading..." : `${firstName} ${lastName}`}
@@ -173,67 +190,93 @@ const ProfilePage = () => {
             </s-box>
           </s-grid>
         </s-banner>
+        
 
-         {(loading || (orders.length > 0)) && (
-          <s-box padding="base" background="base" borderRadius="base">
-            <s-stack gap="base">
-              <s-heading id="reorder-heading">Top 3 Recent Orders</s-heading>
-              <s-grid gridTemplateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap="base">
-                {loading ? (
-                  [1, 2, 3].map((i: number) => (
-                    <s-box key={i} padding="small" borderRadius="base" background="subdued">
-                      <s-stack gap="small" alignItems="center">
-                        <s-box background="subdued" blockSize="100px" inlineSize="100px" borderRadius="base" />
-                        <s-stack gap="small" alignItems="center">
-                          <s-box background="subdued" blockSize="20px" inlineSize="120px" />
-                          <s-box background="subdued" blockSize="15px" inlineSize="80px" />
-                        </s-stack>
-                        <s-button disabled variant="secondary" inlineSize="fill">Loading...</s-button>
-                      </s-stack>
-                    </s-box>
-                  ))
-                ) : (
-                  orders.slice(0, 3).map((order) => (
-                    <s-stack gap="small" key={order.id}>
-                      <s-text type="strong" tone="neutral">{order.name} - {new Date(order.processedAt).toLocaleDateString()}</s-text>
-                      <s-grid gridTemplateColumns="1fr" gap="base">
-                        {order.lineItems.map((item: any) => (
-                          <s-box key={item.id} padding="small" borderRadius="base" background="subdued">
-                            <s-stack gap="small" alignItems="center">
-                              {item.image && (
-                                <s-product-thumbnail
-                                  src={item.image.url}
-                                  alt={item.name}
-                                />
-                              )}
-                              <s-stack gap="large" alignItems="center">
-                                <s-text type="strong">{item.name}</s-text>
-                                {item.variantTitle && <s-text type="small" tone="neutral">{item.variantTitle}</s-text>}
-                                <s-text>
-                                  {api.i18n.formatCurrency(item.totalPrice.amount, {
-                                    currency: item.totalPrice.currencyCode,
-                                  })}
-                                </s-text>
-                                {item.variantId && (
-                                  <s-button
-                                    href={`https://${shopDomain}/cart/${getNumericId(item.variantId)}:1?attributes[from]=new-customer-account&storefront=true`}
-                                    variant="primary"
-                                    inlineSize="fill"
-                                  >
-                                    Reorder
-                                  </s-button>
-                                )}
-                              </s-stack>
-                            </s-stack>
-                          </s-box>
-                        ))}
-                      </s-grid>
-                    </s-stack>
-                  ))
-                )}
-              </s-grid>
-            </s-stack>
-          </s-box>
+
+
+        
+        {loading ? (
+             <s-box padding="base" background="base" borderRadius="base">
+                <s-stack gap="base">
+                    <s-heading>Ongoing Order Status</s-heading>
+                    {[1, 2, 3].map((i) => (
+                        <s-box key={i} border="base" padding="base" borderRadius="base">
+                            <s-grid gridTemplateColumns="auto 1fr 1fr auto auto" alignItems="center" gap="base">
+                                <s-box background="subdued" blockSize="50px" inlineSize="50px" borderRadius="base" />
+                                <s-stack gap="small-100">
+                                    <s-box background="subdued" blockSize="15px" inlineSize="60px" />
+                                    <s-box background="subdued" blockSize="12px" inlineSize="40px" />
+                                </s-stack>
+                                <s-stack gap="small-100">
+                                    <s-box background="subdued" blockSize="15px" inlineSize="80px" />
+                                    <s-box background="subdued" blockSize="12px" inlineSize="50px" />
+                                </s-stack>
+                                <s-box background="subdued" blockSize="15px" inlineSize="80px" />
+                                <s-icon type="menu-horizontal" tone="neutral" />
+                            </s-grid>
+                        </s-box>
+                    ))}
+                </s-stack>
+            </s-box>
+        ) : orders.length > 0 && (
+            <s-box padding="base" background="base" borderRadius="base">
+                <s-stack gap="base">
+                    <s-heading>Recent Orders</s-heading>
+                    {orders.slice(0, 3).map((order) => {
+                        const fulfillmentStatus = order.fulfillmentStatus ? order.fulfillmentStatus.charAt(0) + order.fulfillmentStatus.slice(1).toLowerCase() : 'Confirmed';
+                        const financialStatus = order.financialStatus ? order.financialStatus.charAt(0) + order.financialStatus.slice(1).toLowerCase() : '';
+                        const displayStatus = order.fulfillmentStatus === 'FULFILLED' ? 'Fulfilled' : financialStatus || fulfillmentStatus;
+
+                        return (
+                            <s-box key={order.id} padding="base" background="base" borderRadius="base" border="base">
+                                <s-grid gridTemplateColumns="auto 1fr 1fr auto auto" alignItems="center" gap="base">
+                                    <s-box borderRadius="base" overflow="hidden" inlineSize="50px" blockSize="50px">
+                                        {order.lineItems[0]?.image ? (
+                                            <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name} />
+                                        ) : (
+                                            <s-box background="subdued" blockSize="100%" inlineSize="100%" />
+                                        )}
+                                    </s-box>
+                                    
+                                    <s-stack gap="small-100">
+                                        <s-text type="strong">{order.name}</s-text>
+                                        <s-text tone="neutral" type="small">
+                                            {order.lineItems.reduce((acc, item) => acc + item.quantity, 0)} items
+                                        </s-text>
+                                    </s-stack>
+                
+                                    <s-stack gap="small-100">
+                                        <s-text type="strong">{displayStatus}</s-text>
+                                        <s-text tone="neutral" type="small">
+                                            {new Date(order.processedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                        </s-text>
+                                    </s-stack>
+                
+                                    <s-text type="strong">
+                                        {api.i18n.formatCurrency(Number(order.totalPrice.amount), {
+                                            currency: order.totalPrice.currencyCode,
+                                        })}
+                                    </s-text>
+                
+                                    <s-box>
+                                         <s-button id={`trigger-${getNumericId(order.id)}`} variant="secondary" command="--toggle" commandFor={`menu-${getNumericId(order.id)}`}>
+                                            <s-icon type="menu-horizontal" tone="neutral" />
+                                        </s-button>
+                                        <s-popover id={`menu-${getNumericId(order.id)}`}>
+                                            <s-stack padding="base" gap="small">
+                                                 <s-button variant="secondary" href={`shopify://customer-account/orders/${getNumericId(order.id)}`}>View order details</s-button>
+                                                 <s-button variant="secondary" onClick={() => handleReorder(order.id)} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
+                                                     {reorderLoadingId === order.id ? "" : "Reorder"}
+                                                 </s-button>
+                                            </s-stack>
+                                        </s-popover>
+                                    </s-box>
+                                </s-grid>
+                            </s-box>
+                        );
+                    })}
+                </s-stack>
+            </s-box>
         )}
 
         <s-query-container>
@@ -331,7 +374,13 @@ const ProfilePage = () => {
                 <s-icon type="check-circle" tone="neutral" />
                 <s-text type="strong">Loyalty Points</s-text>
                 <s-text type="strong">
-                    {pointsLoading ? "..." : points !== null ? `${points} pts` : "0 pts"}
+                    {pointsLoading ? (
+                        <s-spinner accessibilityLabel="Loading points" />
+                    ) : points !== null ? (
+                        `${points} pts`
+                    ) : (
+                        "0 pts"
+                    )}
                 </s-text>
               </s-grid>
             </s-box>
@@ -356,5 +405,9 @@ const ProfilePage = () => {
         </s-query-container>
       </s-stack>
     </s-page>
-  );
+    );
+}
+
+export default () => {
+    render(<ProfilePage />, document.body);
 };
