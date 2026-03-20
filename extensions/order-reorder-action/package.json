@@ -1,5 +1,5 @@
 {
-  "name": "customer-dependant-manager",
+  "name": "order-reorder-action",
   "private": true,
   "version": "1.0.0",
   "license": "UNLICENSED",
@@ -8,4 +8,4 @@
     "@preact/signals": "^2.3.x",
     "@shopify/ui-extensions": "2026.1.x"
   }
-}
+} 

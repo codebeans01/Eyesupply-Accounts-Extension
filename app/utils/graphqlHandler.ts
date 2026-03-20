@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { adminCache } from "./cache.server";
+=======
+import { adminCache } from "app/utils/cache.server";
+>>>>>>> stage
 
 interface GraphQLError {
   message: string;
@@ -25,6 +29,39 @@ const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
 
 /**
+<<<<<<< HEAD
+=======
+ * Standard fetch with retry logic for REST APIs.
+ */
+export async function safeFetch(
+  url: string,
+  options: RequestInit = {},
+  retries = MAX_RETRIES
+): Promise<Response> {
+  let lastError;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 429) {
+        const backoff = INITIAL_BACKOFF_MS * Math.pow(2, i);
+        console.warn(`[safeFetch] HTTP 429 Throttled. Retrying in ${backoff}ms...`);
+        await new Promise(r => setTimeout(r, backoff));
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (i === retries) break;
+      const backoff = INITIAL_BACKOFF_MS * Math.pow(2, i);
+      console.warn(`[safeFetch] Attempt ${i + 1} failed. Retrying in ${backoff}ms...`, error);
+      await new Promise(r => setTimeout(r, backoff));
+    }
+  }
+  throw lastError || new Error(`Fetch failed after ${retries} retries`);
+}
+
+/**
+>>>>>>> stage
  * Generic retry logic for GraphQL calls.
  * @param client - The admin or storefront client.
  * @param query - The GraphQL query/mutation string.

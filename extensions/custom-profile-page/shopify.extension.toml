@@ -10,6 +10,10 @@ type = "ui_extension"
 module = "./src/ProfilePage.tsx"
 target = "customer-account.page.render"
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> stage
 [extensions.capabilities]
 api_access = true
 network_access = true

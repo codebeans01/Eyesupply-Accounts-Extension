@@ -18,10 +18,7 @@ export const CUSTOMER_DATA_QUERY = `
           name
           processedAt
           fulfillmentStatus
-<<<<<<< HEAD
-=======
           financialStatus
->>>>>>> stage
           totalPrice {
             amount
             currencyCode
@@ -58,6 +55,14 @@ export const CUSTOMER_DATA_QUERY = `
           }
         }
       }
+    }
+  }
+`;
+
+export const SHOP_DOMAIN_QUERY = `
+  query {
+    shop {
+      myshopifyDomain
     }
   }
 `;

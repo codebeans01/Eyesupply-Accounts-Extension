@@ -24,10 +24,7 @@ export interface Order {
   name: string;
   processedAt: string;
   fulfillmentStatus: string; // optionally narrow to enum
-<<<<<<< HEAD
-=======
   financialStatus: string;
->>>>>>> stage
   totalPrice: Money;
   lineItems: LineItem[];
   daysTillRunOut?: string | null;
@@ -76,10 +73,7 @@ export interface CustomerDataQueryResponse {
         name: string;
         processedAt: string;
         fulfillmentStatus: string;
-<<<<<<< HEAD
-=======
         financialStatus: string;
->>>>>>> stage
         totalPrice: Money;
         lineItems: {
           nodes: Array<{

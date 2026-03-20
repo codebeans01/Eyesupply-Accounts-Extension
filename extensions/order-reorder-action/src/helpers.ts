@@ -1,9 +1,5 @@
 export const API_VERSION = "2026-01";
-<<<<<<< HEAD
-export const APP_URL = "https://fewer-integrity-regime-nirvana.trycloudflare.com";
-=======
 export const APP_URL = "https://kent-some-expensive-dad.trycloudflare.com";
->>>>>>> stage
 
 /**
  * Fetches data with retry logic for Shopify Customer Account API.
@@ -93,15 +89,11 @@ export async function fetchWithRetry(
         );
       }
 
-<<<<<<< HEAD
-      return json;
-=======
       return {
         data: json,
         ok: response.ok,
         status: response.status
       };
->>>>>>> stage
     } catch (err) {
       // Network error (fetch throw) – retry
       if (attempt < retries) {
@@ -142,10 +134,6 @@ export async function fetchSmilePoints(sessionToken: string, shopDomain: string)
     });
 
     if (!response.ok) {
-<<<<<<< HEAD
-        // We handle 404 or other errors gracefully
-        return null;
-=======
         let errorMsg = "Failed to fetch points";
         try {
             const errorData = await response.json();
@@ -154,7 +142,6 @@ export async function fetchSmilePoints(sessionToken: string, shopDomain: string)
             // ignore parse error, use default
         }
         throw new Error(errorMsg);
->>>>>>> stage
     }
 
     return await response.json();

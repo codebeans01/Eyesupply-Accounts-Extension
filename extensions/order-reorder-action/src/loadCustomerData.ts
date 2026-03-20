@@ -13,11 +13,7 @@ export async function loadCustomerData(
 
   const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 
-<<<<<<< HEAD
-  const json = (await fetchWithRetry(endpoint, {
-=======
   const result = await fetchWithRetry(endpoint, {
->>>>>>> stage
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -25,17 +21,13 @@ export async function loadCustomerData(
     body: JSON.stringify({
       query: CUSTOMER_DATA_QUERY,
       variables: {
-        ordersFirst: ordersLimit,
+        ordersFirst: ordersLimit, 
         lineItemsFirst: lineItemsLimit,
       },
     }),
-<<<<<<< HEAD
-  })) as GraphQLResponse<{ customer: CustomerDataQueryResponse['customer']; shop: { myshopifyDomain: string } }>;
-=======
   });
 
   const json = result.data as GraphQLResponse<{ customer: CustomerDataQueryResponse['customer']; shop: { myshopifyDomain: string } }>;
->>>>>>> stage
 
   if (json.errors && json.errors.length > 0) {
     console.error('GraphQL errors:', json.errors);
@@ -66,10 +58,7 @@ export async function loadCustomerData(
     name: order.name,
     processedAt: order.processedAt,
     fulfillmentStatus: order.fulfillmentStatus,
-<<<<<<< HEAD
-=======
     financialStatus: order.financialStatus,
->>>>>>> stage
     totalPrice: {
       amount: order.totalPrice.amount,
       currencyCode: order.totalPrice.currencyCode,
@@ -104,11 +93,7 @@ export async function loadCustomerData(
 
 
 export async function reorder(orderId: string, sessionToken: string, shopDomain: string) {
-<<<<<<< HEAD
-  const res = await fetchWithRetry(
-=======
   const result = await fetchWithRetry(
->>>>>>> stage
     `${APP_URL}/api/reorder-link`,
     {
       method: "POST",
@@ -121,13 +106,6 @@ export async function reorder(orderId: string, sessionToken: string, shopDomain:
     },
   );
 
-<<<<<<< HEAD
-  if (!res.ok) {
-    throw new Error(`Reorder API failed: ${res.status}`);
-  }
-
-  return res.json(); // { redirectUrl: string }
-=======
   if (!result.ok) {
     const errorData = result.data;
     const errorMsg = errorData?.error?.message || errorData?.message || errorData?.error || 'Unknown error';
@@ -135,5 +113,4 @@ export async function reorder(orderId: string, sessionToken: string, shopDomain:
   }
 
   return result.data; // { redirectUrl: string }
->>>>>>> stage
 }
