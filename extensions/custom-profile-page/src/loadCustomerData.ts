@@ -134,7 +134,23 @@ export async function loadCustomerData(
     }
   }
 
-  const latestPrescription = prescriptions.length > 0 ? prescriptions[0] : null;
+  // Helper to sort prescriptions by updatedAt and ID suffix
+  const sortPrescriptions = (items: Prescription[]) => {
+    return [...items].sort((a, b) => {
+      const dateA = new Date(a.updatedAt || 0).getTime();
+      const dateB = new Date(b.updatedAt || 0).getTime();
+      if (dateB !== dateA) return dateB - dateA;
+      
+      const getSuffix = (id: string) => {
+        const parts = id.split('-');
+        return parseInt(parts[parts.length - 1], 10) || 0;
+      };
+      return getSuffix(b.id) - getSuffix(a.id);
+    });
+  };
+
+  const sortedPrescriptions = sortPrescriptions(prescriptions);
+  const latestPrescription = sortedPrescriptions.length > 0 ? sortedPrescriptions[0] : null;
 
   const customerSummary: CustomerSummary = {
     firstName: customer.firstName,

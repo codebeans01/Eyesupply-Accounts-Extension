@@ -138,11 +138,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     };
 
     const sortByUpdatedAt = (list: any[]) => {
-      return list.sort(
-        (a, b) =>
+      return list.sort((a, b) => {
+        const dateDiff =
           new Date(b.updatedAt || 0).getTime() -
-          new Date(a.updatedAt || 0).getTime()
-      );
+          new Date(a.updatedAt || 0).getTime();
+        
+        if (dateDiff !== 0) return dateDiff;
+
+        // Secondary sort: numeric suffix of ID (for unfolded entries within same metaobject)
+        const getSuffix = (id: string) => {
+          const parts = id.split("-");
+          const suffix = parseInt(parts[parts.length - 1], 10);
+          return isNaN(suffix) ? 0 : suffix;
+        };
+
+        return getSuffix(b.id) - getSuffix(a.id);
+      });
     };
 
     const metaobjectQuery = `

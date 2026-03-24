@@ -423,33 +423,34 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         <s-query-container>
           <s-grid
             id="quick-info-row"
-            gridTemplateColumns="1fr 1fr"
+            gridTemplateColumns="1fr"
             gap="base"
           >
-            <s-box padding="base" background="subdued" borderRadius="base">
-              <s-grid gridTemplateColumns="auto 1fr auto" alignItems="center" gap="large">
-                <s-icon type="check-circle" tone="neutral" />
-                <s-text type="strong">Loyalty Points</s-text>
-                <s-text type="strong">
-                    {pointsLoading ? (
-                        <s-spinner accessibilityLabel="Loading points" />
-                    ) : points !== null ? (
-                        `${points} pts`
-                    ) : (
-                        "0 pts"
-                    )}
-                </s-text>
+          <s-box padding="base" background="base" borderRadius="base" border="base">
+            <s-stack gap="base">
+              <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+                <s-heading>Reward Status</s-heading>
               </s-grid>
-            </s-box>
-            <s-box padding="base" background="subdued" borderRadius="base">
-              <s-clickable href="extension:custom-profile-page/view-prescription">
-                <s-grid gridTemplateColumns="auto 1fr auto" alignItems="center" gap="small">
-                  <s-icon type="note" tone="neutral" />
-                  <s-text type="strong">Prescription Details</s-text>
-                  <s-icon type="chevron-right" tone="neutral" />
+              <s-box padding="base" background="base" borderRadius="base">
+                <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base">
+                  <s-stack gap="small" direction="inline" alignItems="center" justifyContent="space-between">
+                    <s-text tone="neutral" type="small">Reward Status</s-text>
+                    <s-text type="strong">
+                      {pointsLoading ? (
+                          <s-spinner accessibilityLabel="Loading points" />
+                      ) : points !== null ? (
+                          `${points} pts`
+                      ) : (
+                          "0 pts"
+                      )}
+                    </s-text>
+                  </s-stack>
                 </s-grid>
-              </s-clickable>
-            </s-box>
+              </s-box>
+            </s-stack>
+          </s-box>
+          
+          
           </s-grid>
         </s-query-container>
 
