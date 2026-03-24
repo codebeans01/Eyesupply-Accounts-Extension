@@ -40,6 +40,14 @@ export interface CustomerSummary {
   medicalAidName?: string | null;
   patientIdNumber?: string | null;
   daysTillRunOut?: string | null;
+  prescription?: Prescription | null;
+  prescriptions?: Prescription[];
+  prescriptionPageInfo?: PageInfo;
+}
+
+export interface PageInfo {
+  hasNextPage: boolean;
+  endCursor: string | null;
 }
 
 export interface LoadCustomerDataResult {
@@ -101,6 +109,28 @@ export interface CustomerDataQueryResponse {
       namespace: string;
       key: string;
       value: string;
+      type: string;
+      reference?: {
+        __typename: string;
+        id: string;
+        handle: string;
+        type: string;
+        status?: { value: string };
+        expiryDate?: { value: string };
+        imagePdfUrl?: { value: string };
+      }; 
+      references?: {
+        nodes: Array<{
+          __typename: string;
+          id: string;
+          handle: string;
+          type: string;
+          status?: { value: string };
+          expiryDate?: { value: string };
+          imagePdfUrl?: { value: string };
+        }>;
+        pageInfo: PageInfo;
+      };
     }>;
   } | null;
 }
@@ -122,6 +152,11 @@ export interface Prescription {
   status: string;
   expiry_date?: string;
   image_url?: string;
+  image_urls?: string[];
+  entry_status?: string;
+  customer_email?: string;
+  handle?: string;
+  updatedAt?: string;
 }
 
 export interface GraphQLResponse<T> {

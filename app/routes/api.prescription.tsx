@@ -1,11 +1,10 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { errorResponse, handleOptions, standardResponse } from "app/utils/response";
-import { safeGraphql } from "app/utils/graphqlHandler";
 import { authenticate, unauthenticated } from "app/shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (request.method === "OPTIONS") {
-    return handleOptions();
+    return handleOptions(request);
   }
 
   let corsWrapper: any = null;
@@ -15,157 +14,199 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       request,
       { corsHeaders: ["Authorization", "x-shop-domain"] }
     );
+
     corsWrapper = cors;
 
     const shopDomain = sessionToken.dest.replace(/^https?:\/\//, "");
+
     if (!shopDomain) {
-        return errorResponse("Invalid shop domain", { status: 400, cors: corsWrapper });
+      return errorResponse("Invalid shop domain", { status: 400, cors: corsWrapper });
     }
 
-    const { admin } = await unauthenticated.admin(shopDomain);
+    const { storefront } = await unauthenticated.storefront(shopDomain);
 
-    if (!admin) {
-        return errorResponse("Admin API not available", { status: 500, cors: corsWrapper });
+    const url = new URL(request.url);
+    const targetIds = url.searchParams.get("ids");
+    const targetHandle = url.searchParams.get("id");
+
+    if (!targetIds && !targetHandle) {
+      return standardResponse(
+        { prescription: null, prescriptions: [] },
+        { cors: corsWrapper }
+      );
     }
 
-    const customerGID = sessionToken.sub; 
+    const parse = (val: string) => {
+      if (!val) return [];
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed : [val];
+      } catch {
+        return [val];
+      }
+    };
 
-    // 1. Fetch the customer's metafield which points to the prescription metaobject
-    const customerQuery = `
-      query GetCustomerPrescription($id: ID!) {
-        customer(id: $id) {
-          metafield(namespace: "custom", key: "customer_prescription") {
-            value
+    // 🔥 Resolve Media IDs -> URLs
+    const resolveMedia = async (ids: string[]) => {
+      if (!ids.length) return [];
+
+      const query = `
+        query GetFiles($ids: [ID!]!) {
+          nodes(ids: $ids) {
+            ... on MediaImage {
+              image { url }
+            }
+            ... on GenericFile {
+              url
+            }
+          }
+        }
+      `;
+
+      const res = await storefront.graphql(query, { variables: { ids } });
+      const json = await res.json();
+
+      return (
+        json.data?.nodes
+          ?.map((n: any) => n?.url || n?.image?.url)
+          .filter(Boolean) || []
+      );
+    };
+
+    const processMetaobject = async (node: any) => {
+      const fields: any = {
+        images: [],
+        expiry_dates: [],
+        statuses: [],
+        customer_email: null,
+      };
+      
+      for (const f of node.fields || []) {
+        const key = f.key.toLowerCase();
+        
+        let refs =
+          f.references?.nodes
+            ?.map((n: any) => n?.url || n?.image?.url)
+            .filter(Boolean) || [];
+         
+        // 🔥 fallback if references null
+        if (!refs.length && f.value && key.includes("image_pdf_url")) {
+          const ids = parse(f.value); 
+          refs = await resolveMedia(ids);
+        }
+
+        if (key.includes("image_pdf_url")) {
+          fields.images.push(...refs);
+        }
+
+        if (key.includes("expiry")) {
+          fields.expiry_dates.push(...parse(f.value));
+        }
+
+        if (key.includes("status")) {
+          fields.statuses.push(...parse(f.value));
+        }
+
+        if (key.includes("email")) {
+          fields.customer_email = f.value;
+        }
+      }
+
+      const maxLength = Math.max(
+        fields.images.length,
+        fields.expiry_dates.length,
+        fields.statuses.length,
+        1
+      );
+
+      const entries: any[] = [];
+
+      for (let i = 0; i < maxLength; i++) {
+        entries.push({
+          id: `${node.id}-${i}`,
+          metaobjectId: node.id,
+          handle: node.handle,
+          image_url: fields.images[i] || fields.images[0] || null,
+          expiry_date: fields.expiry_dates[i] || fields.expiry_dates[0] || null,
+          status: fields.statuses[i] || fields.statuses[0] || "Active",
+          customer_email: fields.customer_email,
+          updatedAt: node.updatedAt,
+        });
+      }
+
+      return entries;
+    };
+
+    const sortByUpdatedAt = (list: any[]) => {
+      return list.sort(
+        (a, b) =>
+          new Date(b.updatedAt || 0).getTime() -
+          new Date(a.updatedAt || 0).getTime()
+      );
+    };
+
+    const metaobjectQuery = `
+      query GetPrescriptions($ids: [ID!]!) {
+        nodes(ids: $ids) {
+          ... on Metaobject {
+            id
+            handle
+            updatedAt
+            fields {
+              key
+              value
+              references(first: 20) {
+                nodes {
+                  ... on GenericFile { url }
+                  ... on MediaImage { image { url } }
+                }
+              }
+            }
           }
         }
       }
     `;
 
-    const url = new URL(request.url);
-    const queryId = url.searchParams.get("id");
+    let ids: string[] = [];
 
-    const customerResult = await safeGraphql(admin, customerQuery, { id: customerGID });
-    console.log("Customer Metafield Result:", JSON.stringify(customerResult, null, 2));
-    
-    const metafieldValue = customerResult.data?.customer?.metafield?.value;
-    
-    // Prioritize queryId if available, fallback to metafieldValue
-    const targetHandle = queryId || metafieldValue;
-
-    if (!targetHandle) {
-      console.log("No prescription handle found (neither in query param 'id' nor in customer metafield)");
-      return standardResponse({ prescription: null }, { cors: corsWrapper });
-    }
-    
-    console.log(`Fetching metaobject with handle/ID: ${targetHandle}`);
-    
-    let metaobject = null;
-
-    if (targetHandle.startsWith("gid://shopify/Metaobject/")) {
-      const metaobjectQuery = `
-        query GetPrescriptionById($id: ID!) {
-          metaobject(id: $id) {
-            id
-            fields {
-              key
-              value
-              jsonValue
-              references(first: 20) {
-                nodes {
-                  ... on GenericFile {
-                    url
-                  }
-                  ... on MediaImage {
-                    image {
-                      url
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `;
-      const metaobjectResult = await safeGraphql(admin, metaobjectQuery, { id: targetHandle });
-      console.log("Metaobject By ID Result:", JSON.stringify(metaobjectResult, null, 2));
-      metaobject = metaobjectResult.data?.metaobject;
-    } else {
-      const metaobjectQuery = `
-        query GetPrescription($handle: String!, $type: String!) {
-          metaobjectByHandle(handle: { handle: $handle, type: $type }) {
-            id
-            fields {
-              key
-              value
-              jsonValue
-              references(first: 20) {
-                nodes {
-                  ... on GenericFile {
-                    url
-                  }
-                  ... on MediaImage {
-                    image {
-                      url
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `;
-
-      const metaobjectResult = await safeGraphql(admin, metaobjectQuery, {
-        handle: targetHandle,
-        type: "customer_prescription"
-      });
-      console.log("Metaobject By Handle Result:", JSON.stringify(metaobjectResult, null, 2));
-      metaobject = metaobjectResult.data?.metaobjectByHandle;
+    if (targetIds) {
+      ids = targetIds.split(",").map((x) => x.trim());
     }
 
-    if (!metaobject) {
-       console.log(`No metaobject found for: ${targetHandle}`);
-       return standardResponse({ prescription: null }, { cors: corsWrapper });
+    if (targetHandle && targetHandle.startsWith("gid://shopify/Metaobject/")) {
+      ids = [targetHandle];
     }
 
-    // Process fields
-    const fields: any = {
-        images: [],
-        expiry_dates: [],
-        statuses: []
-    };
-
-    console.log("Metaobject Fields:", JSON.stringify(metaobject.fields, null, 2));
-
-    metaobject.fields.forEach((f: any) => {
-      // Check for image/file references (common keys: image_pdf_url, prescription_file, file)
-      if (["image_pdf_url", "prescription_file", "file"].includes(f.key)) {
-        const refs = f.references?.nodes?.map((n: any) => n.url || n.image?.url).filter(Boolean) || [];
-        if (refs.length > 0) {
-          fields.images = [...fields.images, ...refs];
-        } else if (f.value && f.value.startsWith("http")) {
-             fields.images.push(f.value);
-        }
-      } else if (f.key === "expiry_date") {
-        fields.expiry_dates = Array.isArray(f.jsonValue) ? f.jsonValue : (f.jsonValue ? [f.jsonValue] : [f.value].filter(Boolean));
-      } else if (f.key === "status") {
-        fields.statuses = Array.isArray(f.jsonValue) ? f.jsonValue : (f.jsonValue ? [f.jsonValue] : [f.value].filter(Boolean));
-      }
+    const response = await storefront.graphql(metaobjectQuery, {
+      variables: { ids },
     });
 
-    const prescription = {
-      image_url: fields.images?.length > 0 ? fields.images[fields.images.length - 1] : null,
-      expiry_date: fields.expiry_dates?.length > 0 ? fields.expiry_dates[fields.expiry_dates.length - 1] : null,
-      status: fields.statuses?.length > 0 ? fields.statuses[fields.statuses.length - 1] : null,
-    };
+    const result = await response.json();
 
-    return standardResponse({ prescription }, { cors: corsWrapper });
+    const prescriptions: any[] = [];
 
+    for (const node of result.data?.nodes || []) {
+      if (!node) continue;
+
+      const entries = await processMetaobject(node);
+      prescriptions.push(...entries);
+    }
+
+    const sorted = sortByUpdatedAt(prescriptions);
+
+    return standardResponse(
+      {
+        prescription: sorted[0] || null,
+        prescriptions: sorted,
+      },
+      { cors: corsWrapper }
+    );
   } catch (error: any) {
     console.error("Prescription API Error:", error);
-    return errorResponse(
-      error.message || "An unexpected error occurred", 
-      { status: 500, cors: corsWrapper }
-    );
+
+    return errorResponse(error.message || "Unexpected error", {
+      status: 500,
+      cors: corsWrapper,
+    });
   }
 };

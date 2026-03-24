@@ -127,6 +127,12 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
               }
 
               let href = link.href;
+              // Add prescription ID to details link
+              if (link.label === "Prescription Details" && customer?.prescription?.id) {
+                // Pass only the numeric ID to keep the URL clean
+                href = `${href}/${getNumericId(customer.prescription.id)}`;
+              }
+              
               if (navSection.id === "reviews") {
                 if (link.label === "Review Us on Google" && settings?.cb_review_google_url) {
                   href = settings.cb_review_google_url as string;
@@ -383,6 +389,37 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           </s-box>
         )}
 
+        {customer?.prescription && (
+          <s-box padding="base" background="base" borderRadius="base" border="base">
+            <s-stack gap="base">
+              <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+                <s-heading>Latest Prescription</s-heading>
+                <s-clickable href="extension:custom-profile-page/view-prescription">
+                  <s-text tone="info">View All</s-text>
+                </s-clickable>
+              </s-grid>
+              <s-box padding="base" background="subdued" borderRadius="base">
+                <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base">
+                  <s-stack gap="small">
+                    <s-text tone="neutral" type="small">Prescription ID</s-text>
+                    <s-text type="strong">#{getNumericId(customer.prescription.id)}</s-text>
+                  </s-stack>
+                  <s-stack gap="small">
+                    <s-text tone="neutral" type="small">Expiry Date</s-text>
+                    <s-text type="strong">{customer.prescription.expiry_date || "No Expiry"}</s-text>
+                  </s-stack>
+                  <s-stack gap="small">
+                    <s-text tone="neutral" type="small">Status</s-text>
+                    <s-badge tone={customer.prescription.status?.toLowerCase() === 'active' ? 'auto' : 'neutral'}>
+                      {customer.prescription.status || "Active"}
+                    </s-badge>
+                  </s-stack>
+                </s-grid>
+              </s-box>
+            </s-stack>
+          </s-box>
+        )}
+
         <s-query-container>
           <s-grid
             id="quick-info-row"
@@ -405,11 +442,13 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
               </s-grid>
             </s-box>
             <s-box padding="base" background="subdued" borderRadius="base">
-              <s-grid gridTemplateColumns="auto 1fr auto" alignItems="center" gap="small">
-                <s-icon type="note" tone="neutral" />
-                <s-text type="strong">Prescription Expiry</s-text>
-                <s-text type="strong">25/12/2025</s-text>
-              </s-grid>
+              <s-clickable href="extension:custom-profile-page/view-prescription">
+                <s-grid gridTemplateColumns="auto 1fr auto" alignItems="center" gap="small">
+                  <s-icon type="note" tone="neutral" />
+                  <s-text type="strong">Prescription Details</s-text>
+                  <s-icon type="chevron-right" tone="neutral" />
+                </s-grid>
+              </s-clickable>
             </s-box>
           </s-grid>
         </s-query-container>

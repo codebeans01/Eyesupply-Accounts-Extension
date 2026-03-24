@@ -1,5 +1,5 @@
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://spencer-readers-wheat-purpose.trycloudflare.com";
+export const APP_URL = "https://listings-engineers-resolved-katrina.trycloudflare.com";
 
 /**
  * Fetches data with retry logic for Shopify Customer Account API.

@@ -1,18 +1,18 @@
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://spencer-readers-wheat-purpose.trycloudflare.com";
+export const APP_URL = "https://listings-engineers-resolved-katrina.trycloudflare.com";
 
 /**
  * Fetches data with retry logic for Shopify Customer Account API.
  * Handles both HTTP 429 and GraphQL "THROTTLED" errors.
  */
-export async function fetchWithRetry(
+export async function fetchWithRetry<T = any>(
   url: string,
   options: RequestInit,
   {
     retries = 5,
     baseDelayMs = 300,
   }: { retries?: number; baseDelayMs?: number } = {},
-): Promise<any> {
+): Promise<{ data: T; ok: boolean; status: number }> {
   let attempt = 0;
 
   while (true) {
@@ -26,7 +26,7 @@ export async function fetchWithRetry(
             response.headers.get('Retry-After') || '2',
             10,
           );
-          const waitMs = retryAfterSec * 1000;
+          const waitMs = retryAfterSec * 5000;
           console.warn(
             `[Extension] Rate limited (429). Retrying after ${waitMs}ms (attempt ${attempt}/${retries})...`,
           );

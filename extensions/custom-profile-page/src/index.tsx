@@ -3,24 +3,8 @@ import { render } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
 
 import { ProfilePage } from './components/ProfilePage';
-import { PrescriptionDetailsPage } from './components/PrescriptionDetailsPage';
+import { PrescriptionListPage } from './components/PrescriptionListPage';
 import { API_VERSION, fetchWithRetry } from './helpers';
-
-
-function extractPrescriptionId(url: string): string {
-  // extension:/ scheme ke saath kaam karo
-  const path = url.replace(/^[a-z]+:\/*/i, ""); // scheme strip karo
-  const segments = path.split("/").filter(Boolean);
-  
-  console.log('[Extract] path:', path, '| segments:', segments);
-  
-  const pIndex = segments.findIndex(s =>
-    s.toLowerCase().includes("prescription-details")
-  );
-  
-  return pIndex > 0 ? segments[pIndex - 1] : "";
-}
-
 
 
 function App() {
@@ -94,9 +78,8 @@ function App() {
 
   const currentUrl = url.toLowerCase();
 
-  if (currentUrl.includes("prescription-details")) {
-    const id = extractPrescriptionId(url);
-    return <PrescriptionDetailsPage id={id} api={api} shopDomain={shopDomain} />;
+  if (currentUrl.includes("view-prescription")) {
+    return <PrescriptionListPage api={api} shopDomain={shopDomain} />;
   }
 
   const MainPage = ProfilePage;

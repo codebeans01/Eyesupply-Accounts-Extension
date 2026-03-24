@@ -16,7 +16,7 @@
       "title": "Prescription",
       "icon": "clipboard",
       "links": [
-        { "label": "Prescription Details", "href": "extension:custom-profile-page/prescription-details" },
+        { "label": "All Prescription", "href": "extension:custom-profile-page/view-prescription" },
         { "label": "Reward Status", "sub": "Gold tier - 480 pts", "href": "extension:customer-account.rewards.page.render" },
         { "label": "Upload My Prescription", "sub": "R120 off waiting", "href": "extension:customer-account.prescriptions.page.render" },
         { "label": "How to Redeem More", "href": "extension:customer-account.rewards.page.render" },

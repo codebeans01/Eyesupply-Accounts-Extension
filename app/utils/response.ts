@@ -42,10 +42,20 @@ export function standardResponse(
 /**
  * Handle OPTIONS preflight requests uniformly.
  */
-export function handleOptions() {
+export function handleOptions(request?: Request) {
+  const headers = { ...DEFAULT_CORS_HEADERS };
+  
+  if (request) {
+    const origin = request.headers.get("Origin");
+    if (origin && origin !== "null") {
+        (headers as any)["Access-Control-Allow-Origin"] = origin;
+        (headers as any)["Vary"] = "Origin";
+    }
+  }
+
   return new Response(null, {
     status: 204,
-    headers: DEFAULT_CORS_HEADERS,
+    headers,
   });
 }
 
