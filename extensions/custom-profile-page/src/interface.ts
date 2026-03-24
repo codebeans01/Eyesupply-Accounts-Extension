@@ -35,6 +35,11 @@ export interface CustomerSummary {
   lastName: string | null;
   email: string | null;
   phone: string | null;
+  medicalAidNumber?: string | null;
+  medicalAidPlan?: string | null;
+  medicalAidName?: string | null;
+  patientIdNumber?: string | null;
+  daysTillRunOut?: string | null;
 }
 
 export interface LoadCustomerDataResult {
@@ -92,9 +97,11 @@ export interface CustomerDataQueryResponse {
         };
       }>;
     };
-    daysTillRunOut?: {
+    metafields: Array<{
+      namespace: string;
+      key: string;
       value: string;
-    } | null;
+    }>;
   } | null;
 }
 
@@ -110,6 +117,13 @@ export interface SmilePointsResponse {
   customer?: SmileCustomer;
   error?: string;
 }
+export interface Prescription {
+  id: string;
+  status: string;
+  expiry_date?: string;
+  image_url?: string;
+}
+
 export interface GraphQLResponse<T> {
   data?: T;
   errors?: GraphQLError[];

@@ -7,8 +7,9 @@ uid = "ea664419-a2b5-5496-6389-5dc984c4dad8a8587f09"
 type = "ui_extension"
 
 [[extensions.targeting]]
-module = "./src/ProfilePage.tsx"
+module = "./src/index.tsx"
 target = "customer-account.page.render"
+
 
 
 [extensions.capabilities]

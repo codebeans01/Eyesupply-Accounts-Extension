@@ -1,7 +1,25 @@
 import '@shopify/ui-extensions';
 
 //@ts-ignore
-declare module './src/ProfilePage.tsx' {
+declare module './src/index.tsx' {
+  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
+declare module './src/components/ProfilePage.tsx' {
+  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
+declare module './src/components/PrescriptionDetailsPage.tsx' {
+  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
+declare module './src/helpers.ts' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };
 }
@@ -20,12 +38,6 @@ declare module './src/interface.ts' {
 
 //@ts-ignore
 declare module './src/loadCustomerData.ts' {
-  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
-  const globalThis: { shopify: typeof shopify };
-}
-
-//@ts-ignore
-declare module './src/helpers.ts' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };
 }

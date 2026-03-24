@@ -35,13 +35,20 @@ export async function loadCustomerData(
   }
 
   const customer = json.data?.customer ?? null;
-
   if (!customer) {
     return {
       customer: null,
       orders: [],
       myshopifyDomain: "",
     };
+  }
+
+  const metafieldsArray = customer.metafields ?? [];
+  const metafieldMap = new Map<string, string>();
+  for (const mf of metafieldsArray) {
+    if (mf) {
+      metafieldMap.set(`${mf.namespace}.${mf.key}`, mf.value);
+    }
   }
 
   const ordersNodes = customer.orders?.nodes ?? [];
@@ -51,6 +58,11 @@ export async function loadCustomerData(
     lastName: customer.lastName,
     email: customer.emailAddress?.emailAddress ?? null,
     phone: customer.phoneNumber?.phoneNumber ?? null,
+    daysTillRunOut: metafieldMap.get("custom.days_till_run_out") ?? null,
+    medicalAidNumber: metafieldMap.get("custom.medical_aid_number") ?? null,
+    medicalAidPlan: metafieldMap.get("custom.medical_aid_plan") ?? null,
+    medicalAidName: metafieldMap.get("custom.medical_aid_name") ?? null,
+    patientIdNumber: metafieldMap.get("custom.patient_id_number") ?? null,
   };
 
   const orders: Order[] = ordersNodes.map((order) => ({
@@ -63,7 +75,6 @@ export async function loadCustomerData(
       amount: order.totalPrice.amount,
       currencyCode: order.totalPrice.currencyCode,
     },
-    daysTillRunOut: (order as any).daysTillRunOut?.value ?? null,
     lineItems:
       order.lineItems?.nodes?.map<LineItem>((li: any) => ({
         id: li.id,

@@ -1,7 +1,6 @@
 import { render } from "preact";
 import { useState } from "preact/hooks";
-import { reorder } from "./loadCustomerData";
-import { fetchWithRetry, API_VERSION } from "./helpers";
+import { fetchWithRetry, reorder, API_VERSION } from "./helpers";
 import { SHOP_DOMAIN_QUERY } from "./graphql-query";
 
 /**
@@ -12,14 +11,14 @@ function ReorderButton() {
   const [loading, setLoading] = useState(false);
   
   // Cast shopify to any for easier access while maintaining some structure
-  const api = shopify as any;
+  const api = (globalThis as any).shopify;
 
   const handleReorder = async () => {
     if (loading) return;
     setLoading(true);
 
     try {
-      const orderId = api.orderId;
+      const orderId = api?.orderId;
       if (!orderId) throw new Error("Order ID not found");
 
       const sessionToken = await api.sessionToken.get();
@@ -41,7 +40,7 @@ function ReorderButton() {
       if (!redirectUrl) throw new Error("Failed to generate reorder link");
 
       // Standardized navigation logic
-      const nav = (typeof navigation !== "undefined" ? navigation : api.navigation);
+      const nav = api?.navigation;
       
       if (nav?.navigate) {
         nav.navigate(redirectUrl);
@@ -53,7 +52,7 @@ function ReorderButton() {
     } catch (err) {
       const message = (err as Error).message || "Reorder failed";
       console.error("[ReorderButton] Error:", err);
-      api.toast.show(message);
+      api?.toast?.show(message);
     } finally {
       setLoading(false);
     }

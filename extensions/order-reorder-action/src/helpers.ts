@@ -1,5 +1,5 @@
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://kent-some-expensive-dad.trycloudflare.com";
+export const APP_URL = "https://spencer-readers-wheat-purpose.trycloudflare.com";
 
 /**
  * Fetches data with retry logic for Shopify Customer Account API.
@@ -111,42 +111,42 @@ export async function fetchWithRetry(
 }
 
 /**
- * Extracts the numeric ID from a Shopify GID.
- * e.g. "gid://shopify/ProductVariant/12345678" -> "12345678"
+ * Response from the reorder API.
  */
-export function getNumericId(gid: string | undefined): string {
-  if (!gid) return "";
-  const parts = gid.split("/");
-  return parts[parts.length - 1];
+export interface ReorderResponse {
+  redirectUrl: string;
 }
 
 /**
- * Fetches Smile.io loyalty points via the server proxy.
+ * Calls the backend API to generate a reorder link.
  */
-export async function fetchSmilePoints(sessionToken: string, shopDomain: string) {
-  try {
-    const response = await fetch(`${APP_URL}/api/smile/points`, {
-      method: "GET",
+export async function reorder(
+  orderId: string, 
+  sessionToken: string, 
+  shopDomain: string
+): Promise<ReorderResponse> {
+  const result = await fetchWithRetry(
+    `${APP_URL}/api/reorder-link`,
+    {
+      method: "POST",
       headers: {
+        "Content-Type": "application/json",
         "Authorization": `Bearer ${sessionToken}`,
         "x-shop-domain": shopDomain,
       },
-    });
+      body: JSON.stringify({ orderId }),
+    },
+  );
 
-    if (!response.ok) {
-        let errorMsg = "Failed to fetch points";
-        try {
-            const errorData = await response.json();
-            errorMsg = errorData.error?.message || errorData.error || errorData.message || errorMsg;
-        } catch (e) {
-            // ignore parse error, use default
-        }
-        throw new Error(errorMsg);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("[Extension] Failed to fetch Smile points:", error);
-    return null;
+  if (!result.ok) {
+    const errorData = result.data;
+    const errorMsg =
+      errorData?.error?.message ||
+      errorData?.message ||
+      errorData?.error ||
+      "Unknown error";
+    throw new Error(errorMsg);
   }
+
+  return result.data;
 }

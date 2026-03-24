@@ -16,6 +16,7 @@
       "title": "Prescription",
       "icon": "clipboard",
       "links": [
+        { "label": "Prescription Details", "href": "extension:custom-profile-page/prescription-details" },
         { "label": "Reward Status", "sub": "Gold tier - 480 pts", "href": "extension:customer-account.rewards.page.render" },
         { "label": "Upload My Prescription", "sub": "R120 off waiting", "href": "extension:customer-account.prescriptions.page.render" },
         { "label": "How to Redeem More", "href": "extension:customer-account.rewards.page.render" },
@@ -37,8 +38,10 @@
       "title": "Medical Aid",
       "icon": "plus",
       "links": [
-        { "label": "Medical Aid Info", "href": "mailto:support@eyesupply.co.uk" },
-        { "label": "Medical Aid Invoices", "href": "shopify://customer-account/orders" }
+        { "label": "Medical Aid Number", "href": "mailto:support@eyesupply.co.uk" },
+        { "label": "Medical Aid Plan", "href": "mailto:support@eyesupply.co.uk" },
+        { "label": "Medical Aid Name", "href": "mailto:support@eyesupply.co.uk" },
+        { "label": "Patient ID Number", "href": "mailto:support@eyesupply.co.uk" }
       ]
     },
     {

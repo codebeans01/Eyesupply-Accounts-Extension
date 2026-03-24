@@ -12,6 +12,17 @@ export const CUSTOMER_DATA_QUERY = `
       phoneNumber {
         phoneNumber
       }
+      metafields(identifiers: [
+        {namespace: "custom", key: "days_till_run_out"},
+        {namespace: "custom", key: "medical_aid_number"},
+        {namespace: "custom", key: "medical_aid_plan"},
+        {namespace: "custom", key: "medical_aid_name"},
+        {namespace: "custom", key: "patient_id_number"}
+      ]) {
+        namespace
+        key
+        value
+      }
       orders(first: $ordersFirst, reverse: true) {
         nodes {
           id

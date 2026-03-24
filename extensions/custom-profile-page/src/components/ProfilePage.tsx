@@ -1,53 +1,59 @@
-import { render, Fragment } from "preact";
+import { Fragment } from "preact";
 import { useState, useEffect } from "preact/hooks";
-import navConfig from "./navigation.json";
-import type { Order } from "./interface";
-import { loadCustomerData, reorder} from "./loadCustomerData";
-import { fetchWithRetry, APP_URL, API_VERSION, getNumericId, fetchSmilePoints } from "./helpers";
+import '@shopify/ui-extensions/preact';
+import navConfig from "../navigation.json";
+import { type Order, type Money } from "../interface";
+import { loadCustomerData, reorder} from "../loadCustomerData";
+import { fetchWithRetry, APP_URL, API_VERSION, getNumericId, fetchSmilePoints } from "../helpers";
 
 
 
 
-function ProfilePage() {
-  const api = shopify;
-  
-  if (!api) {
-    console.error("Extension rendered without shopify global");
-    return null;
-  }
-  
-  const [firstName, setFirstName] = useState("User");
-  const [lastName, setLastName] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]);
+interface ProfilePageProps {
+  api: any;
+  shopDomain: string;
+}
+
+export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   const [loading, setLoading] = useState(true);
+  const [customer, setCustomer] = useState<any | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<Error | null>(null);
-  const [settings, setSettings] = useState(api.settings?.value ?? {});
-  const [shopDomain, setShopDomain] = useState("");
+  const [settings, setSettings] = useState(api?.settings?.value ?? {});
+  const [myshopifyDomain, setMyshopifyDomain] = useState<string>(shopDomain);
   const [points, setPoints] = useState<number | null>(null);
   const [pointsLoading, setPointsLoading] = useState(false);
   const [reorderLoadingId, setReorderLoadingId] = useState<string | null>(null);
-  const limit = 50;
+
+  if (!api) {
+    return null;
+  }
+  
+  const limit = 5;
+
+  const currentShopDomain = myshopifyDomain || shopDomain;
 
   useEffect(() => {
     async function init() {
       setError(null);
       setLoading(true);
       try {
-        const { customer, orders: customerOrders, myshopifyDomain } = await loadCustomerData({
+        const data = await loadCustomerData({
           ordersLimit: limit,
           lineItemsLimit: 20,
         });
 
-        if (customer) { 
-          setFirstName(customer.firstName || "User");
-          setLastName(customer.lastName || "");
+        if (data.customer) {
+          setCustomer(data.customer);
         }
-        setOrders(customerOrders);
-        setShopDomain(myshopifyDomain);
+        setOrders(data.orders || []);
+        if (data.myshopifyDomain) {
+          setMyshopifyDomain(data.myshopifyDomain);
+        }
       } catch (err) {
         console.error("Failed to fetch customer data", err);
         setError(err as Error);
-        api.toast.show((err as Error).message || "Failed to load customer data");
+        api.toast?.show((err as Error).message || "Failed to load customer data");
       } finally {
         setLoading(false);
       }
@@ -57,23 +63,22 @@ function ProfilePage() {
 
   useEffect(() => {
     async function getPoints() {
-        if (!shopDomain) return;
+        if (!currentShopDomain) return;
         setPointsLoading(true);
         try {
             const sessionToken = await api.sessionToken.get();
-            const data = await fetchSmilePoints(sessionToken, shopDomain);
+            const data = await fetchSmilePoints(sessionToken, currentShopDomain);
             if (data?.customer) {
                 setPoints(data.customer.points_balance);
             }
         } catch (err) {
             console.error("Failed to fetch points", err);
-            api.toast.show((err as Error).message || "Failed to fetch points");
         } finally {
             setPointsLoading(false);
         }
     }
     getPoints();
-  }, [api, shopDomain]);
+  }, [api, currentShopDomain]);
 
   useEffect(() => {
     const unsubscribe = api.settings?.subscribe?.((newSettings: any) => {
@@ -83,26 +88,30 @@ function ProfilePage() {
   }, [api.settings]);
 
   const handleReorder = async (orderId: string) => {
+    if (!currentShopDomain) return;
     setReorderLoadingId(orderId);
     try {
         const sessionToken = await api.sessionToken.get();
-        const { redirectUrl } = await reorder(orderId, sessionToken, shopDomain);
+        const { redirectUrl } = await reorder(orderId, sessionToken, currentShopDomain);
         if (redirectUrl) {
-          navigation.navigate(redirectUrl);
+           api.navigation.navigate(redirectUrl);
         }
     } catch (err) {
         console.error("Reorder failed", err);
-        api.toast.show((err as Error).message || "Reorder failed");
+        api.toast?.show((err as Error).message || "Reorder failed");
     } finally {
         setReorderLoadingId(null);
     }
   };
 
+  const firstName = customer?.firstName || "User";
+  const lastName = customer?.lastName || "";
+
   const welcomeImageUrl = (settings?.cb_welcome_image_url as string) ?? "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_100x100.png";
 
   const navSections = (navConfig.sections || []).map((navSection: any) => {
     return (
-      <s-box key={navSection.id} id={`section-${navSection.id}`} border="base" padding="base" background="base" borderRadius="base">
+      <s-box key={navSection.id} id={`section-${navSection.id}`} padding="base" background="base" borderRadius="base" border="base">
         <s-stack gap="base">
           <s-grid gridTemplateColumns="1fr auto">
             <s-heading id={`heading-${navSection.id}`}>{navSection.title}</s-heading>
@@ -142,7 +151,7 @@ function ProfilePage() {
                               />
                             )}
                             <s-text type="small">{item.name}</s-text>
-                            <s-clickable href={`https://${shopDomain}/products/${getNumericId(item.productId ?? undefined)}#reviews`} target="_blank">
+                            <s-clickable href={`https://${currentShopDomain}/products/${getNumericId(item.productId ?? undefined)}#reviews`}>
                               <s-text tone="info">Review</s-text>
                             </s-clickable>
                           </s-grid>
@@ -154,10 +163,22 @@ function ProfilePage() {
                   );
                 }
               }
+ 
+              if (navSection.id === "medical-aid" && customer) {
+                if (link.label === "Medical Aid Number") {
+                  dynamicSub = customer.medicalAidNumber || "--";
+                } else if (link.label === "Medical Aid Plan") {
+                  dynamicSub = customer.medicalAidPlan || "--";
+                } else if (link.label === "Medical Aid Name") {
+                  dynamicSub = customer.medicalAidName || "--";
+                } else if (link.label === "Patient ID Number") {
+                  dynamicSub = customer.patientIdNumber || "--";
+                }
+              }
 
               return (
                 <s-grid key={index} gridTemplateColumns="1fr auto" alignItems="center">
-                   <s-clickable href={href} target="_blank">
+                   <s-clickable href={href}>
                      <s-text tone="info">{link.label}</s-text>
                    </s-clickable>
                    {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
@@ -218,15 +239,14 @@ function ProfilePage() {
                     ))}
                 </s-stack>
             </s-box>
-        ) : orders.length > 0 && (
+        )        : !loading && orders.length > 0 ? (
             <s-box padding="base" background="base" borderRadius="base">
                 <s-stack gap="base">
                     <s-heading>Recent Orders</s-heading>
                     {orders.slice(0, 3).map((order) => {
-                        const fulfillmentStatus = order.fulfillmentStatus ? order.fulfillmentStatus.charAt(0) + order.fulfillmentStatus.slice(1).toLowerCase() : 'Confirmed';
-                        const financialStatus = order.financialStatus ? order.financialStatus.charAt(0) + order.financialStatus.slice(1).toLowerCase() : '';
-                        const displayStatus = order.fulfillmentStatus === 'FULFILLED' ? 'Fulfilled' : financialStatus || fulfillmentStatus;
-
+                        const fulfillmentStatus = (order.fulfillmentStatus || 'Confirmed');
+                        const displayStatus = fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase();
+                        
                         return (
                             <s-box key={order.id} padding="base" background="base" borderRadius="base" border="base">
                                 <s-grid gridTemplateColumns="auto 1fr 1fr auto auto" alignItems="center" gap="base">
@@ -239,23 +259,23 @@ function ProfilePage() {
                                     </s-box>
                                     
                                     <s-stack gap="small-100">
-                                        <s-text type="strong">{order.name}</s-text>
+                                        <s-text type="strong">{order.name || ""}</s-text>
                                         <s-text tone="neutral" type="small">
-                                            {order.lineItems.reduce((acc, item) => acc + item.quantity, 0)} items
+                                            {(order.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0), 0)} items
                                         </s-text>
                                     </s-stack>
                 
                                     <s-stack gap="small-100">
                                         <s-text type="strong">{displayStatus}</s-text>
                                         <s-text tone="neutral" type="small">
-                                            {new Date(order.processedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                            {order.processedAt ? new Date(order.processedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ""}
                                         </s-text>
                                     </s-stack>
                 
                                     <s-text type="strong">
-                                        {api.i18n.formatCurrency(Number(order.totalPrice.amount), {
+                                        {order.totalPrice ? api.i18n.formatCurrency(Number(order.totalPrice.amount), {
                                             currency: order.totalPrice.currencyCode,
-                                        })}
+                                        }) : ""}
                                     </s-text>
                 
                                     <s-box>
@@ -277,7 +297,7 @@ function ProfilePage() {
                     })}
                 </s-stack>
             </s-box>
-        )}
+        ) : null}
 
         <s-query-container>
           <s-grid
@@ -408,6 +428,3 @@ function ProfilePage() {
     );
 }
 
-export default () => {
-    render(<ProfilePage />, document.body);
-};
