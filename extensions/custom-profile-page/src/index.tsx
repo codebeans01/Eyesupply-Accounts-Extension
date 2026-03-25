@@ -63,7 +63,7 @@ function App() {
           }
         );
 
-        const json = result?.data;
+        const json = result?.data as any;
 
         if (json?.data?.shop?.myshopifyDomain) {
           setShopDomain(json.data.shop.myshopifyDomain);

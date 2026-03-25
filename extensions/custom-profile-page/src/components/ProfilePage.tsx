@@ -1,13 +1,10 @@
-import { Fragment } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
 import navConfig from "../navigation.json";
 import { type Order, type Money } from "../interface";
-import { loadCustomerData, reorder} from "../loadCustomerData";
-import { fetchWithRetry, APP_URL, API_VERSION, getNumericId, fetchSmilePoints } from "../helpers";
-
-
-
+import { loadCustomerData, reorder } from "../loadCustomerData";
+import { type SmilePointsResponse } from "../interface";
+import { getNumericId, fetchSmilePoints } from "../helpers";
 
 interface ProfilePageProps {
   api: any;
@@ -67,7 +64,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         setPointsLoading(true);
         try {
             const sessionToken = await api.sessionToken.get();
-            const data = await fetchSmilePoints(sessionToken, currentShopDomain);
+            const data = await fetchSmilePoints(sessionToken, currentShopDomain) as SmilePointsResponse;
             if (data?.customer) {
                 setPoints(data.customer.points_balance);
             }
@@ -92,7 +89,8 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
     setReorderLoadingId(orderId);
     try {
         const sessionToken = await api.sessionToken.get();
-        const { redirectUrl } = await reorder(orderId, sessionToken, currentShopDomain);
+        const result = await reorder(orderId, sessionToken, currentShopDomain) as { redirectUrl?: string };
+        const { redirectUrl } = result;
         if (redirectUrl) {
            api.navigation.navigate(redirectUrl);
         }
@@ -129,9 +127,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
               }
 
               let href = link.href;
-              // Add prescription ID to details link
               if (link.label === "Prescription Details" && customer?.prescription?.id) {
-                // Pass only the numeric ID to keep the URL clean
                 href = `${href}/${getNumericId(customer.prescription.id)}`;
               }
               
@@ -141,9 +137,6 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                 } else if (link.label === "Review Us on Facebook" && settings?.cb_review_facebook_url) {
                   href = settings.cb_review_facebook_url as string;
                 } else if (link.label === "Review Products") {
-                  if (settings?.cb_review_products_url) {
-                      href = settings.cb_review_products_url as string;
-                  }
                   return (
                     <s-stack gap="small" key={index}>
                       <s-text tone="neutral" type="strong">{link.label}</s-text>
@@ -153,12 +146,12 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                         orders[0].lineItems.map((item: any) => (
                           <s-grid key={item.id} gridTemplateColumns="auto 1fr auto" alignItems="center" gap="small">
                             {item.image && (
-                              <s-product-thumbnail
+                              <s-image
                                 src={item.image.url}
                                 alt={item.name}
                               />
                             )}
-                            <s-text type="small">{item.name}</s-text>
+                            <s-paragraph tone="neutral">{item.name}</s-paragraph>
                             <s-clickable href={`https://${currentShopDomain}/products/${item.productHandle || getNumericId(item.productId ?? undefined)}#reviews`}>
                               <s-text tone="info">Review</s-text>
                             </s-clickable>
@@ -171,7 +164,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                   );
                 }
               }
- 
+
               if (navSection.id === "medical-aid" && customer) {
                 if (link.label === "Medical Aid Number") {
                   dynamicSub = customer.medicalAidNumber || "--";
@@ -220,10 +213,6 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           </s-grid>
         </s-banner>
         
-
-
-
-        
         {loading ? (
              <s-box padding="base" background="base" borderRadius="base">
                 <s-stack gap="base">
@@ -247,7 +236,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                     ))}
                 </s-stack>
             </s-box>
-        )        : !loading && orders.length > 0 ? (
+        ) : !loading && orders.length > 0 ? (
             <s-box padding="base" background="base" borderRadius="base">
                 <s-stack gap="base">
                     <s-heading>Recent Orders</s-heading>
@@ -268,16 +257,16 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                     
                                     <s-stack gap="small-100">
                                         <s-text type="strong">{order.name || ""}</s-text>
-                                        <s-text tone="neutral" type="small">
+                                        <s-paragraph tone="neutral">
                                             {(order.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0), 0)} items
-                                        </s-text>
+                                        </s-paragraph>
                                     </s-stack>
                 
                                     <s-stack gap="small-100">
                                         <s-text type="strong">{displayStatus}</s-text>
-                                        <s-text tone="neutral" type="small">
+                                        <s-paragraph tone="neutral">
                                             {order.processedAt ? new Date(order.processedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ""}
-                                        </s-text>
+                                        </s-paragraph>
                                     </s-stack>
                 
                                     <s-text type="strong">
@@ -352,21 +341,18 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                       <s-box key={item.id} padding="small" borderRadius="base" background="base" border="base">
                         <s-grid gridTemplateColumns="auto 1fr" gap="base" alignItems="center">
                           {item.image && (
-                            <s-product-thumbnail
-                              src={item.image.url}
-                              alt={item.name}
-                            />
+                            <s-image src={item.image.url} alt={item.name} />
                           )}
                           <s-stack gap="small">
                             <s-text type="strong">{item.name}</s-text>
-                            {item.variantTitle && <s-text type="small" tone="neutral">{item.variantTitle}</s-text>}
+                            {item.variantTitle && <s-paragraph tone="neutral">{item.variantTitle}</s-paragraph>}
                             
                             {item.variantOptions && item.variantOptions.length > 0 && (
                               <s-stack gap="small">
                                 {item.variantOptions.map((opt, idx) => (
-                                  <s-text key={idx} type="small" tone="neutral">
+                                  <s-paragraph key={idx} tone="neutral">
                                     {opt.name}: {opt.value}
-                                  </s-text>
+                                  </s-paragraph>
                                 ))}
                               </s-stack>
                             )}
@@ -374,9 +360,9 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                             {item.customAttributes && item.customAttributes.length > 0 && (
                               <s-stack gap="small">
                                 {item.customAttributes.map((attr, idx) => (
-                                  <s-text key={idx} type="small" tone="neutral">
+                                  <s-paragraph key={idx} tone="neutral">
                                     {attr.key}: {attr.value}
-                                  </s-text>
+                                  </s-paragraph>
                                 ))}
                               </s-stack>
                             )}
@@ -403,15 +389,15 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
               <s-box padding="base" background="subdued" borderRadius="base">
                 <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base">
                   <s-stack gap="small">
-                    <s-text tone="neutral" type="small">Prescription ID</s-text>
+                    <s-text tone="neutral">Prescription ID</s-text>
                     <s-text type="strong">#{getNumericId(customer.prescription.id)}</s-text>
                   </s-stack>
                   <s-stack gap="small">
-                    <s-text tone="neutral" type="small">Expiry Date</s-text>
+                    <s-text tone="neutral">Expiry Date</s-text>
                     <s-text type="strong">{customer.prescription.expiry_date || "No Expiry"}</s-text>
                   </s-stack>
                   <s-stack gap="small">
-                    <s-text tone="neutral" type="small">Status</s-text>
+                    <s-text tone="neutral">Status</s-text>
                     <s-badge tone={customer.prescription.status?.toLowerCase() === 'active' ? 'auto' : 'neutral'}>
                       {customer.prescription.status || "Active"}
                     </s-badge>
@@ -421,7 +407,6 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
             </s-stack>
           </s-box>
         )}
-
 
         <s-query-container>
           <s-grid
@@ -436,4 +421,3 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
     </s-page>
     );
 }
-

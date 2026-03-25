@@ -165,3 +165,31 @@ export interface GraphQLResponse<T> {
   errors?: GraphQLError[];
   extensions?: any;
 }
+
+export interface RetryConfig {
+  retries?: number
+  baseDelayMs?: number
+  maxDelayMs?: number
+  timeoutMs?: number
+  log?: boolean
+}
+
+export interface ShopifyFetchResult<T = unknown> {
+  data: T
+  ok: boolean
+  status: number
+}
+
+export interface ShopifyThrottleStatus {
+  maximumAvailable: number
+  currentlyAvailable: number
+  restoreRate: number
+}
+
+export interface ShopifyCostExtension {
+  requestedQueryCost: number
+  actualQueryCost: number
+  throttleStatus: ShopifyThrottleStatus
+}
+
+

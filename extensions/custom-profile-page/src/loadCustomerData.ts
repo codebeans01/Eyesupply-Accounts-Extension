@@ -127,7 +127,7 @@ export async function loadCustomerData(
       });
 
       if (backendResponse.ok) {
-        prescriptions = backendResponse.data.prescriptions || [];
+        prescriptions = (backendResponse.data as any).prescriptions || [];
       }
     } catch (err) {
       console.error('[loadCustomerData] Backend fetch error for prescriptions:', err);
@@ -218,7 +218,7 @@ export async function loadCustomerData(
       });
 
       if (productResponse.ok) {
-        const handleMap = productResponse.data.products || {};
+        const handleMap = (productResponse.data as any).products || {};
         orders.forEach(order => {
           order.lineItems.forEach(li => {
             if (li.productId && handleMap[li.productId]) {
@@ -308,7 +308,7 @@ export async function loadPrescriptions(limit: number = 10): Promise<{ prescript
         throw new Error(`Backend returned status ${backendResponse.status}`);
     }
 
-    const data = backendResponse.data;
+    const data = backendResponse.data as any;
     const prescriptions = data.prescriptions || [];
     
     // Get pageInfo from the first list metafield that has it (if any)
@@ -339,7 +339,7 @@ export async function reorder(orderId: string, sessionToken: string, shopDomain:
   );
 
   if (!result.ok) {
-    const errorData = result.data;
+    const errorData = result.data as any;
     const errorMsg = errorData?.error?.message || errorData?.message || errorData?.error || 'Unknown error';
     throw new Error(errorMsg);
   }
@@ -411,7 +411,7 @@ export async function fetchAdditionalPrescriptions(cursor: string, limit: number
     if (!backendResponse.ok) throw new Error(`Backend returned status ${backendResponse.status}`);
 
     return {
-      prescriptions: backendResponse.data.prescriptions || [],
+      prescriptions: (backendResponse.data as any).prescriptions || [],
       pageInfo,
     };
   } catch (err) {

@@ -1,152 +1,408 @@
+import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult } from "./interface";
+
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://tuner-ward-curious-continent.trycloudflare.com";
+export const APP_URL = "https://newcastle-crucial-greatest-threatening.trycloudflare.com";
+
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
 
 /**
- * Fetches data with retry logic for Shopify Customer Account API.
- * Handles both HTTP 429 and GraphQL "THROTTLED" errors.
+ * Fixed retry schedule used by large Shopify apps
  */
-export async function fetchWithRetry<T = any>(
-  url: string,
-  options: RequestInit,
-  {
-    retries = 5,
-    baseDelayMs = 300,
-  }: { retries?: number; baseDelayMs?: number } = {},
-): Promise<{ data: T; ok: boolean; status: number }> {
-  let attempt = 0;
+const RETRY_DELAYS = [
+  10 * SECOND,
+  1 * MINUTE,
+  5 * MINUTE,
+  10 * MINUTE,
+  15 * MINUTE
+];
 
-  while (true) {
-    try {
-      const response = await fetch(url, options);
 
-      if (response.status === 429) {
-        if (attempt < retries) {
-          attempt += 1;
-          const retryAfterSec = parseInt(
-            response.headers.get('Retry-After') || '2',
-            10,
-          );
-          const waitMs = retryAfterSec * 5000;
-          console.warn(
-            `[Extension] Rate limited (429). Retrying after ${waitMs}ms (attempt ${attempt}/${retries})...`,
-          );
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-          continue;
-        }
-        throw new Error('Maximum retries reached for HTTP 429 throttling.');
-      }
+/* =========================================================
+   Types
+   ========================================================= */
 
-      // Try to parse JSON safely (in case it's not JSON)
-      let json: any;
-      let text: string | null = null;
-      try {
-        text = await response.text();
-        json = text ? JSON.parse(text) : {};
-      } catch {
-        json = { raw: text };
-      }
+export interface GraphQLError {
+  message?: string
+  extensions?: {
+    code?: string
+  }
+}
 
-      const graphqlErrors = json?.errors ?? [];
-      const isGraphqlThrottled = graphqlErrors.some(
-        (err: any) =>
-          err?.extensions?.code === 'THROTTLED' ||
-          err?.message === 'Throttled',
-      );
+export interface GraphQLResponse {
+  data?: unknown
+  errors?: GraphQLError[]
+  extensions?: {
+    cost?: ShopifyCostExtension
+  }
+}
 
-      const isServerError =
-        response.status >= 500 && response.status <= 599;
 
-      // 2) GraphQL-level throttling
-      if (isGraphqlThrottled) {
-        if (attempt < retries) {
-          attempt += 1;
-          const restoreRate =
-            json.extensions?.cost?.throttleStatus?.restoreRate || 100;
-          // Heuristic: wait based on restoreRate, minimum 1s
-          const waitTime =
-            Math.max(1000, (1000 / restoreRate) * 50) * attempt;
-          console.warn(
-            `[Extension] GraphQL THROTTLED. restoreRate=${restoreRate}. Retrying after ${waitTime}ms (attempt ${attempt}/${retries})...`,
-          );
-          await new Promise((resolve) => setTimeout(resolve, waitTime));
-          continue;
-        }
-        throw new Error('Maximum retries reached for GraphQL throttling.');
-      }
+/* =========================================================
+   Utilities
+   ========================================================= */
 
-      if (isServerError) {
-        if (attempt < retries) {
-          attempt += 1;
-          const waitTime = baseDelayMs * attempt;
-          console.warn(
-            `[Extension] Server error ${response.status}. Retrying after ${waitTime}ms (attempt ${attempt}/${retries})...`,
-          );
-          await new Promise((resolve) => setTimeout(resolve, waitTime));
-          continue;
-        }
-        throw new Error(
-          `Maximum retries reached for server errors. Last status: ${response.status}`,
-        );
-      }
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
-      return {
-        data: json,
-        ok: response.ok,
-        status: response.status
-      };
-    } catch (err) {
-      // Network error (fetch throw) – retry
-      if (attempt < retries) {
-        attempt += 1;
-        const waitTime = baseDelayMs * attempt;
-        console.warn(
-          `[Extension] Network error: ${(err as Error).message}. Retrying after ${waitTime}ms (attempt ${attempt}/${retries})...`,
-        );
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-        continue;
-      }
-      throw err;
-    }
+function safeJsonParse(text: string | null): unknown {
+  try {
+    return text ? JSON.parse(text) : {}
+  } catch {
+    return { raw: text }
   }
 }
 
 /**
- * Extracts the numeric ID from a Shopify GID.
- * e.g. "gid://shopify/ProductVariant/12345678" -> "12345678"
+ * Retry delay with jitter
  */
-export function getNumericId(gid: string | undefined): string {
-  if (!gid) return "";
-  const parts = gid.split("/");
-  return parts[parts.length - 1];
+function getRetryDelay(
+  attempt: number,
+  base: number,
+  max: number
+) {
+  let delay: number
+
+  if (attempt >= 1 && attempt <= RETRY_DELAYS.length) {
+    delay = RETRY_DELAYS[attempt - 1]
+  } else {
+    delay = base * 2 ** attempt
+  }
+
+  const jitter = delay * 0.2 * Math.random()
+
+  return Math.min(delay + jitter, max)
 }
 
 /**
- * Fetches Smile.io loyalty points via the server proxy.
+ * Shopify adaptive throttling
  */
-export async function fetchSmilePoints(sessionToken: string, shopDomain: string) {
-  try {
-    const response = await fetch(`${APP_URL}/api/smile/points`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${sessionToken}`,
-        "x-shop-domain": shopDomain,
-      },
-    });
+function adaptiveThrottleDelay(json: GraphQLResponse): number | null {
 
-    if (!response.ok) {
-        let errorMsg = "Failed to fetch points";
+  const cost = json?.extensions?.cost
+
+  if (!cost) return null
+
+  const {
+    requestedQueryCost,
+    throttleStatus
+  } = cost
+
+  const {
+    currentlyAvailable,
+    restoreRate
+  } = throttleStatus
+
+  if (currentlyAvailable >= requestedQueryCost)
+    return null
+
+  const missing = requestedQueryCost - currentlyAvailable
+
+  const waitMs = (missing / restoreRate) * 1000
+
+  return Math.max(waitMs, 200)
+}
+
+
+/* =========================================================
+   Request Queue (Concurrency Control)
+   ========================================================= */
+
+class RequestQueue {
+
+  private running = 0
+  private queue: (() => Promise<void>)[] = []
+
+  constructor(private concurrency = 5) {}
+
+  async add<T>(task: () => Promise<T>): Promise<T> {
+
+    return new Promise((resolve, reject) => {
+
+      const run = async () => {
+
+        this.running++
+
         try {
-            const errorData = await response.json();
-            errorMsg = errorData.error?.message || errorData.error || errorData.message || errorMsg;
-        } catch (e) {
-            // ignore parse error, use default
+          const result = await task()
+          resolve(result)
+        } catch (err) {
+          reject(err)
         }
-        throw new Error(errorMsg);
+
+        this.running--
+        this.next()
+      }
+
+      this.queue.push(run)
+
+      queueMicrotask(() => this.next())
+    })
+  }
+
+  private next() {
+
+    if (this.running >= this.concurrency)
+      return
+
+    const job = this.queue.shift()
+
+    if (!job) return
+
+    job()
+  }
+}
+
+
+/* =========================================================
+   Per-Shop Queue Manager
+   ========================================================= */
+
+const shopQueues = new Map<string, RequestQueue>()
+
+function getShopQueue(shop: string) {
+
+  if (!shopQueues.has(shop)) {
+    shopQueues.set(shop, new RequestQueue(4))
+  }
+
+  return shopQueues.get(shop)!
+}
+
+
+/* =========================================================
+   Core Shopify Fetch
+   ========================================================= */
+
+export async function fetchShopifyAdaptive<T = unknown>(
+  shop: string,
+  url: string,
+  options: RequestInit,
+  config: RetryConfig = {}
+): Promise<ShopifyFetchResult<T>> {
+
+  const {
+    retries = 5,
+    baseDelayMs = 250,
+    maxDelayMs = 15 * MINUTE,
+    timeoutMs = 30 * SECOND,
+    log = true
+  } = config
+
+  const queue = getShopQueue(shop)
+
+  return queue.add(async () => {
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+
+      const controller = new AbortController()
+
+      const timeout = setTimeout(
+        () => controller.abort(),
+        timeoutMs
+      )
+
+      try {
+
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        })
+
+        clearTimeout(timeout)
+
+        const text = await response.text()
+        const parsed = safeJsonParse(text) as GraphQLResponse
+
+        const graphqlErrors = parsed?.errors ?? []
+
+        const isGraphqlThrottle = graphqlErrors.some(
+          err =>
+            err?.extensions?.code === "THROTTLED" ||
+            err?.message === "Throttled"
+        )
+
+        const isServerError = response.status >= 500
+
+        /* =============================
+           HTTP 429
+        ============================= */
+
+        if (response.status === 429) {
+
+          if (attempt >= retries)
+            throw new Error("Max retries reached (429)")
+
+          const retryAfterHeader =
+            parseInt(response.headers.get("Retry-After") || "0") * 1000
+
+          const delay = Math.max(
+            retryAfterHeader,
+            getRetryDelay(attempt, baseDelayMs, maxDelayMs)
+          )
+
+          if (log)
+            console.warn(`[Shopify Retry] 429 ${shop} wait ${delay}ms`)
+
+          await sleep(delay)
+          continue
+        }
+
+        /* =============================
+           GraphQL Throttle
+        ============================= */
+
+        if (isGraphqlThrottle) {
+
+          if (attempt >= retries)
+            throw new Error("Max retries reached (throttle)")
+
+          const adaptiveDelay = adaptiveThrottleDelay(parsed)
+
+          const delay =
+            adaptiveDelay ??
+            getRetryDelay(attempt, baseDelayMs, maxDelayMs)
+
+          if (log)
+            console.warn(`[Shopify Retry] throttle ${shop} wait ${delay}ms`)
+
+          await sleep(delay)
+          continue
+        }
+
+        /* =============================
+           Server Error
+        ============================= */
+
+        if (isServerError) {
+
+          if (attempt >= retries)
+            throw new Error(`Max retries reached (${response.status})`)
+
+          const delay = getRetryDelay(
+            attempt,
+            baseDelayMs,
+            maxDelayMs
+          )
+
+          if (log)
+            console.warn(`[Shopify Retry] server ${response.status} wait ${delay}ms`)
+
+          await sleep(delay)
+          continue
+        }
+
+        return {
+          data: parsed as T,
+          ok: response.ok,
+          status: response.status
+        }
+
+      } catch (err) {
+
+        clearTimeout(timeout)
+
+        if (err instanceof DOMException && err.name === "AbortError") {
+          throw new Error("Request timeout")
+        }
+
+        if (attempt >= retries)
+          throw err
+
+        const delay = getRetryDelay(
+          attempt,
+          baseDelayMs,
+          maxDelayMs
+        )
+
+        if (log)
+          console.warn(`[Shopify Retry] network error retry in ${delay}ms`)
+
+        await sleep(delay)
+      }
     }
 
-    return await response.json();
+    throw new Error("Unexpected retry exit")
+  })
+}
+
+
+/* =========================================================
+   Legacy Alias
+   ========================================================= */
+
+export async function fetchWithRetry<T = unknown>(
+  url: string,
+  options: RequestInit,
+  config: RetryConfig = {}
+): Promise<ShopifyFetchResult<T>> {
+
+  const shop = new URL(url).hostname
+
+  return fetchShopifyAdaptive<T>(
+    shop,
+    url,
+    options,
+    config
+  )
+}
+
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+
+/**
+ * Extract numeric ID from Shopify GID
+ */
+export function getNumericId(gid?: string): string {
+
+  if (!gid) return ""
+
+  const parts = gid.split("/")
+
+  return parts[parts.length - 1]
+}
+
+
+/**
+ * Fetch Smile.io points
+ */
+export async function fetchSmilePoints(
+  sessionToken: string,
+  shopDomain: string
+) {
+
+  try {
+
+    const response = await fetchWithRetry(`${APP_URL}/api/smile/points`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "x-shop-domain": shopDomain
+      }
+    })
+
+    if (!response.ok) {
+
+      const data = response.data as Record<string, unknown>
+
+      const message =
+        (data?.error as any)?.message ||
+        data?.error ||
+        data?.message ||
+        "Failed to fetch points"
+
+      throw new Error(String(message))
+    }
+
+    return response.data
+
   } catch (error) {
-    console.error("[Extension] Failed to fetch Smile points:", error);
-    return null;
+
+    console.error("[Extension] Failed to fetch Smile points:", error)
+
+    return null
   }
 }

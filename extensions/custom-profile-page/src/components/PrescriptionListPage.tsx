@@ -18,16 +18,16 @@ const DocumentLink = ({ url }: { url: string }) => {
   const isPDF = fileName.toLowerCase().endsWith('.pdf');
   
   return (
-    <s-stack direction="row" gap="extra-small" alignItems="center">
+    <s-stack direction="inline" gap="small-500" alignItems="center">
       {isImage ? (
         <s-box inlineSize="24px" blockSize="24px" borderRadius="small" overflow="hidden">
            <s-image src={url} alt={fileName} />
         </s-box>
       ) : (
-        <s-icon type={isPDF ? "file" : "note"} size="small" tone="neutral" />
+        <s-icon type="clipboard" size="small" tone="neutral" />
       )}
       <s-link href={url} target="_blank">
-        <s-text size="small" tone="info">
+        <s-text tone="info">
           {fileName.length > 25 ? fileName.substring(0, 22) + "..." : fileName}
         </s-text>
       </s-link>
@@ -125,12 +125,12 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
     const isActive = p.status?.toLowerCase() === "active" || p.status?.toLowerCase() === "completed";
     
     return (
-      <Fragment key={p.id}>
+      <>
         <s-grid gridTemplateColumns="1fr 1fr 1fr 1.5fr 1.5fr 1.5fr" gap="base" alignItems="center">
           <s-text type="strong">{`#${numericId}`}</s-text>
           <s-text>{p.expiry_date || "No Expiry"}</s-text>
-          <s-badge tone={isActive ? "success" : "neutral"}>{p.status || "Active"}</s-badge>
-          <s-stack gap="extra-small">
+          <s-badge tone={isActive ? "neutral" : "neutral"}>{p.status || "Active"}</s-badge>
+          <s-stack gap="small-500">
             {(() => {
               const allUrls = [
                 ...(p.image_urls || []),
@@ -147,7 +147,7 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
           <s-text>{p.handle || "N/A"}</s-text>
         </s-grid>
         <s-divider />
-      </Fragment>
+      </>
     );
   };
 
