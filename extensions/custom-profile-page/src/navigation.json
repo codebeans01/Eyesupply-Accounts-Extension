@@ -51,6 +51,16 @@
       ]
     },
     {
+      "id": "rewards",
+      "title": "Rewards",
+      "icon": "gift",
+      "links": [
+        { "label": "Loyalty Points", "dynamicSub": "loyaltyPoints", "href": "#" },
+        { "label": "Referral", "href": "#" },
+        { "label": "How to Redeem Points", "href": "#" }
+      ]
+    },
+     {
       "id": "reviews",
       "title": "Reviews",
       "icon": "star",

@@ -124,6 +124,8 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                 dynamicSub = loading ? "Loading..." : `${orders.length} order${orders.length !== 1 ? "s" : ""}`;
               } else if (link.dynamicSub === "lastOrderName") {
                 dynamicSub = orders.length > 0 ? orders[0].name : "None";
+              } else if (link.dynamicSub === "loyaltyPoints") {
+                dynamicSub = pointsLoading ? "Loading..." : points !== null ? `${points} pts` : "0 pts";
               }
 
               let href = link.href;
@@ -157,7 +159,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                               />
                             )}
                             <s-text type="small">{item.name}</s-text>
-                            <s-clickable href={`https://${currentShopDomain}/products/${getNumericId(item.productId ?? undefined)}#reviews`}>
+                            <s-clickable href={`https://${currentShopDomain}/products/${item.productHandle || getNumericId(item.productId ?? undefined)}#reviews`}>
                               <s-text tone="info">Review</s-text>
                             </s-clickable>
                           </s-grid>
@@ -420,39 +422,6 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           </s-box>
         )}
 
-        <s-query-container>
-          <s-grid
-            id="quick-info-row"
-            gridTemplateColumns="1fr"
-            gap="base"
-          >
-          <s-box padding="base" background="base" borderRadius="base" border="base">
-            <s-stack gap="base">
-              <s-grid gridTemplateColumns="1fr auto" alignItems="center">
-                <s-heading>Reward Status</s-heading>
-              </s-grid>
-              <s-box padding="base" background="base" borderRadius="base">
-                <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base">
-                  <s-stack gap="small" direction="inline" alignItems="center" justifyContent="space-between">
-                    <s-text tone="neutral" type="small">Reward Status</s-text>
-                    <s-text type="strong">
-                      {pointsLoading ? (
-                          <s-spinner accessibilityLabel="Loading points" />
-                      ) : points !== null ? (
-                          `${points} pts`
-                      ) : (
-                          "0 pts"
-                      )}
-                    </s-text>
-                  </s-stack>
-                </s-grid>
-              </s-box>
-            </s-stack>
-          </s-box>
-          
-          
-          </s-grid>
-        </s-query-container>
 
         <s-query-container>
           <s-grid

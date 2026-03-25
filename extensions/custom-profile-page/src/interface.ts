@@ -11,6 +11,7 @@ export interface LineItem {
   variantId: string | null;
   sku: string | null;
   productId: string | null;
+  productHandle?: string | null;
   image: {
     url: string;
   } | null;

@@ -197,6 +197,41 @@ export async function loadCustomerData(
   }));
 
   const myshopifyDomain = json.data?.shop?.myshopifyDomain;
+
+  // Extract unique product IDs from orders
+  const productIds = Array.from(new Set(
+    orders.flatMap(order => order.lineItems.map(li => li.productId)).filter(Boolean)
+  )) as string[];
+
+  if (productIds.length > 0) {
+    try {
+      const api = (globalThis as any).shopify;
+      const sessionToken = await api.sessionToken.get();
+      
+      const productResponse = await fetchWithRetry(`${APP_URL}/api/products?ids=${encodeURIComponent(productIds.join(','))}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`,
+          'x-shop-domain': myshopifyDomain || "",
+        },
+      });
+
+      if (productResponse.ok) {
+        const handleMap = productResponse.data.products || {};
+        orders.forEach(order => {
+          order.lineItems.forEach(li => {
+            if (li.productId && handleMap[li.productId]) {
+              li.productHandle = handleMap[li.productId];
+            }
+          });
+        });
+      }
+    } catch (err) {
+      console.error('[loadCustomerData] Failed to fetch product handles:', err);
+    }
+  }
+
   return {
     customer: customerSummary,  
     orders,   
