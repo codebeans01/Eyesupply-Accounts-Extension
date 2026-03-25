@@ -4,7 +4,7 @@
    ========================================================= */
 
 export const API_VERSION = "2026-01"
-export const APP_URL = "https://newcastle-crucial-greatest-threatening.trycloudflare.com";
+export const APP_URL = "https://oak-invitation-rating-wrote.trycloudflare.com";
 
 /* =========================================================
    Types
@@ -441,7 +441,8 @@ export async function fetchWithRetry<T = any>(
 }
 
 export interface ReorderResponse {
-  redirectUrl: string
+  redirectUrl: string | null;
+  missingItems?: { name: string; image?: string }[];
 }
 
 export async function reorder(

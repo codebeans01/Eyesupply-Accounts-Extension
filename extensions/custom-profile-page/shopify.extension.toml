@@ -24,16 +24,19 @@ network_access = true
   key = "cb_pagination_prev_text"
   type = "single_line_text_field"
   name = "Previous Button Text"
+  default = "Previous"
 
   [[extensions.settings.fields]]
   key = "cb_pagination_next_text"
   type = "single_line_text_field"
   name = "Next Button Text"
+  default = "Next"
 
   [[extensions.settings.fields]]
   key = "cb_pagination_enabled"
   type = "boolean"
   name = "Enable Pagination"
+  default = true
 
   [[extensions.settings.fields]]
   key = "cb_welcome_image_url"
@@ -46,16 +49,48 @@ network_access = true
   type = "single_line_text_field"
   name = "Google Review URL"
   description = "URL for Google reviews"
+  default = "https://g.page/r/11164121505097059976/review"
 
   [[extensions.settings.fields]]
   key = "cb_review_facebook_url"
   type = "single_line_text_field"
   name = "Facebook Review URL"
   description = "URL for Facebook reviews"
+  default = "https://www.facebook.com/eyesupply/reviews"
 
   [[extensions.settings.fields]]
-  key = "cb_review_products_url"
+  key = "cb_review_target"
   type = "single_line_text_field"
-  name = "Product Review URL"
-  description = "URL for Product reviews"
+  name = "Product Review Target"
+  description = "Target for product reviews"
+  default = "#reviews"
 
+  [[extensions.settings.fields]]
+  key = "cb_support_faq_url"
+  type = "single_line_text_field"
+  name = "Support FAQ URL"
+  description = "URL for Support FAQ"
+  default = "https://support.eyewearsystem.com/hc/en-us"
+
+  [[extensions.settings.fields]]
+  key = "cb_support_contact_url"
+  type = "single_line_text_field"
+  name = "Support Contact URL"
+  description = "URL for Support Contact"
+  default = "https://support.eyewearsystem.com/hc/en-us/requests/new"
+
+
+  [[extensions.settings.fields]]
+  key = "cb_reward_refferal_url"
+  type = "single_line_text_field"
+  name = "Refferal URL"
+  description = "URL for Reward Refferal"
+  default = "https://support.eyewearsystem.com/hc/en-us/requests/new"
+
+
+  [[extensions.settings.fields]]
+  key = "cb_reward_redeem_points_url"
+  type = "single_line_text_field"
+  name = "Redeem Points URL"
+  description = "URL for Redeem Points"
+  default = "https://support.eyewearsystem.com/hc/en-us/requests/new"

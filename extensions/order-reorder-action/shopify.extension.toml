@@ -10,6 +10,10 @@ uid = "b41be001-abb3-5081-97d2-5367889359b89767f6e7"
 module = "./src/index.tsx"
 target = "customer-account.order.action.menu-item.render"
 
+[[extensions.targeting]]
+module = "./src/action-modal.tsx"
+target = "customer-account.order.action.render"
+
 [extensions.capabilities]
 api_access = true
 network_access = true

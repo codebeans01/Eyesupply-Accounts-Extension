@@ -131,6 +131,22 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                 href = `${href}/${getNumericId(customer.prescription.id)}`;
               }
               
+              if (navSection.id === "rewards") {
+                if (link.label === "Referral" && settings?.cb_reward_refferal_url) {
+                  href = settings.cb_reward_refferal_url as string;
+                } else if (link.label === "How to Redeem Points" && settings?.cb_reward_redeem_points_url) {
+                  href = settings.cb_reward_redeem_points_url as string;
+                }
+              }
+
+              if (navSection.id === "support") {
+                if (link.label === "FAQs" && settings?.cb_support_faq_url) {
+                  href = settings.cb_support_faq_url as string;
+                } else if (link.label === "Contact Us" && settings?.cb_support_contact_url) {
+                  href = settings.cb_support_contact_url as string;
+                }
+              }
+              
               if (navSection.id === "reviews") {
                 if (link.label === "Review Us on Google" && settings?.cb_review_google_url) {
                   href = settings.cb_review_google_url as string;
@@ -152,7 +168,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                               />
                             )}
                             <s-paragraph tone="neutral">{item.name}</s-paragraph>
-                            <s-clickable href={`https://${currentShopDomain}/products/${item.productHandle || getNumericId(item.productId ?? undefined)}#reviews`}>
+                            <s-clickable href={`https://${currentShopDomain}/products/${item.productHandle || getNumericId(item.productId ?? undefined)}${settings?.cb_review_target || "#reviews"}`}>
                               <s-text tone="info">Review</s-text>
                             </s-clickable>
                           </s-grid>
@@ -177,11 +193,17 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                 }
               }
 
+              const isClickable = href && href !== "#" && navSection.id !== "medical-aid" && link.label !== "Loyalty Points";
+
               return (
                 <s-grid key={index} gridTemplateColumns="1fr auto" alignItems="center">
-                   <s-clickable href={href}>
-                     <s-text tone="info">{link.label}</s-text>
-                   </s-clickable>
+                   {isClickable ? (
+                     <s-clickable href={href}>
+                       <s-text tone="info">{link.label}</s-text>
+                     </s-clickable>
+                   ) : (
+                     <s-text tone="neutral">{link.label}</s-text>
+                   )}
                    {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
                 </s-grid>
               );
@@ -216,9 +238,9 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         {loading ? (
              <s-box padding="base" background="base" borderRadius="base">
                 <s-stack gap="base">
-                    <s-heading>Ongoing Order Status</s-heading>
+                    <s-heading>Orders</s-heading>
                     {[1, 2, 3].map((i) => (
-                        <s-box key={i} border="base" padding="base" borderRadius="base">
+                        <s-box key={i} border="base" padding="base" borderRadius="large">
                             <s-grid gridTemplateColumns="auto 1fr 1fr auto auto" alignItems="center" gap="base">
                                 <s-box background="subdued" blockSize="50px" inlineSize="50px" borderRadius="base" />
                                 <s-stack gap="small-100">
@@ -239,13 +261,18 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         ) : !loading && orders.length > 0 ? (
             <s-box padding="base" background="base" borderRadius="base">
                 <s-stack gap="base">
-                    <s-heading>Recent Orders</s-heading>
+                    <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+                        <s-heading>Orders</s-heading>
+                        <s-button variant="secondary">
+                            <s-icon type="filter" tone="neutral" />
+                        </s-button>
+                    </s-grid>
                     {orders.slice(0, 3).map((order) => {
                         const fulfillmentStatus = (order.fulfillmentStatus || 'Confirmed');
                         const displayStatus = fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase();
                         
                         return (
-                            <s-box key={order.id} padding="base" background="base" borderRadius="base" border="base">
+                            <s-box key={order.id} padding="base" background="base" borderRadius="large" border="base">
                                 <s-grid gridTemplateColumns="auto 1fr 1fr auto auto" alignItems="center" gap="base">
                                     <s-box borderRadius="base" overflow="hidden" inlineSize="50px" blockSize="50px">
                                         {order.lineItems[0]?.image ? (
@@ -270,9 +297,9 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                     </s-stack>
                 
                                     <s-text type="strong">
-                                        {order.totalPrice ? api.i18n.formatCurrency(Number(order.totalPrice.amount), {
+                                        {order.totalPrice ? `${api.i18n.formatCurrency(Number(order.totalPrice.amount), {
                                             currency: order.totalPrice.currencyCode,
-                                        }) : ""}
+                                        })} ${order.totalPrice.currencyCode}` : ""}
                                     </s-text>
                 
                                     <s-box>
@@ -281,7 +308,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                         </s-button>
                                         <s-popover id={`menu-${getNumericId(order.id)}`}>
                                             <s-stack padding="base" gap="small">
-                                                 <s-button variant="secondary" href={`shopify://customer-account/orders/${getNumericId(order.id)}`}>View order details</s-button>
+                                                 <s-button variant="secondary" href={`shopify://customer-account/orders/${getNumericId(order.id)}`}>View Order</s-button>
                                                  <s-button variant="secondary" onClick={() => handleReorder(order.id)} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
                                                      {reorderLoadingId === order.id ? "" : "Reorder"}
                                                  </s-button>
