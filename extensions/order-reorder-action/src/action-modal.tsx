@@ -1,16 +1,14 @@
 import '@shopify/ui-extensions/preact';
 import { render } from "preact";
 import { useState, useEffect } from "preact/hooks";
-import { fetchWithRetry, reorder, API_VERSION, APP_URL } from "./helpers";
-import { SHOP_DOMAIN_QUERY } from "./graphql-query";
+import { reorder, fetchShopDomain } from "./helpers";
+import { MissingItem } from './reorder.helpers';
+import { fetchReorderResult } from './reorder.service';
 
-/**
- * ActionModal component for customer-account.order.action.render target.
- * Shows a popup if items are missing, otherwise redirects to cart.
- */
 function ActionModal() {
+
   const [loading, setLoading] = useState(true);
-  const [missingItems, setMissingItems] = useState<{ name: string; image?: string }[] | null>(null);
+  const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
@@ -19,54 +17,51 @@ function ActionModal() {
   useEffect(() => {
     async function runReorder() {
       try {
-        const orderId = api?.orderId;
+        const orderId: string = api?.orderId;
         if (!orderId) throw new Error("Order ID not found");
 
-        const sessionToken = await api?.sessionToken?.get();
-        if (!sessionToken) throw new Error("Access denied");
+        const shopDomain = await fetchShopDomain();
 
-        // Fetch shop domain
-        const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
-        const response = await fetchWithRetry(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: SHOP_DOMAIN_QUERY }),
-        });
+        const { redirectUrl: url, missingItems: missing } = await fetchReorderResult(
+          orderId,
+          shopDomain
+        );
 
-        const shopDomain = response.data?.data?.shop?.myshopifyDomain;
-        if (!shopDomain) throw new Error("Shop domain error");
+        setRedirectUrl(url);
+        setMissingItems(missing);
+        setLoading(false);
 
-        // Call backend reorder API
-        const { redirectUrl: url, missingItems: missing } = await reorder(orderId, sessionToken, shopDomain);
-        
-        if (missing && missing.length > 0) {
-          setMissingItems(missing);
-          if (url) setRedirectUrl(url);
-          setLoading(false);
-        } else if (url) {
-          setRedirectUrl(url);
-          setLoading(false);
-          // Attempt automatic navigation
+        if (!missing.length && url) {
           if (api?.navigation?.navigate) {
-            console.log("[ActionModal] Redirecting to:", url);
             api.navigation.navigate(url);
+          } else {
+            window.location.href = url;
           }
-        } else {
-          throw new Error("No cart link generated");
+          
+          setTimeout(() => api?.close?.(), 5000);
         }
 
-      } catch (err) {
+      } catch (err: any) {
         console.error("[ActionModal] Reorder error:", err);
-        setError((err as Error).message || "Failed to process reorder");
+        setError(err?.message ?? "Failed to process reorder");
         setLoading(false);
       }
     }
 
     runReorder();
-  }, [api]);
+  }, []);
 
-  const handleClose = () => {
-    api?.close();
+  const handleClose = () => api?.close?.();
+
+  const handleProceed = () => {
+    if (redirectUrl) {
+      if (api?.navigation?.navigate) {
+        api.navigation.navigate(redirectUrl);
+      } else {
+        window.location.href = redirectUrl;
+      }
+      setTimeout(() => api?.close?.(), 5000);
+    }
   };
 
   if (loading) {
@@ -101,7 +96,14 @@ function ActionModal() {
             All items are available and ready to reorder!
           </s-banner>
           <s-text>Click below to go to your cart if you aren't redirected automatically.</s-text>
-          <s-button slot="primary-action" onClick={() => api?.navigation?.navigate?.(redirectUrl)}>
+          <s-button slot="primary-action" onClick={() => {
+            if (api?.navigation?.navigate) {
+              api.navigation.navigate(redirectUrl);
+            } else {
+              window.location.href = redirectUrl;
+            }
+            setTimeout(() => handleClose(), 5000);
+          }}>
             Go to Cart
           </s-button>
           <s-button slot="secondary-action" onClick={handleClose}>
@@ -140,7 +142,18 @@ function ActionModal() {
           You can still find the other items in your cart.
         </s-text>
 
-        <s-button slot="primary-action" onClick={() => redirectUrl ? api?.navigation?.navigate?.(redirectUrl) : handleClose()}>
+        <s-button slot="primary-action" onClick={() => {
+          if (redirectUrl) {
+            if (api?.navigation?.navigate) {
+              api.navigation.navigate(redirectUrl);
+            } else {
+              window.location.href = redirectUrl;
+            }
+            setTimeout(() => handleClose(), 5000);
+          } else {
+            handleClose();
+          }
+        }}>
           {redirectUrl ? "Go to Cart" : "Got it"}
         </s-button>
         <s-button slot="secondary-action" onClick={handleClose}>Close</s-button>

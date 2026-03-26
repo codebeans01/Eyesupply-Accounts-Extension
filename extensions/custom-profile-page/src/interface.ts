@@ -192,4 +192,15 @@ export interface ShopifyCostExtension {
   throttleStatus: ShopifyThrottleStatus
 }
 
+export interface MissingItem {
+  name: string;
+  image?: string;
+}
+
+export interface ReorderResult {
+  redirectUrl: string | null;
+  missingItems: MissingItem[];
+}
+
+
 

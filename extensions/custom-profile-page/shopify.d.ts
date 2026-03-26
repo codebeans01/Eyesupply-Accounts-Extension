@@ -43,7 +43,19 @@ declare module './src/loadCustomerData.ts' {
 }
 
 //@ts-ignore
+declare module './src/reorder.service.ts' {
+  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
 declare module './src/graphql-query.ts' {
+  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
+declare module './src/reorder.helpers.ts' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };
 }

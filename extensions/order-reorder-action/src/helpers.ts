@@ -3,8 +3,10 @@
    Production Grade
    ========================================================= */
 
+import { SHOP_DOMAIN_QUERY } from "./graphql-query";
+
 export const API_VERSION = "2026-01"
-export const APP_URL = "https://oak-invitation-rating-wrote.trycloudflare.com";
+export const APP_URL = "https://cam-containing-combine-disable.trycloudflare.com";
 
 /* =========================================================
    Types
@@ -479,4 +481,20 @@ export async function reorder(
   }
 
   return result.data
+}
+
+
+export async function fetchShopDomain(): Promise<string> {
+  const response = await fetch(
+    `shopify://customer-account/api/${API_VERSION}/graphql.json`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: SHOP_DOMAIN_QUERY }),
+    }
+  );
+  const json = await response.json();
+  const domain = json.data?.shop?.myshopifyDomain;
+  if (!domain) throw new Error("Shop domain not found");
+  return domain;
 }

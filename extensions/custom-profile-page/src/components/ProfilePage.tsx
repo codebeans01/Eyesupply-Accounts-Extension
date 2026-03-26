@@ -1,8 +1,9 @@
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
 import navConfig from "../navigation.json";
-import { type Order, type Money } from "../interface";
-import { loadCustomerData, reorder } from "../loadCustomerData";
+import { type Order, type Money, type MissingItem } from "../interface";
+import { loadCustomerData } from "../loadCustomerData";
+import { fetchReorderResult } from "../reorder.service";
 import { type SmilePointsResponse } from "../interface";
 import { getNumericId, fetchSmilePoints } from "../helpers";
 
@@ -21,6 +22,9 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   const [points, setPoints] = useState<number | null>(null);
   const [pointsLoading, setPointsLoading] = useState(false);
   const [reorderLoadingId, setReorderLoadingId] = useState<string | null>(null);
+  const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
+  const [reorderRedirectUrl, setReorderRedirectUrl] = useState<string | null>(null);
+  const [showReorderWarning, setShowReorderWarning] = useState(false);
 
   if (!api) {
     return null;
@@ -85,14 +89,23 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   }, [api.settings]);
 
   const handleReorder = async (orderId: string) => {
+    console.log("[ProfilePage] handleReorder clicked with orderId:", orderId);
     if (!currentShopDomain) return;
     setReorderLoadingId(orderId);
+    setError(null);
+    setShowReorderWarning(false);
+    
     try {
-        const sessionToken = await api.sessionToken.get();
-        const result = await reorder(orderId, sessionToken, currentShopDomain) as { redirectUrl?: string };
-        const { redirectUrl } = result;
-        if (redirectUrl) {
-           api.navigation.navigate(redirectUrl);
+        const { redirectUrl, missingItems: missing } = await fetchReorderResult(orderId, currentShopDomain);
+        
+        setReorderRedirectUrl(redirectUrl);
+        setMissingItems(missing);
+
+        if (missing.length > 0) {
+            setShowReorderWarning(true);
+            api.toast?.show("Some items are unavailable");
+        } else if (redirectUrl) {
+            api.navigation.navigate(redirectUrl);
         }
     } catch (err) {
         console.error("Reorder failed", err);
@@ -234,6 +247,53 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
             </s-box>
           </s-grid>
         </s-banner>
+
+        {showReorderWarning && (
+          <s-box paddingBlockEnd="base">
+             <s-banner tone="warning" onDismiss={() => setShowReorderWarning(false)}>
+                <s-stack gap="base">
+                    <s-text type="strong">Some items are unavailable</s-text>
+                    <s-text tone="neutral">
+                        The following products from your previous order are no longer available and were skipped:
+                    </s-text>
+                    <s-stack gap="small">
+                        {missingItems.map((item, i) => (
+                        <s-box key={i} padding="small" background="subdued" borderRadius="base" border="base">
+                            <s-grid gridTemplateColumns="auto 1fr" gap="small" alignItems="center">
+                            {item.image ? (
+                                <s-box inlineSize="40px" blockSize="40px" borderRadius="small" overflow="hidden">
+                                <s-image src={item.image} alt={item.name} />
+                                </s-box>
+                            ) : (
+                                <s-icon type="alert-triangle" size="small" tone="neutral" />
+                            )}
+                            <s-text type="strong">{item.name}</s-text>
+                            </s-grid>
+                        </s-box>
+                        ))}
+                    </s-stack>
+                    <s-stack direction="inline" gap="small">
+                        {reorderRedirectUrl && (
+                            <s-button
+                                variant="primary"
+                                onClick={() => {
+                                    if (reorderRedirectUrl) {
+                                        api.navigation.navigate(reorderRedirectUrl);
+                                    }
+                                    setShowReorderWarning(false);
+                                }}
+                            >
+                                Go to Cart
+                            </s-button>
+                        )}
+                        <s-button variant="secondary" onClick={() => setShowReorderWarning(false)}>
+                            Close
+                        </s-button>
+                    </s-stack>
+                </s-stack>
+            </s-banner>
+          </s-box>
+        )}
         
         {loading ? (
              <s-box padding="base" background="base" borderRadius="base">
@@ -309,7 +369,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                         <s-popover id={`menu-${getNumericId(order.id)}`}>
                                             <s-stack padding="base" gap="small">
                                                  <s-button variant="secondary" href={`shopify://customer-account/orders/${getNumericId(order.id)}`}>View Order</s-button>
-                                                 <s-button variant="secondary" onClick={() => handleReorder(order.id)} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
+                                                 <s-button variant="secondary" onClick={() => { console.log("[UI] Clicking reorder for order:", order.id, order.name); handleReorder(order.id); }} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
                                                      {reorderLoadingId === order.id ? "" : "Reorder"}
                                                  </s-button>
                                             </s-stack>

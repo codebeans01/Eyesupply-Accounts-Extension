@@ -101,6 +101,7 @@ export const GET_PRESCRIPTIONS_PAGINATED = `
   }
 `;
 
+
 export const MEDIA_DETAILS_QUERY = `
   query GetMediaDetails($ids: [ID!]!) {
     nodes(ids: $ids) {
@@ -119,3 +120,22 @@ export const MEDIA_DETAILS_QUERY = `
     }
   }
 `;
+
+export const ORDER_LINE_ITEMS_QUERY = `
+  query getOrder($orderId: ID!) {
+    order(id: $orderId) {
+      lineItems(first: 50) {
+        nodes {
+          id
+          title
+          name
+          quantity
+          image { url }
+          customAttributes { key value }
+          variantId       
+          productId    
+        }
+      }
+    }
+  }
+`;
