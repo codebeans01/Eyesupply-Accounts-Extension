@@ -94,3 +94,10 @@ network_access = true
   name = "Redeem Points URL"
   description = "URL for Redeem Points"
   default = "https://support.eyewearsystem.com/hc/en-us/requests/new"
+
+  [[extensions.settings.fields]]
+  key = "exclude_trial_pack"
+  type = "boolean"
+  name = "Exclude Trial Pack"
+  description = "If enabled, trial packs will be excluded from reorder."
+  default = false

@@ -41,7 +41,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
       try {
         const data = await loadCustomerData({
           ordersLimit: limit,
-          lineItemsLimit: 20,
+          lineItemsLimit: 250,
         });
 
         if (data.customer) {
@@ -96,7 +96,8 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
     setShowReorderWarning(false);
     
     try {
-        const { redirectUrl, missingItems: missing } = await fetchReorderResult(orderId, currentShopDomain);
+        const excludeTrial = settings?.exclude_trial_pack === true;
+        const { redirectUrl, missingItems: missing } = await fetchReorderResult(orderId, currentShopDomain, excludeTrial);
         
         setReorderRedirectUrl(redirectUrl);
         setMissingItems(missing);
@@ -181,9 +182,11 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                               />
                             )}
                             <s-paragraph tone="neutral">{item.name}</s-paragraph>
-                            <s-clickable href={`https://${currentShopDomain}/products/${item.productHandle || getNumericId(item.productId ?? undefined)}${settings?.cb_review_target || "#reviews"}`}>
-                              <s-text tone="info">Review</s-text>
-                            </s-clickable>
+                            {item.productHandle && (
+                              <s-clickable href={`https://${currentShopDomain}/products/${item.productHandle}${settings?.cb_review_target || "#reviews"}`}>
+                                <s-text tone="info">Review</s-text>
+                              </s-clickable>
+                            )}
                           </s-grid>
                         ))
                       ) : (
@@ -338,7 +341,9 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                         {order.lineItems[0]?.image ? (
                                             <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name} />
                                         ) : (
-                                            <s-box background="subdued" blockSize="100%" inlineSize="100%" />
+                                            <s-grid alignItems="center" blockSize="100%">
+                                                <s-icon type="image" tone="neutral" size="large-100" />
+                                            </s-grid>
                                         )}
                                     </s-box>
                                     
@@ -418,48 +423,68 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           <s-box padding="base" background="base" borderRadius="base">
             <s-stack gap="base">
               <s-heading id="last-order-details-heading">Last Order Details</s-heading>
-              <s-box padding="base" background="subdued" borderRadius="base">
-                <s-stack gap="base">
-                  <s-text type="strong" tone="neutral">
-                    Order {orders[0].name} - {new Date(orders[0].processedAt).toLocaleDateString()}
-                  </s-text>
-                  <s-grid gridTemplateColumns="1fr" gap="base">
-                    {orders[0].lineItems.map((item) => (
-                      <s-box key={item.id} padding="small" borderRadius="base" background="base" border="base">
-                        <s-grid gridTemplateColumns="auto 1fr" gap="base" alignItems="center">
-                          {item.image && (
-                            <s-image src={item.image.url} alt={item.name} />
-                          )}
-                          <s-stack gap="small">
-                            <s-text type="strong">{item.name}</s-text>
-                            {item.variantTitle && <s-paragraph tone="neutral">{item.variantTitle}</s-paragraph>}
-                            
-                            {item.variantOptions && item.variantOptions.length > 0 && (
-                              <s-stack gap="small">
-                                {item.variantOptions.map((opt, idx) => (
-                                  <s-paragraph key={idx} tone="neutral">
-                                    {opt.name}: {opt.value}
-                                  </s-paragraph>
-                                ))}
-                              </s-stack>
+              <s-clickable href={`shopify://customer-account/orders/${getNumericId(orders[0].id)}`}>
+                <s-box padding="base" background="base" borderRadius="large" border="base">
+                    <s-grid gridTemplateColumns="auto 1fr 1fr auto" alignItems="center" gap="base">
+                        <s-box borderRadius="base" overflow="hidden" inlineSize="56px" blockSize="56px">
+                            {orders[0].lineItems.length === 1 ? (
+                                orders[0].lineItems[0].image ? (
+                                    <s-image src={orders[0].lineItems[0].image.url} alt={orders[0].lineItems[0].name} />
+                                ) : (
+                                    <s-grid alignItems="center" blockSize="100%">
+                                        <s-icon type="image" tone="neutral" />
+                                    </s-grid>
+                                )
+                            ) : (
+                                <s-grid gridTemplateColumns="1fr 1fr" gridTemplateRows="1fr 1fr" gap="small-300">
+                                    {orders[0].lineItems.slice(0, orders[0].lineItems.length > 4 ? 3 : 4).map((item, idx) => (
+                                        <s-box key={idx} borderRadius="small" overflow="hidden" background="subdued">
+                                             {item.image ? (
+                                                <s-image src={item.image.url} alt={item.name} />
+                                            ) : (
+                                                <s-grid alignItems="center" blockSize="100%">
+                                                    <s-icon type="image" tone="neutral" />
+                                                </s-grid>
+                                            )}
+                                        </s-box>
+                                    ))}
+                                    {orders[0].lineItems.length > 4 && (
+                                        <s-box background="subdued" borderRadius="small">
+                                            <s-grid alignItems="center" blockSize="100%">
+                                                <s-text tone="neutral">
+                                                    +{orders[0].lineItems.length - 3}
+                                                </s-text>
+                                            </s-grid>
+                                        </s-box>
+                                    )}
+                                </s-grid>
                             )}
-
-                            {item.customAttributes && item.customAttributes.length > 0 && (
-                              <s-stack gap="small">
-                                {item.customAttributes.map((attr, idx) => (
-                                  <s-paragraph key={idx} tone="neutral">
-                                    {attr.key}: {attr.value}
-                                  </s-paragraph>
-                                ))}
-                              </s-stack>
-                            )}
-                          </s-stack>
-                        </s-grid>
-                      </s-box>
-                    ))}
-                  </s-grid>
-                </s-stack>
-              </s-box>
+                        </s-box>
+                        
+                        <s-stack gap="small-100">
+                            <s-text type="strong">{orders[0].name || ""}</s-text>
+                            <s-paragraph tone="neutral">
+                                {(orders[0].lineItems || []).reduce((acc, item) => acc + (item.quantity || 0), 0)} items
+                            </s-paragraph>
+                        </s-stack>
+    
+                        <s-stack gap="small-100">
+                            <s-text type="strong">
+                                {(orders[0].fulfillmentStatus || 'Confirmed').charAt(0) + (orders[0].fulfillmentStatus || 'Confirmed').slice(1).toLowerCase()}
+                            </s-text>
+                            <s-paragraph tone="neutral">
+                                {orders[0].processedAt ? new Date(orders[0].processedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ""}
+                            </s-paragraph>
+                        </s-stack>
+    
+                        <s-text type="strong">
+                            {orders[0].totalPrice ? `${api.i18n.formatCurrency(Number(orders[0].totalPrice.amount), {
+                                currency: orders[0].totalPrice.currencyCode,
+                            })} ${orders[0].totalPrice.currencyCode}` : ""}
+                        </s-text>
+                    </s-grid>
+                </s-box>
+              </s-clickable>
             </s-stack>
           </s-box>
         )}

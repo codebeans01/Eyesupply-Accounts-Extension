@@ -17,3 +17,11 @@ target = "customer-account.order.action.render"
 [extensions.capabilities]
 api_access = true
 network_access = true
+
+[extensions.settings]
+[[extensions.settings.fields]]
+key = "exclude_trial_pack"
+type = "boolean"
+name = "Exclude Trial Pack"
+description = "If enabled, trial packs will be excluded from reorder."
+default = false

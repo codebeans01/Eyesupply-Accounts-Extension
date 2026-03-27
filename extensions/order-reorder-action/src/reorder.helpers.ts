@@ -23,6 +23,8 @@ interface LineItem {
   customAttributes: { key: string; value: string }[];
   variantId?: string | null;   // ✅ Direct — already GID format
   productId?: string | null;   // nullable — deleted product pe null hoga
+  sku?: string | null;
+  productType?: string | null;
 }
 
 
@@ -38,7 +40,7 @@ export function extractNumericId(gid: string): string | null {
 /**
  * Line items ko cartItems aur missingItems mein split karta hai
  */
-export function partitionLineItems(lineItems: LineItem[]): {
+export function partitionLineItems(lineItems: LineItem[], excludeTrial: boolean = false): {
   cartItems: CartItem[];
   missingItems: MissingItem[];
 } {
@@ -46,6 +48,23 @@ export function partitionLineItems(lineItems: LineItem[]): {
   const missingItems: MissingItem[] = [];
 
   for (const item of lineItems) {
+    // Trial Pack Exclude Logic
+    if (excludeTrial) {
+      const name = (item.name || item.title || "").toLowerCase();
+      const sku = (item.sku || "").toLowerCase();
+      const type = (item.productType || "").toLowerCase();
+
+      const isTrial =
+        name.includes("trial pack") ||
+        sku.includes("trial") ||
+        type.includes("trial");
+
+      if (isTrial) {
+        console.log(`[reorder.helpers] Excluding trial pack: ${item.name || item.title}`);
+        continue;
+      }
+    }
+
     // ✅ variantId directly available — no nesting
     const variantGid = item.variantId;
 

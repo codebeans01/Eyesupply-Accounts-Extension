@@ -1,7 +1,7 @@
 import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://cam-containing-combine-disable.trycloudflare.com";
+export const APP_URL = "https://jeans-per-oliver-dir.trycloudflare.com";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;

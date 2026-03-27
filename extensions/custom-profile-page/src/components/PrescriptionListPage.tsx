@@ -1,4 +1,3 @@
-import { h, Fragment } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
 import { fetchAdditionalPrescriptions, loadPrescriptions } from "../loadCustomerData";
@@ -126,7 +125,7 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
     
     return (
       <>
-        <s-grid gridTemplateColumns="1fr 1fr 1fr 1.5fr 1.5fr 1.5fr" gap="base" alignItems="center">
+        <s-grid gridTemplateColumns="1fr 1fr 1fr 1.5fr" gap="base" alignItems="center">
           <s-text type="strong">{`#${numericId}`}</s-text>
           <s-text>{p.expiry_date || "No Expiry"}</s-text>
           <s-badge tone={isActive ? "neutral" : "neutral"}>{p.status || "Active"}</s-badge>
@@ -143,8 +142,7 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
               return <s-text tone="neutral">No documents</s-text>;
             })()}
           </s-stack>
-          <s-text>{p.customer_email || "N/A"}</s-text>
-          <s-text>{p.handle || "N/A"}</s-text>
+        
         </s-grid>
         <s-divider />
       </>
@@ -156,13 +154,12 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
       <s-stack gap="base">
         <s-box padding="base" background="base" borderRadius="base" border="base">
           <s-stack gap="base">
-            <s-grid gridTemplateColumns="1fr 1fr 1fr 1.5fr 1.5fr 1.5fr" gap="base" alignItems="center">
+            <s-grid gridTemplateColumns="1fr 1fr 1fr 1.5fr" gap="base" alignItems="center">
               <s-text type="strong">ID</s-text>
               <s-text type="strong">Expiry Date</s-text>
               <s-text type="strong">Status</s-text>
               <s-text type="strong">Documents</s-text>
-              <s-text type="strong">Email</s-text>
-              <s-text type="strong">Handle</s-text>
+           
             </s-grid>
             <s-divider />
             {prescriptions.length > 0 ? (
@@ -181,7 +178,7 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
           </s-button>
         )}
 
-        <s-button onClick={handleBack} variant="secondary">Back to Dashboard</s-button>
+        <s-button onClick={handleBack} variant="secondary">Back</s-button>
       </s-stack>
     </s-page>
   );

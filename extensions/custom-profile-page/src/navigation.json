@@ -17,7 +17,7 @@
       "icon": "clipboard",
       "links": [
         { "label": "All Prescription", "href": "extension:custom-profile-page/view-prescription" },
-        { "label": "Upload My Prescription", "sub": "R120 off waiting", "href": "extension:customer-account.prescriptions.page.render" }
+        { "label": "Upload My Prescription", "sub": "", "href": "extension:customer-account.prescriptions.page.render" }
       ]
     },
     {

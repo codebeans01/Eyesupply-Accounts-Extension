@@ -11,7 +11,8 @@ const CUSTOMER_ACCOUNT_ENDPOINT = `shopify://customer-account/api/${API_VERSION}
  */
 export async function fetchReorderResult(
   orderId: string,
-  shopDomain: string
+  shopDomain: string,
+  excludeTrial: boolean = false
 ): Promise<ReorderResult> {
   const response = await fetch(CUSTOMER_ACCOUNT_ENDPOINT, {
     method: "POST",
@@ -39,7 +40,7 @@ export async function fetchReorderResult(
     throw new Error("Order not found or has no line items");
   }
 
-  const { cartItems, missingItems } = partitionLineItems(lineItems);
+  const { cartItems, missingItems } = partitionLineItems(lineItems, excludeTrial);
 
   const redirectUrl = buildCartPermalink(shopDomain, cartItems);
 

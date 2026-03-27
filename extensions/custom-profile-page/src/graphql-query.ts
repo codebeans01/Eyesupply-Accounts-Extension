@@ -56,6 +56,7 @@ export const CUSTOMER_DATA_QUERY = `
               variantTitle
               variantId
               sku
+              productType
               image {
                 url
               }
@@ -134,8 +135,10 @@ export const ORDER_LINE_ITEMS_QUERY = `
           customAttributes { key value }
           variantId       
           productId    
+          sku
+          productType    
         }
       }
     }
   }
-`;
+`;

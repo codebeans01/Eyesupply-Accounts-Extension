@@ -22,9 +22,12 @@ function ActionModal() {
 
         const shopDomain = await fetchShopDomain();
 
+        const excludeTrial = api?.settings?.current?.exclude_trial_pack === true;
+
         const { redirectUrl: url, missingItems: missing } = await fetchReorderResult(
           orderId,
-          shopDomain
+          shopDomain,
+          excludeTrial
         );
 
         setRedirectUrl(url);

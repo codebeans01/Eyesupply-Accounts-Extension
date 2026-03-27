@@ -43,7 +43,7 @@ export async function loadCustomerData(
 ): Promise<LoadCustomerDataResult> {
   const {
     ordersLimit = 5,
-    lineItemsLimit = 10,
+    lineItemsLimit = 50,
   } = params;
 
   const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql`;
@@ -239,7 +239,7 @@ export async function loadCustomerData(
   };
 }
 
-export async function loadPrescriptions(limit: number = 10): Promise<{ prescriptions: Prescription[], prescriptionPageInfo?: PageInfo }> {
+export async function loadPrescriptions(limit: number = 2): Promise<{ prescriptions: Prescription[], prescriptionPageInfo?: PageInfo }> {
   const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql`;
 
   const result = await fetchWithRetry(endpoint, {

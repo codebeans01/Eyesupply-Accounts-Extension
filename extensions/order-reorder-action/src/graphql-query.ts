@@ -18,7 +18,9 @@ export const ORDER_LINE_ITEMS_QUERY = `
           image { url }
           customAttributes { key value }
           variantId       
-          productId    
+          productId
+          sku
+          productType    
         }
       }
     }
