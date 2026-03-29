@@ -63,6 +63,7 @@ export const CUSTOMER_DATA_QUERY = `
               productId
               totalPrice {
                 amount
+                currencyCode
               }
               variantOptions {
                 name

@@ -118,48 +118,19 @@ function ActionModal() {
   }
 
   return (
-    <s-customer-account-action heading="Products Unavailable">
+    <s-customer-account-action heading="Reordering from an older order?">
       <s-stack gap="base" padding="large">
-        <s-text tone="neutral">
-          The following products from your previous order are no longer available and were skipped:
+        <s-text tone="neutral" id="reorder-info-text">
+          Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
         </s-text>
         
-        <s-stack gap="small">
-          {missingItems?.map((item, i) => (
-            <s-box key={i} padding="small" background="subdued" borderRadius="base" border="base">
-              <s-stack direction="inline" gap="small" alignItems="center">
-                {item.image ? (
-                  <s-box inlineSize="40px" blockSize="40px" borderRadius="small" overflow="hidden">
-                    <s-image src={item.image} alt={item.name} />
-                  </s-box>
-                ) : (
-                  <s-icon type="alert-triangle" size="small" tone="neutral" />
-                )}
-                <s-text type="strong">{item.name}</s-text>
-              </s-stack>
-            </s-box>
-          ))}
-        </s-stack>
-
-        <s-text>
-          You can still find the other items in your cart.
+        <s-text tone="neutral" id="reorder-help-text">
+           Need help? <s-clickable id="reorder-proceed-link" onClick={handleProceed}><s-text tone="info">Click here</s-text></s-clickable> and we’ll load your previous order into cart for you.
         </s-text>
 
-        <s-button slot="primary-action" onClick={() => {
-          if (redirectUrl) {
-            if (api?.navigation?.navigate) {
-              api.navigation.navigate(redirectUrl);
-            } else {
-              window.location.href = redirectUrl;
-            }
-            setTimeout(() => handleClose(), 5000);
-          } else {
-            handleClose();
-          }
-        }}>
-          {redirectUrl ? "Go to Cart" : "Got it"}
+        <s-button slot="primary-action" id="close-button" onClick={handleClose}>
+          Close
         </s-button>
-        <s-button slot="secondary-action" onClick={handleClose}>Close</s-button>
       </s-stack>
     </s-customer-account-action>
   );
