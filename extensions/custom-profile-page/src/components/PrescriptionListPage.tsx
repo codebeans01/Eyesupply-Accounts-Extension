@@ -125,22 +125,46 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
     
     return (
       <>
-        <s-grid gridTemplateColumns="1fr 1fr 1fr 1.5fr" gap="base" alignItems="center">
-          <s-text type="strong">{`#${numericId}`}</s-text>
-          <s-text>{p.expiry_date || "No Expiry"}</s-text>
-          <s-badge tone={isActive ? "neutral" : "neutral"}>{p.status || "Active"}</s-badge>
-          <s-stack gap="small-500">
-            {(() => {
-              const allUrls = [
-                ...(p.image_urls || []),
-                ...(p.image_url ? [p.image_url] : [])
-              ].filter(Boolean);
-              
-              if (allUrls.length > 0) {
-                return allUrls.map((url, i) => <DocumentLink key={i} url={url} />);
-              }
-              return <s-text tone="neutral">No documents</s-text>;
-            })()}
+        <s-grid 
+          gridTemplateColumns="@container (inline-size > 400px) 1fr 1fr 1.2fr 1.8fr, 1fr" 
+          gap="base" 
+          alignItems="center"
+          paddingBlock="@container (inline-size > 400px) none, base"
+        >
+          {/* ID Column */}
+          <s-stack gap="small-200">
+             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">ID</s-text>
+             <s-text type="strong">{`#${numericId}`}</s-text>
+          </s-stack>
+
+          {/* Expiry Date Column */}
+          <s-stack gap="small-200">
+             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">Expiry Date</s-text>
+             <s-text>{p.expiry_date || "No Expiry"}</s-text>
+          </s-stack>
+
+          {/* Status Column */}
+          <s-stack gap="small-200">
+             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">Status</s-text>
+             <s-badge tone={isActive ? "neutral" : "neutral"}>{p.status || "Active"}</s-badge>
+          </s-stack>
+
+          {/* Documents Column */}
+          <s-stack gap="small-200">
+             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">Documents</s-text>
+             <s-stack gap="small-500">
+               {(() => {
+                 const allUrls = [
+                   ...(p.image_urls || []),
+                   ...(p.image_url ? [p.image_url] : [])
+                 ].filter(Boolean);
+                 
+                 if (allUrls.length > 0) {
+                   return allUrls.map((url, i) => <DocumentLink key={i} url={url} />);
+                 }
+                 return <s-text tone="neutral">No documents</s-text>;
+               })()}
+             </s-stack>
           </s-stack>
         
         </s-grid>
@@ -152,16 +176,23 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
   return (
     <s-page heading="My Prescriptions">
       <s-stack gap="base">
-        <s-box padding="base" background="base" borderRadius="base" border="base">
-          <s-stack gap="base">
-            <s-grid gridTemplateColumns="1fr 1fr 1fr 1.5fr" gap="base" alignItems="center">
+        <s-query-container>
+          <s-box padding="base" background="base" borderRadius="base" border="base">
+            <s-stack gap="base">
+            <s-grid 
+              gridTemplateColumns="1fr 1fr 1.2fr 1.8fr" 
+              gap="base" 
+              alignItems="center"
+              display="@container (inline-size > 400px) auto, none"
+            >
               <s-text type="strong">ID</s-text>
               <s-text type="strong">Expiry Date</s-text>
               <s-text type="strong">Status</s-text>
               <s-text type="strong">Documents</s-text>
-           
             </s-grid>
-            <s-divider />
+            <s-box display="@container (inline-size > 400px) auto, none">
+              <s-divider />
+            </s-box>
             {prescriptions.length > 0 ? (
               prescriptions.map(renderPrescriptionRow)
             ) : (
@@ -171,8 +202,9 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
             )}
           </s-stack>
         </s-box>
+      </s-query-container>
 
-        {pageInfo?.hasNextPage && (
+      {pageInfo?.hasNextPage && (
           <s-button onClick={handleFetchMore} loading={fetchingMore} variant="secondary">
             Load More
           </s-button>

@@ -6,7 +6,7 @@
 import { SHOP_DOMAIN_QUERY } from "./graphql-query";
 
 export const API_VERSION = "2026-01"
-export const APP_URL = "https://organisation-cubic-departments-hopes.trycloudflare.com";
+export const APP_URL = "https://lemon-sell-yes-calling.trycloudflare.com";
 
 /* =========================================================
    Types
