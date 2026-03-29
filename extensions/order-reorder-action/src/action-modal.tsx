@@ -56,12 +56,15 @@ function ActionModal() {
 
   const handleClose = () => api?.close?.();
 
+  const externalLink = api?.settings?.current?.external_reorder_link;
+
   const handleProceed = () => {
-    if (redirectUrl) {
+    const targetUrl = externalLink || redirectUrl;
+    if (targetUrl) {
       if (api?.navigation?.navigate) {
-        api.navigation.navigate(redirectUrl);
+        api.navigation.navigate(targetUrl);
       } else {
-        window.location.href = redirectUrl;
+        window.location.href = targetUrl;
       }
       setTimeout(() => api?.close?.(), 5000);
     }
@@ -72,7 +75,7 @@ function ActionModal() {
       <s-customer-account-action heading="Reordering...">
         <s-stack gap="base" alignItems="center" padding="large">
           <s-spinner size="base" />
-          <s-text>Checking product availability...</s-text>
+          <s-text tone="neutral">Checking product availability...</s-text>
         </s-stack>
       </s-customer-account-action>
     );
@@ -120,17 +123,19 @@ function ActionModal() {
   return (
     <s-customer-account-action heading="Reordering from an older order?">
       <s-stack gap="base" padding="large">
-        <s-text tone="neutral" id="reorder-info-text">
-          Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
+        <s-text tone="neutral">
+          Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. 
+          Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
         </s-text>
         
-        <s-text tone="neutral" id="reorder-help-text">
-           Need help? <s-clickable id="reorder-proceed-link" onClick={handleProceed}><s-text tone="info">Click here</s-text></s-clickable> and we’ll load your previous order into cart for you.
-        </s-text>
-
-        <s-button slot="primary-action" id="close-button" onClick={handleClose}>
-          Close
-        </s-button>
+        <s-stack direction="inline" gap="base">
+          <s-text tone="neutral">Need help?</s-text>
+          <s-clickable onClick={handleProceed}>
+            <s-text tone="info">Click here</s-text>
+          </s-clickable>
+          <s-text tone="neutral">and we’ll load your previous order into cart for you.</s-text>
+        </s-stack>
+        
       </s-stack>
     </s-customer-account-action>
   );

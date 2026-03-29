@@ -25,3 +25,10 @@ type = "boolean"
 name = "Exclude Trial Pack"
 description = "If enabled, trial packs will be excluded from reorder."
 default = false
+
+[[extensions.settings.fields]]
+key = "external_reorder_link"
+type = "single_line_text_field"
+name = "External Reorder Link"
+description = "If set, the \"Click here\" action will redirect to this link instead of the default reorder behavioral logic."
+
