@@ -13,7 +13,8 @@ const CUSTOMER_ACCOUNT_ENDPOINT = `shopify://customer-account/api/${API_VERSION}
 export async function fetchReorderResult(
   orderId: string,
   shopDomain: string,
-  excludeTrial: boolean = false
+  excludeTrial: boolean = false,
+  excludeVariantIds: string = ""
 ): Promise<ReorderResult> {
   console.log("[reorder.service] START fetchReorderResult for orderId:", orderId);
   
@@ -66,7 +67,7 @@ export async function fetchReorderResult(
     throw new Error("Order has no line items to reorder");
   }
 
-  const { cartItems, missingItems } = partitionLineItems(lineItems, excludeTrial);
+  const { cartItems, missingItems } = partitionLineItems(lineItems, excludeTrial, excludeVariantIds);
   const redirectUrl = buildCartPermalink(shopDomain, cartItems);
   
   console.log("[reorder.service] Returning redirectUrl:", redirectUrl);

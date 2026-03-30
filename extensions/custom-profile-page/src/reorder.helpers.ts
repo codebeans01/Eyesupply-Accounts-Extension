@@ -40,15 +40,28 @@ export function extractNumericId(gid: string): string | null {
 /**
  * Line items ko cartItems aur missingItems mein split karta hai
  */
-export function partitionLineItems(lineItems: LineItem[], excludeTrial: boolean = false): {
+export function partitionLineItems(
+  lineItems: LineItem[], 
+  excludeTrial: boolean = false,
+  excludeVariantIds: string = ""
+): {
   cartItems: CartItem[];
   missingItems: MissingItem[];
 } {
   const cartItems: CartItem[] = [];
   const missingItems: MissingItem[] = [];
 
+  // Parse excluded variant IDs into an array for easy lookup
+  const excludedIds = excludeVariantIds 
+    ? excludeVariantIds.split(',').map(id => id.trim()).filter(id => id) 
+    : [];
+
   for (const item of lineItems) {
-    // Trial Pack Exclude Logic
+    // Basic variant info
+    const variantGid = item.variantId;
+    const numericVariantId = variantGid ? extractNumericId(variantGid) : null;
+
+    // Trial Pack / Specific ID Exclude Logic
     if (excludeTrial) {
       const name = (item.name || item.title || "").toLowerCase();
       const sku = (item.sku || "").toLowerCase();
@@ -59,15 +72,16 @@ export function partitionLineItems(lineItems: LineItem[], excludeTrial: boolean 
         sku.includes("trial") || 
         type.includes("trial");
 
-      if (isTrial) {
-        console.log(`[reorder.helpers] Excluding trial pack: ${item.name || item.title}`);
+      // Check if this specific variant ID is in the exclusion list
+      const isSpecificExcluded = !!(numericVariantId && excludedIds.includes(numericVariantId));
+
+      if (isTrial || isSpecificExcluded) {
+        console.log(`[reorder.helpers] Excluding item: ${item.name || item.title} (Reason: ${isTrial ? 'Trial' : 'Specific ID'})`);
         continue;
       }
     }
 
     // ✅ variantId directly available — no nesting
-    const variantGid = item.variantId;
-
     if (!variantGid) {
       missingItems.push({
         name: item.name || item.title || "Unknown Product",
@@ -76,7 +90,6 @@ export function partitionLineItems(lineItems: LineItem[], excludeTrial: boolean 
       continue;
     }
 
-    const numericVariantId = extractNumericId(variantGid);
     if (!numericVariantId) continue;
 
     cartItems.push({

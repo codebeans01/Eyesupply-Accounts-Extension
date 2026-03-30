@@ -16,6 +16,7 @@
       "title": "Prescription",
       "icon": "clipboard",
       "links": [
+        { "label": "Current Prescription Status", "dynamicSub": "prescriptionStatus", "href": "" },
         { "label": "All Prescription", "href": "extension:custom-profile-page/view-prescription" },
         { "label": "Upload My Prescription", "sub": "", "href": "extension:custom-profile-page/view-prescription" }
       ]
@@ -35,10 +36,10 @@
       "title": "Medical Aid",
       "icon": "plus",
       "links": [
-        { "label": "Medical Aid Number", "href": "mailto:support@eyesupply.co.uk" },
-        { "label": "Medical Aid Plan", "href": "mailto:support@eyesupply.co.uk" },
-        { "label": "Medical Aid Name", "href": "mailto:support@eyesupply.co.uk" },
-        { "label": "Patient ID Number", "href": "mailto:support@eyesupply.co.uk" }
+        { "label": "Medical Aid Number", "dynamicSub": "medicalAidNumber", "href": "" },
+        { "label": "Medical Aid Plan", "dynamicSub": "medicalAidPlan", "href": "" },
+        { "label": "Medical Aid Name", "dynamicSub": "medicalAidName", "href": "" },
+        { "label": "Patient ID Number", "dynamicSub": "patientIdNumber", "href": "" }
       ]
     },
     {
@@ -55,7 +56,7 @@
       "title": "Rewards",
       "icon": "gift",
       "links": [
-        { "label": "Loyalty Points", "dynamicSub": "loyaltyPoints", "href": "#" },
+        { "label": "My Loyality Points", "dynamicSub": "loyaltyPoints", "href": "#" },
         { "label": "Referral", "href": "#" },
         { "label": "How to Redeem Points", "href": "#" }
       ]

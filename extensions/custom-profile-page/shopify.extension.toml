@@ -21,24 +21,6 @@ network_access = true
 [extensions.settings]
 
   [[extensions.settings.fields]]
-  key = "cb_pagination_prev_text"
-  type = "single_line_text_field"
-  name = "Previous Button Text"
-  default = "Previous"
-
-  [[extensions.settings.fields]]
-  key = "cb_pagination_next_text"
-  type = "single_line_text_field"
-  name = "Next Button Text"
-  default = "Next"
-
-  [[extensions.settings.fields]]
-  key = "cb_pagination_enabled"
-  type = "boolean"
-  name = "Enable Pagination"
-  default = true
-
-  [[extensions.settings.fields]]
   key = "cb_welcome_image_url"
   type = "single_line_text_field"
   name = "Welcome Image URL"
@@ -101,3 +83,30 @@ network_access = true
   name = "Exclude Trial Pack"
   description = "If enabled, trial packs will be excluded from reorder."
   default = false
+
+  [[extensions.settings.fields]]
+  key = "exclude_variant_ids"
+  type = "single_line_text_field"
+  name = "Exclude Product Variant IDs"
+  description = "Comma-separated list of variant IDs to exclude from reorder (e.g. 12345,67890)."
+  default = ""
+
+  [[extensions.settings.fields]]
+  key = "external_reorder_link"
+  type = "single_line_text_field"
+  name = "External Reorder Link"
+  description = "If set, the \"Click here\" action will redirect to this link instead of the default reorder behavioral logic." 
+
+  [[extensions.settings.fields]]
+  key = "cb_reorder_button_position"
+  type = "single_line_text_field"
+  name = "Reorder Button Position"
+  description = "Position of the REORDER NOW button in the modal. Options: top_left, top_right, bottom_left, bottom_right."
+  default = "bottom_right"
+
+  [[extensions.settings.fields]]
+  key = "cb_search_enable"
+  type = "boolean"
+  name = "Enable/Disable Search"
+  description = "Enable/Disable search functionality"
+  default = true

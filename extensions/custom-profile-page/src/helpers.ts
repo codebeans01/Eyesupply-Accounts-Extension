@@ -406,3 +406,15 @@ export async function fetchSmilePoints(
     return null
   }
 }
+
+/**
+ * Mask Patient ID: Show only last 4 digits (e.g., ********5468)
+ */
+export function maskPatientId(id?: string | null): string {
+  if (!id) return "";
+  const strId = String(id);
+  if (strId.length <= 4) return strId;
+  const lastFour = strId.slice(-4);
+  const maskedLength = strId.length - 4;
+  return "*".repeat(maskedLength) + lastFour;
+}

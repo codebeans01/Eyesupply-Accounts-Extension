@@ -3,7 +3,7 @@ import navConfig from "../navigation.json";
 import { type Order, type MissingItem, type SmilePointsResponse } from "../interface";
 import { loadCustomerData } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
-import { getNumericId, fetchSmilePoints } from "../helpers";
+import { getNumericId, fetchSmilePoints, maskPatientId } from "../helpers";
 
 interface ProfilePageProps {
   api: any;
@@ -107,7 +107,14 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
 
     try {
         const excludeTrial = settings?.exclude_trial_pack === true;
-        const { redirectUrl, missingItems: missing } = await fetchReorderResult(orderId, currentShopDomain, excludeTrial);
+        const excludeVariantIds = (settings?.exclude_variant_ids as string) || "";
+        
+        const { redirectUrl, missingItems: missing } = await fetchReorderResult(
+          orderId, 
+          currentShopDomain, 
+          excludeTrial,
+          excludeVariantIds
+        );
         
         setReorderRedirectUrl(redirectUrl);
         setMissingItems(missing);
@@ -170,6 +177,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   const firstName = customer?.firstName || "User";
   const lastName = customer?.lastName || "";
   const welcomeImageUrl = (settings?.cb_welcome_image_url as string) ?? "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_100x100.png";
+  const externaReorderLink = (settings?.external_reorder_link as string) ?? "";
 
   const calculateDaysRemaining = (dateString: string | null) => {
     if (!dateString) return null;
@@ -189,6 +197,8 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   };
 
   const daysRemaining = calculateDaysRemaining(customer?.daysTillRunOut);
+  const reorderButtonPosition = (settings?.cb_reorder_button_position as string) || "bottom_right";
+  const cb_search_enable = (settings?.cb_search_enable as boolean) || false;
 
   return (
     <s-page id="profile-dashboard" heading="My Dashboard">
@@ -198,33 +208,18 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           <s-banner 
             id="reorder-warning-banner"
             tone="warning" 
-            heading="Some products are unavailable"
+            heading="Reordering from an older order?"
             onDismiss={() => {
               setShowReorderWarning(false);
               setMissingItems([]);
             }}
           >
             <s-stack gap="base">
-              <s-text>The following items from your previous order are currently out of stock and could not be added to your cart:</s-text>
-              <s-stack gap="small">
-                {(missingItems || []).map((item, idx) => (
-                  <s-text key={idx} type="strong">• {item.name}</s-text>
-                ))}
-              </s-stack>
+              <s-text>Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. 
+              Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account. </s-text>
+              <s-text>Need help? <s-link href={externaReorderLink} target="_blank">Click here</s-link> and we’ll load your previous order into cart for you.</s-text>
+
               <s-stack direction="inline" gap="small">
-                {reorderRedirectUrl && (
-                  <s-button
-                    variant="primary"
-                    onClick={() => {
-                      if (reorderRedirectUrl) {
-                        api.navigation.navigate(reorderRedirectUrl);
-                        setShowReorderWarning(false);
-                      }
-                    }}
-                  >
-                    Proceed to Cart
-                  </s-button>
-                )}
                 <s-button
                   variant="secondary"
                   onClick={() => {
@@ -341,7 +336,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                   <s-icon type="star" size="base" tone="neutral" />
                 </s-grid>
               </s-box>
-              <s-text type="strong">Loyalty Points</s-text>
+              <s-text type="strong">My Loyality Points</s-text>
               <s-text type="strong">
                 {pointsLoading ? "Loading..." : (points !== null ? points + " pts" : "0 pts")}
               </s-text>
@@ -385,6 +380,16 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                       dynamicSub = loading ? "Loading..." : unfulfilledOrders.length + " orders";
                     } else if (link.dynamicSub === "loyaltyPoints") {
                       dynamicSub = pointsLoading ? "Loading..." : points !== null ? points + " pts" : "0 pts";
+                    } else if (link.dynamicSub === "prescriptionStatus") {
+                      dynamicSub = loading ? "Loading..." : (customer?.prescription?.status || "No Active Prescription");
+                    } else if (link.dynamicSub === "medicalAidNumber") {
+                      dynamicSub = loading ? "Loading..." : (customer?.medicalAidNumber || "Not Available");
+                    } else if (link.dynamicSub === "medicalAidPlan") {
+                      dynamicSub = loading ? "Loading..." : (customer?.medicalAidPlan || "Not Available");
+                    } else if (link.dynamicSub === "medicalAidName") {
+                      dynamicSub = loading ? "Loading..." : (customer?.medicalAidName || "Not Available");
+                    } else if (link.dynamicSub === "patientIdNumber") {
+                      dynamicSub = loading ? "Loading..." : (customer?.patientIdNumber ? maskPatientId(customer.patientIdNumber) : "Not Available");
                     }
 
                     let href = link.href;
@@ -404,13 +409,18 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                            >
                              <s-grid gridTemplateColumns="1fr auto" alignItems="center">
                                <s-text tone="info">{link.label}</s-text>
-                               {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                               <s-stack direction="inline" gap="small-300" alignItems="center">
+                                 {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                                 {link?.dynamicSub == 'orderStatus' && <s-icon type="arrow-right" size="small" tone="info" />}
+                               </s-stack>
                              </s-grid>
                            </s-clickable>
                          ) : (
                            <s-grid gridTemplateColumns="1fr auto" alignItems="center">
                              <s-text tone="neutral">{link.label}</s-text>
-                             {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                             <s-stack direction="inline" gap="small-200" alignItems="center">
+                               {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                             </s-stack>
                            </s-grid>
                          )}
                         {isReviewProducts && lastOrder && (
@@ -454,7 +464,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
       </s-query-container>
 
       {isAllOrdersModalVisible && (
-        <s-modal id="all-orders-modal" heading="Ongoing Order Status" size="large-100">
+        <s-modal id="all-orders-modal" heading="Ongoing Order Status" size="max">
           <s-query-container>
             <s-stack gap="large" alignItems="center">
               
@@ -642,28 +652,37 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         <s-modal 
           id="order-line-items-modal" 
           heading={`${(selectedOrder?.lineItems || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0)} items`}
-          size="large-100"
+          size="max"
         >
           <s-query-container>
             <s-stack gap="base">
   
               {/* Search + Button - Responsive */}
               <s-stack gap="base">
-                <s-text-field
-                  label="Search"
-                  labelAccessibilityVisibility="visible"
-                  icon="search"
-                  value={searchQuery}
-                  onInput={(e: any) => setSearchQuery(e.target.value)}
-                />
-                <s-button 
-                  variant="primary" 
-                  onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
-                  loading={reorderLoadingId === selectedOrder?.id}
-                  disabled={reorderLoadingId !== null}
-                >
-                  {reorderLoadingId === selectedOrder?.id ? "Processing..." : "REORDER NOW"}
-                </s-button>
+                {cb_search_enable && (
+                  <s-text-field
+                    label="Search"
+                    labelAccessibilityVisibility="visible"
+                    icon="search"
+                    value={searchQuery}
+                    onInput={(e: any) => setSearchQuery(e.target.value)}
+                  />
+                )}
+                
+                {reorderButtonPosition.startsWith("top") && (
+                   <s-box inlineSize="100%">
+                    <s-stack direction="inline" justifyContent={reorderButtonPosition.endsWith("right") ? "end" : "start"}>
+                      <s-button 
+                        variant="primary" 
+                        onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
+                        loading={reorderLoadingId === selectedOrder?.id}
+                        disabled={reorderLoadingId !== null}
+                      >
+                        {reorderLoadingId === selectedOrder?.id ? "Processing..." : "REORDER NOW"}
+                      </s-button>
+                    </s-stack>
+                  </s-box>
+                )}
               </s-stack>
   
   
@@ -714,7 +733,24 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                     })}
                 </s-stack>
               </s-box>
-  
+              
+              {reorderButtonPosition.startsWith("bottom") && (
+                <s-stack gap="base" paddingBlockStart="base">
+                  <s-divider />
+                  <s-box inlineSize="100%">
+                    <s-stack direction="inline" justifyContent={reorderButtonPosition.endsWith("right") ? "end" : "start"}>
+                      <s-button 
+                        variant="primary" 
+                        onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
+                        loading={reorderLoadingId === selectedOrder?.id}
+                        disabled={reorderLoadingId !== null}
+                      >
+                        {reorderLoadingId === selectedOrder?.id ? "Processing..." : "REORDER NOW"}
+                      </s-button>
+                    </s-stack>
+                  </s-box>
+                </s-stack>
+              )}
             </s-stack>
           </s-query-container>
         </s-modal>
