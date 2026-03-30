@@ -5,8 +5,8 @@
       "title": "Orders",
       "icon": "email",
       "links": [
-        { "label": "Ongoing Order Status", "dynamicSub": "orderStatus", "href": "shopify://customer-account/orders" },
-        { "label": "Reorder", "dynamicSub": "lastOrderName", "href": "shopify://customer-account/orders" },
+        { "label": "Ongoing Order Status", "dynamicSub": "orderStatus", "command": "--show", "commandFor": "all-orders-modal" },
+        { "label": "Reorder", "href": "shopify://customer-account/orders" },
         { "label": "Past Orders", "href": "shopify://customer-account/orders" },
         { "label": "Invoices", "href": "shopify://customer-account/orders" }
       ]
@@ -17,7 +17,7 @@
       "icon": "clipboard",
       "links": [
         { "label": "All Prescription", "href": "extension:custom-profile-page/view-prescription" },
-        { "label": "Upload My Prescription", "sub": "", "href": "extension:customer-account.prescriptions.page.render" }
+        { "label": "Upload My Prescription", "sub": "", "href": "extension:custom-profile-page/view-prescription" }
       ]
     },
     {

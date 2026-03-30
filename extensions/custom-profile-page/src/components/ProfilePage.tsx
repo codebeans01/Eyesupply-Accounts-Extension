@@ -26,6 +26,8 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true);
+  const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true);
 
   // The sandbox environment restricts window access. 
   // We use Shopify's native @container syntax instead of local state for responsiveness.
@@ -86,6 +88,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   }, [api, currentShopDomain]);
 
   useEffect(() => {
+    console.log('api',api)
     const unsubscribe = api.settings?.subscribe?.((newSettings: any) => {
       setSettings(newSettings ?? {});
     });
@@ -115,13 +118,34 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
             api.ui.overlay.close('all-orders-modal');
             api.ui.overlay.close('order-line-items-modal');
 
+            // Force hide by removing from DOM (most reliable way)
+            setIsAllOrdersModalVisible(false);
+            setIsLineItemsModalVisible(false);
+
+            // Fallback: close the currently active overlay to ensure UI stability
+            api.ui.overlay.close();
+
              // Explicitly close the popover if a menuId was provided
             if (menuId) {
               api.ui.overlay.close(menuId);
             }
             
-            setShowReorderWarning(true);
-            api.toast?.show("Some items are unavailable");
+            // Brief delay allows the modal closing animation to complete 
+            // before the page re-renders with the warning banner.
+            setTimeout(() => {
+                setShowReorderWarning(true);
+                api.toast?.show("Some items are unavailable");
+
+                // Scroll to the newly appeared banner
+                // Another tiny delay ensures the banner is rendered in the DOM before scrolling
+                setTimeout(() => {
+                    api.navigation.navigate('#reorder-warning-banner');
+                }, 100);
+
+                // Reset render state so they can be opened again later
+                setIsAllOrdersModalVisible(true);
+                setIsLineItemsModalVisible(true);
+            }, 200);
         } else if (redirectUrl) {
             api.navigation.navigate(redirectUrl);
         }
@@ -173,6 +197,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
       <s-stack gap="base">
         {showReorderWarning && (
           <s-banner 
+            id="reorder-warning-banner"
             tone="warning" 
             heading="Some products are unavailable"
             onDismiss={() => {
@@ -340,41 +365,49 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         >
           {/* Card 1: Most Recent Order */}
           <s-box padding="base" background="subdued" borderRadius="base">
-            <s-grid gridTemplateColumns="auto 1fr auto" alignItems="center" gap="base">
+            <s-grid gridTemplateColumns="@container (inline-size > 500px) auto 1fr auto, 1fr" alignItems="center" gap="base">
               <s-box background="subdued" padding="small" borderRadius="base" inlineSize="56px" blockSize="56px">
                 <s-grid alignItems="center" blockSize="100%">
-                  <s-icon type="cart" size="base" tone="neutral" />
+                  <s-icon type="cart" size="base" tone="info" />
                 </s-grid>
               </s-box>
-              <s-stack gap="none">
-                <s-text tone="neutral">Most Recent Order</s-text>
-                <s-text type="strong">{loading ? "Loading..." : ((orders || []).length > 0 ? orders[0].name : "No orders")}</s-text>
-                {!loading && (orders || []).length > 0 && orders[0] && (
-                  <s-text tone="neutral">
-                    {(orders[0].lineItems || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0)} items
+              
+              <s-clickable 
+                onClick={handleReorderRecent}
+                command="--show" 
+                commandFor="order-line-items-modal"
+                disabled={loading || (orders || []).length === 0}
+              >
+                <s-stack gap="none">
+                  <s-text tone="neutral">Most Recent Order</s-text>
+                  <s-text type="strong" tone="info">
+                    {loading ? "Loading..." : ((orders || []).length > 0 ? orders[0].name : "No orders")}
                   </s-text>
-                )}
-              </s-stack>
-              <s-stack direction="inline" gap="base" alignItems="center">
+                  {!loading && (orders || []).length > 0 && orders[0] && (
+                    <s-paragraph tone="neutral">
+                      {(orders[0].lineItems || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0)} items
+                    </s-paragraph>
+                  )}
+                </s-stack>
+              </s-clickable>
+
+              <s-stack direction="inline" gap="small" alignItems="center">
                 <s-button 
                   variant="primary" 
-                  onClick={handleReorderRecent}
-                  command="--show" 
-                  commandFor="order-line-items-modal"
-                  
+                  onClick={() => orders?.[0]?.id && handleReorder(orders[0].id)}
+                  loading={reorderLoadingId === ((orders || []).length > 0 ? orders[0].id : null)}
                   disabled={loading || (orders || []).length === 0}
                 >
                   REORDER
                 </s-button>
                 <s-button 
                   variant="secondary" 
-                  onClick={() => orders?.[0]?.id && handleReorder(orders[0].id)}
+                  href="shopify://customer-account/orders"
                   disabled={loading || (orders || []).length === 0}
-                  loading={reorderLoadingId === ((orders || []).length > 0 ? orders[0].id : null)}
                 >
                   <s-stack direction="inline" gap="small-200" alignItems="center">
-                    <s-text tone="info" type="strong">Reorder Past Orders</s-text>
-                    <s-icon type="arrow-right" size="small" tone="info" />
+                    <s-text type="strong">Reorder Past Orders</s-text>
+                    <s-icon type="arrow-right" size="small" />
                   </s-stack>
                 </s-button>
               </s-stack>
@@ -424,149 +457,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           </s-box>
         </s-grid>
 
-        <s-modal
-          id="all-orders-modal"
-          heading="REORDER"
-        >
-          <s-stack gap="base" alignItems="center">
-            <s-box padding="base" background="base" border="base" borderRadius="large" inlineSize="100%">
-              <s-stack gap="base">
-                {(orders || []).map((order, index) => {
-                  const fulfillmentStatus = order.fulfillmentStatus || 'Confirmed';
-                  const displayStatus = fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase();
-                  const totalQuantity = (order.lineItems || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
-                  const orderPrice = (order.totalPrice && api.i18n) ? api.i18n.formatCurrency(Number(order.totalPrice.amount), {
-                    currency: order.totalPrice.currencyCode || fallbackCurrency,
-                  }) + " " + (order.totalPrice.currencyCode || fallbackCurrency) : "";
-                  const mTriggerId = "modal-trigger-" + getNumericId(order.id);
-                  const mMenuId = "modal-menu-" + getNumericId(order.id);
-                  
-                  return (
-                    <s-stack key={order.id} gap="base">
-                      {index > 0 && <s-divider />}
-                      <s-grid gridTemplateColumns="auto 1fr 1fr auto auto" alignItems="center" gap="base">
-                        <s-box borderRadius="base" overflow="hidden" inlineSize="50px" blockSize="50px">
-                           {order.lineItems?.[0]?.image ? (
-                              <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name} />
-                            ) : (
-                              <s-grid alignItems="center" blockSize="100%">
-                                <s-icon type="image" tone="neutral" />
-                              </s-grid>
-                            )}
-                        </s-box>
-
-                        <s-stack gap="small-100">
-                           <s-text type="strong">{order.name}</s-text>
-                           <s-text tone="neutral">{totalQuantity} items</s-text>
-                        </s-stack>
-
-                        <s-stack gap="small-100">
-                          <s-text type="strong">{displayStatus}</s-text>
-                          <s-text tone="neutral">
-                            {order.processedAt ? new Date(order.processedAt).toLocaleDateString('en-GB') : ""}
-                          </s-text>
-                        </s-stack>
-
-                        <s-text type="strong">
-                          {orderPrice}
-                        </s-text>
-
-                        <s-box>
-                           <s-button id={mTriggerId} variant="secondary" command="--toggle" commandFor={mMenuId}>
-                              <s-icon type="menu-horizontal" tone="neutral" />
-                          </s-button>
-                          <s-popover id={mMenuId}>
-                              <s-stack padding="base" gap="small">
-                                   <s-button variant="secondary" onClick={() => handleReorder(order.id)} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
-                                       {reorderLoadingId === order.id ? "" : "Reorder"}
-                                   </s-button>
-                              </s-stack>
-                          </s-popover>
-                        </s-box>
-                      </s-grid>
-                    </s-stack>
-                  );
-                })}
-              </s-stack>
-            </s-box>
-          </s-stack>
-          <s-button
-            slot="secondary-action"
-            variant="secondary"
-            command="--hide"
-            commandFor="all-orders-modal"
-          >
-            Close
-          </s-button>
-        </s-modal>
-
-        <s-modal 
-          id="order-line-items-modal" 
-          heading={`${(selectedOrder?.lineItems || []).length} items`}
-          size="large"
-        >
-          <s-stack gap="base">
-            <s-stack padding="base" direction="block" gap="small">
-              <s-text-field
-                label="Search"
-                labelAccessibilityVisibility="visible"
-                placeholder="Search"
-                icon="search"
-                value={searchQuery}
-                onInput={(e: any) => setSearchQuery(e.target.value)}
-              />
-               <s-box inlineSize="100%">
-                <s-button 
-                  variant="primary" 
-                  onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
-                  loading={reorderLoadingId === selectedOrder?.id}
-                  disabled={reorderLoadingId !== null}
-                >
-                  {reorderLoadingId === selectedOrder?.id ? "Processing..." : "REORDER NOW"}
-                </s-button>
-               </s-box>
-            </s-stack>
-
-            <s-box blockSize="400px" overflow="hidden">
-              <s-stack gap="base" padding="base">
-                {(selectedOrder?.lineItems || [])
-                  .filter(item => 
-                    !searchQuery || 
-                    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (item.variantTitle && item.variantTitle.toLowerCase().includes(searchQuery.toLowerCase()))
-                  )
-                  .map((item, index) => {
-                    const itemPrice = (item.totalPrice && api.i18n) ? api.i18n.formatCurrency(Number(item.totalPrice.amount), {
-                      currency: item.totalPrice.currencyCode || fallbackCurrency,
-                    }) : "";
-                    
-                    return (
-                      <s-grid key={item.id || index} gridTemplateColumns="auto 1fr auto" alignItems="center" gap="base">
-                        <s-box inlineSize="64px" blockSize="64px" border="base" borderRadius="base" overflow="hidden">
-                          <s-image
-                            src={item.image?.url}
-                            alt={item.name}
-                          />
-                        </s-box>
-                        
-                        <s-stack gap="small-100">
-                          <s-text type="strong">{item.name}</s-text>
-                          <s-text tone="neutral">
-                            {item.variantTitle || 'Default'}
-                          </s-text>
-                        </s-stack>
-
-                        <s-text type="strong">
-                          {itemPrice}
-                        </s-text>
-                      </s-grid>
-                    );
-                  })}
-              </s-stack>
-            </s-box>
-
-          </s-stack>
-        </s-modal>
+        
 
 
 
@@ -586,31 +477,38 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                   {(navSection.links || []).map((link: any, index: number) => {
                     let dynamicSub = link.sub;
                     if (link.dynamicSub === "orderStatus") {
-                      dynamicSub = loading ? "Loading..." : (orders || []).length + " orders";
-                    } else if (link.dynamicSub === "lastOrderName") {
-                      dynamicSub = "Pending";
+                      const unfulfilledOrders = (orders || []).filter(o => o.fulfillmentStatus === "UNFULFILLED");
+                      dynamicSub = loading ? "Loading..." : unfulfilledOrders.length + " orders";
                     } else if (link.dynamicSub === "loyaltyPoints") {
                       dynamicSub = pointsLoading ? "Loading..." : points !== null ? points + " pts" : "0 pts";
                     }
 
                     let href = link.href;
-                    const isClickable = href && href !== "#";
+                    const isClickable = (href && href !== "#") || link.command;
 
                     const isReviewProducts = link.label === "Review Products";
                     const lastOrder = (orders || []).length > 0 ? orders[0] : null;
 
                     return (
                       <s-stack key={index} gap="small">
-                        <s-grid gridTemplateColumns="1fr auto" alignItems="center">
-                           {isClickable ? (
-                             <s-clickable id={"nav-l-" + index} href={href}>
+                         {isClickable ? (
+                           <s-clickable 
+                             id={"nav-l-" + index} 
+                             href={href} 
+                             command={link.command} 
+                             commandFor={link.commandFor}
+                           >
+                             <s-grid gridTemplateColumns="1fr auto" alignItems="center">
                                <s-text tone="info">{link.label}</s-text>
-                             </s-clickable>
-                           ) : (
+                               {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                             </s-grid>
+                           </s-clickable>
+                         ) : (
+                           <s-grid gridTemplateColumns="1fr auto" alignItems="center">
                              <s-text tone="neutral">{link.label}</s-text>
-                           )}
-                           {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
-                        </s-grid>
+                             {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                           </s-grid>
+                         )}
                         {isReviewProducts && lastOrder && (
                           <s-stack gap="base" paddingBlockStart="small">
                             {(showAllReviews ? lastOrder.lineItems : lastOrder.lineItems.slice(0, 5)).map((item, idx) => {
@@ -649,6 +547,280 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         </s-grid>
       </s-stack>
       </s-query-container>
+
+      {isAllOrdersModalVisible && (
+        <s-modal id="all-orders-modal" heading="Ongoing Order Status" size="max">
+          <s-query-container>
+            <s-stack gap="large" alignItems="center">
+              
+              <s-box padding="large" background="base" border="base" borderRadius="large" inlineSize="100%">
+                <s-stack gap="large">
+  
+                  {/* Header */}
+                  <s-grid gridTemplateColumns="2fr 1fr 1fr 1fr" display="@container (inline-size > 768px) grid, none" alignItems="center" paddingInline="base">
+                    <s-text type="strong" tone="neutral">Product</s-text>
+                    <s-text type="strong" tone="neutral">Status</s-text>
+                    <s-text type="strong" tone="neutral">Price</s-text>
+                    <s-text type="strong" tone="neutral">Action</s-text>
+                  </s-grid>
+  
+                  <s-box display="@container (inline-size > 768px) block, none">
+                    <s-divider />
+                  </s-box>
+  
+                  {(orders || [])
+                    .filter(o => o.fulfillmentStatus === "UNFULFILLED")
+                    .map((order, index) => {
+                      const fulfillmentStatus = order.fulfillmentStatus || 'UNFULFILLED';
+                      const displayStatus =
+                        fulfillmentStatus.charAt(0) +
+                        fulfillmentStatus.slice(1).toLowerCase();
+  
+                      const totalQuantity = (order.lineItems || []).reduce(
+                        (acc, item) => acc + (item.quantity || 0),
+                        0
+                      );
+  
+                      const orderPrice =
+                        order.totalPrice && api.i18n
+                          ? api.i18n.formatCurrency(
+                              Number(order.totalPrice.amount),
+                              {
+                                currency:
+                                  order.totalPrice.currencyCode || fallbackCurrency,
+                              }
+                            ) +
+                            " " +
+                            (order.totalPrice.currencyCode || fallbackCurrency)
+                          : "";
+  
+                      return (
+                        <s-box
+                          key={order.id}
+                          padding="base"
+                          border="base"
+                          borderRadius="large"
+                        >
+                          <s-stack gap="base">
+  
+                            {/* DESKTOP */}
+                            <s-grid
+                              gridTemplateColumns="2fr 1fr 1fr 1fr"
+                              display="@container (inline-size > 768px) grid, none"
+                              alignItems="center"
+                              gap="base"
+                            >
+                              {/* Product */}
+                              <s-clickable href={`shopify://customer-account/orders/${getNumericId(order.id)}`}>
+                                <s-stack direction="inline" gap="base" alignItems="center">
+  
+                                  <s-box
+                                    borderRadius="base"
+                                    overflow="hidden"
+                                    inlineSize="56px"
+                                    blockSize="56px"
+                                  >
+                                    {order.lineItems?.[0]?.image ? (
+                                      <s-image
+                                        src={order.lineItems[0].image.url}
+                                        alt={order.lineItems[0].name}
+                                      />
+                                    ) : (
+                                      <s-grid alignItems="center" blockSize="100%">
+                                        <s-icon type="image" tone="subdued" />
+                                      </s-grid>
+                                    )}
+                                  </s-box>
+  
+                                  <s-stack gap="small-100">
+                                    <s-text type="strong">{order.name}</s-text>
+                                    <s-text tone="subdued">
+                                      {totalQuantity} items
+                                    </s-text>
+                                  </s-stack>
+  
+                                </s-stack>
+                              </s-clickable>
+  
+                              {/* Status */}
+                              <s-stack gap="small-100">
+                                <s-text type="strong">{displayStatus}</s-text>
+                                <s-text tone="subdued">
+                                  {order.processedAt
+                                    ? new Date(order.processedAt).toLocaleDateString("en-GB")
+                                    : ""}
+                                </s-text>
+                              </s-stack>
+  
+                              {/* Price */}
+                              <s-text type="strong">{orderPrice}</s-text>
+  
+                              {/* Action */}
+                              <s-button
+                                variant="secondary"
+                                onClick={() => handleReorder(order.id)}
+                                loading={reorderLoadingId === order.id}
+                                disabled={reorderLoadingId !== null}
+                              >
+                                {reorderLoadingId === order.id ? "" : "Reorder"}
+                              </s-button>
+                            </s-grid>
+  
+                            {/* MOBILE */}
+                            <s-grid
+                              gridTemplateColumns="1fr auto"
+                              display="@container (inline-size > 768px) none, grid"
+                              gap="small"
+                            >
+                              <s-clickable href={`shopify://customer-account/orders/${getNumericId(order.id)}`}>
+                                <s-stack direction="inline" gap="base">
+  
+                                  <s-box
+                                    borderRadius="base"
+                                    overflow="hidden"
+                                    inlineSize="52px"
+                                    blockSize="52px"
+                                  >
+                                    {order.lineItems?.[0]?.image ? (
+                                      <s-image
+                                        src={order.lineItems[0].image.url}
+                                        alt={order.lineItems[0].name}
+                                      />
+                                    ) : (
+                                      <s-grid alignItems="center" blockSize="100%">
+                                        <s-icon type="image" tone="subdued" />
+                                      </s-grid>
+                                    )}
+                                  </s-box>
+  
+                                  <s-stack gap="small-100">
+                                    <s-text type="strong">{order.name}</s-text>
+                                    <s-text tone="subdued">
+                                      {totalQuantity} items
+                                    </s-text>
+                                    <s-text>{displayStatus}</s-text>
+                                    <s-text tone="subdued">
+                                      {order.processedAt
+                                        ? new Date(order.processedAt).toLocaleDateString("en-GB")
+                                        : ""}
+                                    </s-text>
+                                  </s-stack>
+  
+                                </s-stack>
+                              </s-clickable>
+  
+                              <s-stack alignItems="end" gap="small">
+                                <s-text type="strong">{orderPrice}</s-text>
+                                <s-button
+                                  size="small"
+                                  variant="secondary"
+                                  onClick={() => handleReorder(order.id)}
+                                  loading={reorderLoadingId === order.id}
+                                  disabled={reorderLoadingId !== null}
+                                >
+                                  Reorder
+                                </s-button>
+                              </s-stack>
+                            </s-grid>
+  
+                          </s-stack>
+                        </s-box>
+                      );
+                    })}
+                </s-stack>
+              </s-box>
+            </s-stack>
+          </s-query-container>
+        </s-modal>
+      )}
+
+      {isLineItemsModalVisible && (
+        <s-modal 
+          id="order-line-items-modal" 
+          heading={`${(selectedOrder?.lineItems || []).length} items`}
+          size="max"
+        >
+          <s-query-container>
+            <s-stack gap="base">
+  
+              {/* Search + Button - Responsive */}
+              <s-stack gap="base">
+                <s-text-field
+                  label="Search"
+                  labelAccessibilityVisibility="visible"
+                  icon="search"
+                  value={searchQuery}
+                  onInput={(e: any) => setSearchQuery(e.target.value)}
+                />
+                <s-button 
+                  variant="primary" 
+                  onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
+                  loading={reorderLoadingId === selectedOrder?.id}
+                  disabled={reorderLoadingId !== null}
+                >
+                  {reorderLoadingId === selectedOrder?.id ? "Processing..." : "REORDER NOW"}
+                </s-button>
+              </s-stack>
+  
+  
+              <s-divider />
+  
+              {/* Scrollable Items List */}
+              <s-box padding="base">
+                <s-stack gap="base">
+                  {(selectedOrder?.lineItems || [])
+                    .filter(item => 
+                      !searchQuery || 
+                      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (item.variantTitle && item.variantTitle.toLowerCase().includes(searchQuery.toLowerCase()))
+                    )
+                    .map((item, index) => {
+                      const itemPrice = (item.totalPrice && api.i18n) ? api.i18n.formatCurrency(Number(item.totalPrice.amount), {
+                        currency: item.totalPrice.currencyCode || fallbackCurrency,
+                      }) : "";
+                      
+                      return (
+                        <s-stack key={item.id || index} gap="base">
+                         
+                          <s-grid 
+                            gridTemplateColumns="auto 1fr auto" 
+                            alignItems="center" 
+                            gap="@container (inline-size > 768px) base, small"
+                          >
+                            {/* Image with fallback */}
+                            <s-box inlineSize="64px" blockSize="64px" border="base" borderRadius="base" overflow="hidden">
+                              {item.image?.url ? (
+                                <s-image src={item.image.url} alt={item.name} />
+                              ) : (
+                                <s-grid alignItems="center" justifyItems="center" blockSize="100%">
+                                  <s-icon type="image" tone="neutral" />
+                                </s-grid>
+                              )}
+                            </s-box>
+                            
+                            {/* Name + Variant */}
+                            <s-stack gap="small-100">
+                              <s-text type="strong">{item.name}</s-text>
+                              <s-text tone="neutral">
+                                {item.variantTitle || 'Default'}
+                              </s-text>
+                            </s-stack>
+  
+                            {/* Price */}
+                            <s-text type="strong">{itemPrice}</s-text>
+                          </s-grid>
+                        </s-stack>
+                      );
+                    })}
+                </s-stack>
+              </s-box>
+  
+            </s-stack>
+          </s-query-container>
+        </s-modal>
+      )}
+
+
     </s-page>
   );
 }
