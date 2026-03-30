@@ -264,99 +264,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           </s-grid>
         </s-banner>
 
-        {loading ? (
-             <s-box padding="base" background="base" borderRadius="base">
-                <s-stack gap="base">
-                    <s-heading>Orders</s-heading>
-                    {[1, 2, 3].map((i) => (
-                        <s-box key={i} border="base" padding="base" borderRadius="large">
-                            <s-grid gridTemplateColumns="@container (inline-size > 768px) 'auto 1fr 1fr auto auto', 'auto 1fr auto'" alignItems="center" gap="base">
-                                <s-box background="subdued" blockSize="50px" inlineSize="50px" borderRadius="base" />
-                                <s-stack gap="small-100">
-                                    <s-box background="subdued" blockSize="15px" inlineSize="60px" />
-                                    <s-box background="subdued" blockSize="12px" inlineSize="40px" />
-                                </s-stack>
-                                <s-stack gap="small-100">
-                                    <s-box background="subdued" blockSize="15px" inlineSize="80px" />
-                                    <s-box background="subdued" blockSize="12px" inlineSize="50px" />
-                                </s-stack>
-                                <s-box background="subdued" blockSize="15px" inlineSize="80px" />
-                                <s-icon type="menu-horizontal" tone="neutral" />
-                            </s-grid>
-                        </s-box>
-                    ))}
-                </s-stack>
-            </s-box>
-        ) : (orders || []).length > 0 ? (
-            <s-box padding="base" background="base" borderRadius="base">
-                <s-stack gap="base">
-                    <s-grid gridTemplateColumns="1fr auto" alignItems="center">
-                        <s-heading>Orders</s-heading>
-                        <s-button variant="secondary">
-                            <s-icon type="filter" tone="neutral" />
-                        </s-button>
-                    </s-grid>
-                    {(orders || []).slice(0, 3).map((order) => {
-                        const fulfillmentStatus = order.fulfillmentStatus || 'Confirmed';
-                        const displayStatus = fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase();
-                        const totalQty = (order.lineItems || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
-                        const orderPrice = (order.totalPrice && api.i18n) ? api.i18n.formatCurrency(Number(order.totalPrice.amount), {
-                            currency: order.totalPrice.currencyCode || fallbackCurrency,
-                        }) + " " + (order.totalPrice.currencyCode || fallbackCurrency) : "";
-                        const triggerId = "trigger-" + getNumericId(order.id);
-                        const menuId = "menu-" + getNumericId(order.id);
-                        
-                        return (
-                            <s-box key={order.id} padding="base" background="base" borderRadius="large" border="base">
-                                <s-grid gridTemplateColumns="@container (inline-size > 768px) 'auto 1fr 1fr auto auto', 'auto 1fr auto'" alignItems="center" gap="base">
-                                    <s-box borderRadius="base" overflow="hidden" inlineSize="50px" blockSize="50px">
-                                        {order.lineItems?.[0]?.image ? (
-                                            <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name} />
-                                        ) : (
-                                            <s-grid alignItems="center" blockSize="100%">
-                                                <s-icon type="image" tone="neutral" />
-                                            </s-grid>
-                                        )}
-                                    </s-box>
-                                    
-                                    <s-stack gap="small-100">
-                                        <s-text type="strong">{order.name || ""}</s-text>
-                                        <s-paragraph tone="neutral">
-                                            {totalQty} items
-                                        </s-paragraph>
-                                    </s-stack>
-                                    
-                                    <s-stack gap="small-100">
-                                        <s-text type="strong">{displayStatus}</s-text>
-                                        <s-paragraph tone="neutral">
-                                            {order.processedAt ? new Date(order.processedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ""}
-                                        </s-paragraph>
-                                    </s-stack>
-                
-                                    <s-text type="strong">
-                                        {orderPrice}
-                                    </s-text>
-                
-                                    <s-box>
-                                         <s-button id={triggerId} variant="secondary" command="--toggle" commandFor={menuId}>
-                                            <s-icon type="menu-horizontal" tone="neutral" />
-                                        </s-button>
-                                        <s-popover id={menuId}>
-                                            <s-stack padding="base" gap="small">
-                                                 <s-button variant="secondary" href={"shopify://customer-account/orders/" + getNumericId(order.id)}>View Order</s-button>
-                                                 <s-button variant="secondary" command="--hide" commandFor={menuId} onClick={() => handleReorder(order.id, menuId)} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
-                                                     {reorderLoadingId === order.id ? "" : "Reorder"}
-                                                 </s-button>
-                                            </s-stack>
-                                        </s-popover>
-                                    </s-box>
-                                </s-grid>
-                            </s-box>
-                        );
-                    })}
-                </s-stack>
-            </s-box>
-        ) : null}
+        
 
         <s-grid 
           id="dashboard-grid" 
@@ -457,9 +365,6 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           </s-box>
         </s-grid>
 
-        
-
-
 
         <s-grid 
           id="nav-grid" 
@@ -512,7 +417,8 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                         {isReviewProducts && lastOrder && (
                           <s-stack gap="base" paddingBlockStart="small">
                             {(showAllReviews ? lastOrder.lineItems : lastOrder.lineItems.slice(0, 5)).map((item, idx) => {
-                              const storefrontUrl = item.productHandle ? `https://${currentShopDomain}/products/${item.productHandle}` : null;
+                              const reviewTargetText = '#' + (settings?.cb_review_target || "review");
+                              const storefrontUrl = item.productHandle ? `https://${currentShopDomain}/products/${item.productHandle}${reviewTargetText}` : null;
                               return (
                                 <s-grid key={idx} gridTemplateColumns="1fr auto" alignItems="center" gap="small">
                                   <s-stack gap="none">
@@ -549,7 +455,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
       </s-query-container>
 
       {isAllOrdersModalVisible && (
-        <s-modal id="all-orders-modal" heading="Ongoing Order Status" size="max">
+        <s-modal id="all-orders-modal" heading="Ongoing Order Status" size="large-100">
           <s-query-container>
             <s-stack gap="large" alignItems="center">
               
@@ -627,14 +533,14 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                       />
                                     ) : (
                                       <s-grid alignItems="center" blockSize="100%">
-                                        <s-icon type="image" tone="subdued" />
+                                        <s-icon type="image" tone="neutral" />
                                       </s-grid>
                                     )}
                                   </s-box>
   
                                   <s-stack gap="small-100">
                                     <s-text type="strong">{order.name}</s-text>
-                                    <s-text tone="subdued">
+                                    <s-text tone="neutral">
                                       {totalQuantity} items
                                     </s-text>
                                   </s-stack>
@@ -645,7 +551,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                               {/* Status */}
                               <s-stack gap="small-100">
                                 <s-text type="strong">{displayStatus}</s-text>
-                                <s-text tone="subdued">
+                                <s-text tone="neutral">
                                   {order.processedAt
                                     ? new Date(order.processedAt).toLocaleDateString("en-GB")
                                     : ""}
@@ -688,18 +594,18 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                       />
                                     ) : (
                                       <s-grid alignItems="center" blockSize="100%">
-                                        <s-icon type="image" tone="subdued" />
+                                        <s-icon type="image" tone="neutral" />
                                       </s-grid>
                                     )}
                                   </s-box>
   
                                   <s-stack gap="small-100">
                                     <s-text type="strong">{order.name}</s-text>
-                                    <s-text tone="subdued">
+                                    <s-text tone="neutral">
                                       {totalQuantity} items
                                     </s-text>
                                     <s-text>{displayStatus}</s-text>
-                                    <s-text tone="subdued">
+                                    <s-text tone="neutral">
                                       {order.processedAt
                                         ? new Date(order.processedAt).toLocaleDateString("en-GB")
                                         : ""}
@@ -712,7 +618,6 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                               <s-stack alignItems="end" gap="small">
                                 <s-text type="strong">{orderPrice}</s-text>
                                 <s-button
-                                  size="small"
                                   variant="secondary"
                                   onClick={() => handleReorder(order.id)}
                                   loading={reorderLoadingId === order.id}
@@ -738,7 +643,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
         <s-modal 
           id="order-line-items-modal" 
           heading={`${(selectedOrder?.lineItems || []).length} items`}
-          size="max"
+          size="large-100"
         >
           <s-query-container>
             <s-stack gap="base">

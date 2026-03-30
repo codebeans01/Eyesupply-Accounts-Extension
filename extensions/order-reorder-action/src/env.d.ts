@@ -1,5 +1,4 @@
-/// <reference types="vite/client" />
-/// <reference types="@react-router/node" />
+import 'preact';
 
 declare global {
   namespace JSX {
@@ -18,14 +17,6 @@ declare module 'preact' {
 }
 
 declare module 'preact/jsx-runtime' {
-  namespace JSX {
-    interface IntrinsicElements {
-      [tagName: string]: any;
-    }
-  }
-}
-
-declare module 'preact/compat' {
   namespace JSX {
     interface IntrinsicElements {
       [tagName: string]: any;

@@ -5,14 +5,29 @@ import { reorder, fetchShopDomain } from "./helpers";
 import { MissingItem } from './reorder.helpers';
 import { fetchReorderResult } from './reorder.service';
 
+const SCustomerAccountAction = 's-customer-account-action' as any;
+const SSection = 's-section' as any;
+const SText = 's-text' as any;
+const SButton = 's-button' as any;
+const SStack = 's-stack' as any;
+
 function ActionModal() {
 
+  const api = (globalThis as any).shopify;
   const [loading, setLoading] = useState(true);
   const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState(api?.settings?.value ?? {});
   
-  const api = (globalThis as any).shopify;
+  const translate = api.i18n.translate;
+  
+  useEffect(() => {
+    const unsubscribe = api.settings?.subscribe?.((newSettings: any) => {
+      setSettings(newSettings ?? {});
+    });
+    return () => unsubscribe?.();
+  }, [api.settings]);
 
   useEffect(() => {
     async function runReorder() {
@@ -22,7 +37,7 @@ function ActionModal() {
 
         const shopDomain = await fetchShopDomain();
 
-        const excludeTrial = api?.settings?.current?.exclude_trial_pack === true;
+        const excludeTrial = settings?.exclude_trial_pack === true;
 
         const { redirectUrl: url, missingItems: missing } = await fetchReorderResult(
           orderId,
@@ -56,7 +71,7 @@ function ActionModal() {
 
   const handleClose = () => api?.close?.();
 
-  const externalLink = api?.settings?.current?.external_reorder_link;
+  const externalLink = settings?.external_reorder_link;
 
   const handleProceed = () => {
     const targetUrl = externalLink || redirectUrl;
@@ -72,69 +87,68 @@ function ActionModal() {
 
   if (loading) {
     return (
-      <s-stack gap="base" padding="large">
-        <s-stack gap="base" alignItems="center" padding="large">
-          <s-spinner size="base" />
-          <s-text tone="neutral">Checking product availability...</s-text>
-        </s-stack>
-      </s-stack>
+      <SCustomerAccountAction heading="Reorder">
+        <SSection>
+          <SText>Checking product availability...</SText>
+        </SSection>
+      </SCustomerAccountAction>
     );
   }
 
   if (error) {
     return (
-      <s-stack gap="base" padding="large">
-        <s-stack gap="base" padding="large">
-          <s-banner tone="critical" heading="Error">
-            <s-text>{error}</s-text>
-          </s-banner>
-          <s-button slot="primary-action" onClick={handleClose}>Close</s-button>
-        </s-stack>
-      </s-stack>
+      <SCustomerAccountAction heading="Error">
+        <SSection padding="base">
+          <SText tone="critical">{error}</SText>
+        </SSection>
+        <SButton slot="primary-action" onClick={handleClose}>Close</SButton>
+      </SCustomerAccountAction>
     );
   }
 
   if (redirectUrl && (!missingItems || missingItems.length === 0)) {
     return (
-      <s-stack gap="base" padding="large">
-        <s-stack gap="base" padding="large">
-          <s-banner tone="success" heading="Success">
-            All items are available and ready to reorder!
-          </s-banner>
-          <s-text>Click below to go to your cart if you aren't redirected automatically.</s-text>
-          <s-button slot="primary-action" onClick={() => {
-            if (api?.navigation?.navigate) {
-              api.navigation.navigate(redirectUrl);
-            } else {
-              window.location.href = redirectUrl;
-            }
-            setTimeout(() => handleClose(), 5000);
-          }}>
-            Go to Cart
-          </s-button>
-          <s-button slot="secondary-action" onClick={handleClose}>
-            Cancel
-          </s-button>
-        </s-stack>
-      </s-stack>
+      <SCustomerAccountAction heading="Success">
+        <SSection padding="base">
+          <SText>All items are available and ready to reorder!</SText>
+          <SText>Click below to go to your cart if you aren't redirected automatically.</SText>
+        </SSection>
+        <SButton slot="primary-action" onClick={() => {
+          if (api?.navigation?.navigate) {
+            api.navigation.navigate(redirectUrl);
+          } else {
+            window.location.href = redirectUrl;
+          }
+          setTimeout(() => handleClose(), 5000);
+        }}>
+          Go to Cart
+        </SButton>
+        <SButton slot="secondary-actions" onClick={handleClose}>
+          Cancel
+        </SButton>
+      </SCustomerAccountAction>
     );
   }
 
   return (
-    <s-stack gap="base" padding="large">
-      <s-text tone="neutral">
-        Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. 
-        Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
-      </s-text>
-      
-      <s-stack direction="inline" gap="base">
-        <s-text tone="neutral">Need help?</s-text>
-        <s-clickable onClick={handleProceed}>
-          <s-text tone="info">Click here</s-text>
-        </s-clickable>
-        <s-text tone="neutral">and we’ll load your previous order into cart for you.</s-text>
-      </s-stack>
-    </s-stack>
+    <s-customer-account-action heading="Reordering from an older order?">
+      <s-box padding="none" paddingBlockStart="base">
+        <s-stack direction="block" gap="base" paddingBlockEnd="base">
+          <s-text>
+            Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
+          </s-text>
+          <s-box padding-block-start="base">
+            <s-text>
+              Need help?{" "}
+              <s-link onClick={handleProceed}>
+                Click here
+              </s-link>
+              {" "}and we'll load your previous order into cart for you.
+            </s-text>
+          </s-box>
+        </s-stack>
+      </s-box>
+    </s-customer-account-action>
   );
 }
 

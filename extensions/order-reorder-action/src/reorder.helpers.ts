@@ -7,6 +7,7 @@ export interface CartItem {
 export interface MissingItem {
   name: string;
   image?: string;
+  quantity: number;
 }
 
 export interface ReorderResult {
@@ -72,6 +73,7 @@ export function partitionLineItems(lineItems: LineItem[], excludeTrial: boolean 
       missingItems.push({
         name: item.name || item.title || "Unknown Product",
         image: item.image?.url,
+        quantity: item.quantity,
       });
       continue;
     }
