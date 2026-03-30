@@ -88,7 +88,6 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   }, [api, currentShopDomain]);
 
   useEffect(() => {
-    console.log('api',api)
     const unsubscribe = api.settings?.subscribe?.((newSettings: any) => {
       setSettings(newSettings ?? {});
     });
@@ -642,7 +641,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
       {isLineItemsModalVisible && (
         <s-modal 
           id="order-line-items-modal" 
-          heading={`${(selectedOrder?.lineItems || []).length} items`}
+          heading={`${(selectedOrder?.lineItems || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0)} items`}
           size="large-100"
         >
           <s-query-container>
@@ -692,16 +691,12 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                             alignItems="center" 
                             gap="@container (inline-size > 768px) base, small"
                           >
-                            {/* Image with fallback */}
-                            <s-box inlineSize="64px" blockSize="64px" border="base" borderRadius="base" overflow="hidden">
-                              {item.image?.url ? (
-                                <s-image src={item.image.url} alt={item.name} />
-                              ) : (
-                                <s-grid alignItems="center" justifyItems="center" blockSize="100%">
-                                  <s-icon type="image" tone="neutral" />
-                                </s-grid>
-                              )}
-                            </s-box>
+                            {/* Image with quantity badge overlay (Checkout style) */}
+                            <s-product-thumbnail 
+                              src={item.image?.url ?? ""} 
+                              alt={item.name} 
+                              totalItems={item.quantity} 
+                            />
                             
                             {/* Name + Variant */}
                             <s-stack gap="small-100">
