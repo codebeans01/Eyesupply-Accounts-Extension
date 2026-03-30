@@ -1,5 +1,5 @@
 import '@shopify/ui-extensions/preact';
-import { render } from "preact";
+import { render, h } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import { reorder, fetchShopDomain } from "./helpers";
 import { MissingItem } from './reorder.helpers';
@@ -72,31 +72,31 @@ function ActionModal() {
 
   if (loading) {
     return (
-      <s-customer-account-action heading="Reordering...">
+      <s-stack gap="base" padding="large">
         <s-stack gap="base" alignItems="center" padding="large">
           <s-spinner size="base" />
           <s-text tone="neutral">Checking product availability...</s-text>
         </s-stack>
-      </s-customer-account-action>
+      </s-stack>
     );
   }
 
   if (error) {
     return (
-      <s-customer-account-action heading="Reorder Error">
+      <s-stack gap="base" padding="large">
         <s-stack gap="base" padding="large">
           <s-banner tone="critical" heading="Error">
-            {error}
+            <s-text>{error}</s-text>
           </s-banner>
           <s-button slot="primary-action" onClick={handleClose}>Close</s-button>
         </s-stack>
-      </s-customer-account-action>
+      </s-stack>
     );
   }
 
   if (redirectUrl && (!missingItems || missingItems.length === 0)) {
     return (
-      <s-customer-account-action heading="Reorder Ready">
+      <s-stack gap="base" padding="large">
         <s-stack gap="base" padding="large">
           <s-banner tone="success" heading="Success">
             All items are available and ready to reorder!
@@ -116,28 +116,25 @@ function ActionModal() {
             Cancel
           </s-button>
         </s-stack>
-      </s-customer-account-action>
+      </s-stack>
     );
   }
 
   return (
-    <s-customer-account-action heading="Reordering from an older order?">
-      <s-stack gap="base" padding="large">
-        <s-text tone="neutral">
-          Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. 
-          Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
-        </s-text>
-        
-        <s-stack direction="inline" gap="base">
-          <s-text tone="neutral">Need help?</s-text>
-          <s-clickable onClick={handleProceed}>
-            <s-text tone="info">Click here</s-text>
-          </s-clickable>
-          <s-text tone="neutral">and we’ll load your previous order into cart for you.</s-text>
-        </s-stack>
-        
+    <s-stack gap="base" padding="large">
+      <s-text tone="neutral">
+        Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. 
+        Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
+      </s-text>
+      
+      <s-stack direction="inline" gap="base">
+        <s-text tone="neutral">Need help?</s-text>
+        <s-clickable onClick={handleProceed}>
+          <s-text tone="info">Click here</s-text>
+        </s-clickable>
+        <s-text tone="neutral">and we’ll load your previous order into cart for you.</s-text>
       </s-stack>
-    </s-customer-account-action>
+    </s-stack>
   );
 }
 

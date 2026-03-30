@@ -1,7 +1,7 @@
 import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://lemon-sell-yes-calling.trycloudflare.com";
+export const APP_URL = "https://cambridge-societies-obtained-app.trycloudflare.com";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;

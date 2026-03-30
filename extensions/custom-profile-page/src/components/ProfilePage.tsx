@@ -25,6 +25,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   const [showReorderWarning, setShowReorderWarning] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   // The sandbox environment restricts window access. 
   // We use Shopify's native @container syntax instead of local state for responsiveness.
@@ -147,6 +148,25 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   const lastName = customer?.lastName || "";
   const welcomeImageUrl = (settings?.cb_welcome_image_url as string) ?? "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_100x100.png";
 
+  const calculateDaysRemaining = (dateString: string | null) => {
+    if (!dateString) return null;
+    try {
+      const targetDate = new Date(dateString);
+      const now = new Date();
+      // Reset time components to compare only dates
+      targetDate.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      
+      const diffTime = targetDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const daysRemaining = calculateDaysRemaining(customer?.daysTillRunOut);
+
   return (
     <s-page id="profile-dashboard" heading="My Dashboard">
       <s-query-container>
@@ -194,14 +214,22 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
           </s-banner>
         )}
         <s-banner tone="info" id="hero-banner">
-          <s-grid gridTemplateColumns="@container (inline-size > 600px) '1fr auto', 1fr" alignItems="center" gap="base">
-            <s-stack gap="small-200" direction="block">
+          <s-grid gridTemplateColumns="@container (inline-size > 600px) 1fr auto, 1fr" alignItems="center" gap="small">
+            <s-stack gap="small-100" direction="block">
               <s-heading id="hero-title">Welcome Back</s-heading>
-              <s-text id="user-full-name" type="strong">
+              <s-text id="user-full-name">
                 {loading ? "Loading..." : firstName + " " + lastName}
               </s-text>
             </s-stack>
-            <s-box background="base" borderRadius="base" padding="large" inlineSize="@container (inline-size > 600px) 120px, 80px">
+            
+            <s-box 
+              background="base" 
+              borderRadius="base" 
+              padding="small" 
+              inlineSize="160px"
+              blockSize="auto"
+              overflow="hidden"
+            >
               <s-image
                 src={welcomeImageUrl}
                 alt="Welcome Back"
@@ -318,7 +346,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                   <s-icon type="cart" size="base" tone="neutral" />
                 </s-grid>
               </s-box>
-              <s-stack gap="small-200">
+              <s-stack gap="none">
                 <s-text tone="neutral">Most Recent Order</s-text>
                 <s-text type="strong">{loading ? "Loading..." : ((orders || []).length > 0 ? orders[0].name : "No orders")}</s-text>
                 {!loading && (orders || []).length > 0 && orders[0] && (
@@ -359,7 +387,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
               <s-stack gap="small-200">
                  <s-text tone="neutral">Days Till Run Out</s-text>
                  <s-text type="strong">
-                   {loading ? "Loading..." : (customer?.daysTillRunOut ? customer.daysTillRunOut + " days" : "--")} left of lenses
+                   {loading ? "Loading..." : (daysRemaining !== null ? daysRemaining + " days" : "--")} left of lenses
                  </s-text>
               </s-stack>
             </s-grid>
@@ -481,24 +509,25 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
             <s-stack padding="base" direction="block" gap="small">
               <s-text-field
                 label="Search"
-                labelAccessibilityVisibility="hidden"
+                labelAccessibilityVisibility="visible"
                 placeholder="Search"
                 icon="search"
                 value={searchQuery}
                 onInput={(e: any) => setSearchQuery(e.target.value)}
               />
-               <s-button 
-                variant="primary" 
-                inlineSize="fill"
-                onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
-                loading={reorderLoadingId === selectedOrder?.id}
-                disabled={reorderLoadingId !== null}
-              >
-                {reorderLoadingId === selectedOrder?.id ? "Processing..." : "REORDER NOW"}
-              </s-button>
+               <s-box inlineSize="100%">
+                <s-button 
+                  variant="primary" 
+                  onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
+                  loading={reorderLoadingId === selectedOrder?.id}
+                  disabled={reorderLoadingId !== null}
+                >
+                  {reorderLoadingId === selectedOrder?.id ? "Processing..." : "REORDER NOW"}
+                </s-button>
+               </s-box>
             </s-stack>
 
-            <s-box blockSize="400px" overflow="auto">
+            <s-box blockSize="400px" overflow="hidden">
               <s-stack gap="base" padding="base">
                 {(selectedOrder?.lineItems || [])
                   .filter(item => 
@@ -513,18 +542,16 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                     
                     return (
                       <s-grid key={item.id || index} gridTemplateColumns="auto 1fr auto" alignItems="center" gap="base">
-                        <s-box inlineSize="64px" blockSize="64px">
-                          <s-product-thumbnail
+                        <s-box inlineSize="64px" blockSize="64px" border="base" borderRadius="base" overflow="hidden">
+                          <s-image
                             src={item.image?.url}
                             alt={item.name}
-                            totalItems={item.quantity}
-                            size="base"
                           />
                         </s-box>
                         
                         <s-stack gap="small-100">
                           <s-text type="strong">{item.name}</s-text>
-                          <s-text tone="neutral" type="small">
+                          <s-text tone="neutral">
                             {item.variantTitle || 'Default'}
                           </s-text>
                         </s-stack>
@@ -569,17 +596,50 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                     let href = link.href;
                     const isClickable = href && href !== "#";
 
+                    const isReviewProducts = link.label === "Review Products";
+                    const lastOrder = (orders || []).length > 0 ? orders[0] : null;
+
                     return (
-                      <s-grid key={index} gridTemplateColumns="1fr auto" alignItems="center">
-                         {isClickable ? (
-                           <s-clickable id={"nav-l-" + index} href={href}>
-                             <s-text tone="info">{link.label}</s-text>
-                           </s-clickable>
-                         ) : (
-                           <s-text tone="neutral">{link.label}</s-text>
-                         )}
-                         {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
-                      </s-grid>
+                      <s-stack key={index} gap="small">
+                        <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+                           {isClickable ? (
+                             <s-clickable id={"nav-l-" + index} href={href}>
+                               <s-text tone="info">{link.label}</s-text>
+                             </s-clickable>
+                           ) : (
+                             <s-text tone="neutral">{link.label}</s-text>
+                           )}
+                           {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
+                        </s-grid>
+                        {isReviewProducts && lastOrder && (
+                          <s-stack gap="base" paddingBlockStart="small">
+                            {(showAllReviews ? lastOrder.lineItems : lastOrder.lineItems.slice(0, 5)).map((item, idx) => {
+                              const storefrontUrl = item.productHandle ? `https://${currentShopDomain}/products/${item.productHandle}` : null;
+                              return (
+                                <s-grid key={idx} gridTemplateColumns="1fr auto" alignItems="center" gap="small">
+                                  <s-stack gap="none">
+                                    <s-text type="strong">{item.name}</s-text>
+                                    {item.variantTitle && <s-text tone="neutral">{item.variantTitle}</s-text>}
+                                  </s-stack>
+                                  {storefrontUrl && (
+                                    <s-button variant="secondary" href={storefrontUrl} target="_blank">
+                                      <s-text>Review</s-text>
+                                    </s-button>
+                                  )}
+                                </s-grid>
+                              );
+                            })}
+                            {lastOrder.lineItems.length > 5 && (
+                              <s-button 
+                                variant="secondary" 
+                                onClick={() => setShowAllReviews(!showAllReviews)}
+                              >
+                                {showAllReviews ? "View Less" : `View More (${lastOrder.lineItems.length - 5} more)`}
+                              </s-button>
+                            )}
+                          </s-stack>
+                        )}
+                      </s-stack>
                     );
                   })}
                 </s-stack>

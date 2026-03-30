@@ -9,6 +9,11 @@ interface PrescriptionListPageProps {
   shopDomain: string;
 }
 
+const MOBILE_ONLY_LABEL = "@container (inline-size > 400px) none, auto";
+const DESKTOP_ONLY_HEADER = "@container (inline-size > 400px) auto, none";
+const RESPONSIVE_GRID = "@container (inline-size > 400px) 1fr 1fr 1.2fr 1.8fr, 1fr";
+const RESPONSIVE_PADDING = "@container (inline-size > 400px) none, base";
+
 const DocumentLink = ({ url }: { url: string }) => {
   const parts = url.split('/');
   const lastPart = parts[parts.length - 1] || "";
@@ -110,10 +115,12 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
   if (error) {
     return (
       <s-page heading="My Prescriptions">
-        <s-banner tone="critical" heading="Error">
-          <s-text>{error}</s-text>
-        </s-banner>
-        <s-button onClick={handleBack} variant="secondary">Back</s-button>
+        <s-stack gap="base">
+          <s-banner tone="critical" heading="Error">
+            <s-text>{error}</s-text>
+          </s-banner>
+          <s-button onClick={handleBack} variant="secondary">Back</s-button>
+        </s-stack>
       </s-page>
     );
   }
@@ -126,32 +133,40 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
     return (
       <>
         <s-grid 
-          gridTemplateColumns="@container (inline-size > 400px) 1fr 1fr 1.2fr 1.8fr, 1fr" 
+          gridTemplateColumns={RESPONSIVE_GRID} 
           gap="base" 
           alignItems="center"
-          paddingBlock="@container (inline-size > 400px) none, base"
+          paddingBlock={RESPONSIVE_PADDING}
         >
           {/* ID Column */}
           <s-stack gap="small-200">
-             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">ID</s-text>
+             <s-box display={MOBILE_ONLY_LABEL}>
+               <s-text type="strong" tone="neutral">ID</s-text>
+             </s-box>
              <s-text type="strong">{`#${numericId}`}</s-text>
           </s-stack>
 
           {/* Expiry Date Column */}
           <s-stack gap="small-200">
-             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">Expiry Date</s-text>
+             <s-box display={MOBILE_ONLY_LABEL}>
+               <s-text type="strong" tone="neutral">Expiry Date</s-text>
+             </s-box>
              <s-text>{p.expiry_date || "No Expiry"}</s-text>
           </s-stack>
 
           {/* Status Column */}
           <s-stack gap="small-200">
-             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">Status</s-text>
+             <s-box display={MOBILE_ONLY_LABEL}>
+                <s-text type="strong" tone="neutral">Status</s-text>
+             </s-box>
              <s-badge tone={isActive ? "neutral" : "neutral"}>{p.status || "Active"}</s-badge>
           </s-stack>
 
           {/* Documents Column */}
           <s-stack gap="small-200">
-             <s-text display="@container (inline-size > 400px) none, auto" type="strong" tone="neutral">Documents</s-text>
+             <s-box display={MOBILE_ONLY_LABEL}>
+                <s-text type="strong" tone="neutral">Documents</s-text>
+             </s-box>
              <s-stack gap="small-500">
                {(() => {
                  const allUrls = [
@@ -183,14 +198,14 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
               gridTemplateColumns="1fr 1fr 1.2fr 1.8fr" 
               gap="base" 
               alignItems="center"
-              display="@container (inline-size > 400px) auto, none"
+              display={DESKTOP_ONLY_HEADER}
             >
               <s-text type="strong">ID</s-text>
               <s-text type="strong">Expiry Date</s-text>
               <s-text type="strong">Status</s-text>
               <s-text type="strong">Documents</s-text>
             </s-grid>
-            <s-box display="@container (inline-size > 400px) auto, none">
+            <s-box display={DESKTOP_ONLY_HEADER}>
               <s-divider />
             </s-box>
             {prescriptions.length > 0 ? (

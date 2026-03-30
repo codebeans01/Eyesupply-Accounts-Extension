@@ -20,7 +20,8 @@ export const CUSTOMER_DATA_QUERY = `
           {namespace: "custom", key: "customer_prescription"},
           {namespace: "custom", key: "prescription"},
           {namespace: "custom", key: "prescriptions"},
-          {namespace: "custom", key: "prescription_validation_status"}
+          {namespace: "custom", key: "prescription_validation_status"},
+          {namespace: "custom", key: "days_till_run_out"}
         ]) {
           namespace
           key
@@ -44,9 +45,6 @@ export const CUSTOMER_DATA_QUERY = `
           totalPrice {
             amount
             currencyCode
-          }
-          daysTillRunOut: metafield(namespace: "custom", key: "days_till_run_out") {
-            value
           }
           lineItems(first: $lineItemsFirst) {
             nodes {
