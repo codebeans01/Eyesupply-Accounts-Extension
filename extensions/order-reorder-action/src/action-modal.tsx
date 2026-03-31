@@ -5,12 +5,6 @@ import { reorder, fetchShopDomain } from "./helpers";
 import { MissingItem } from './reorder.helpers';
 import { fetchReorderResult } from './reorder.service';
 
-const SCustomerAccountAction = 's-customer-account-action' as any;
-const SSection = 's-section' as any;
-const SText = 's-text' as any;
-const SButton = 's-button' as any;
-const SStack = 's-stack' as any;
-
 function ActionModal() {
 
   const api = (globalThis as any).shopify;
@@ -19,6 +13,7 @@ function ActionModal() {
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState(api?.settings?.value ?? {});
+  const [olderOrderName, setOlderOrderName] = useState<string | null>(null);
   
   const translate = api.i18n.translate;
   
@@ -39,7 +34,7 @@ function ActionModal() {
 
         const excludeTrial = settings?.exclude_trial_pack === true;
 
-        const { redirectUrl: url, missingItems: missing } = await fetchReorderResult(
+        const { redirectUrl: url, missingItems: missing, orderName } = await fetchReorderResult(
           orderId,
           shopDomain,
           excludeTrial
@@ -47,6 +42,7 @@ function ActionModal() {
 
         setRedirectUrl(url);
         setMissingItems(missing);
+        setOlderOrderName(orderName ?? null);
         setLoading(false);
 
         if (!missing.length && url) {
@@ -87,33 +83,33 @@ function ActionModal() {
 
   if (loading) {
     return (
-      <SCustomerAccountAction heading="Reorder">
-        <SSection>
-          <SText>Checking product availability...</SText>
-        </SSection>
-      </SCustomerAccountAction>
+      <s-customer-account-action heading="Reorder">
+        <s-section>
+          <s-text>Checking product availability...</s-text>
+        </s-section>
+      </s-customer-account-action>
     );
   }
 
   if (error) {
     return (
-      <SCustomerAccountAction heading="Error">
-        <SSection padding="base">
-          <SText tone="critical">{error}</SText>
-        </SSection>
-        <SButton slot="primary-action" onClick={handleClose}>Close</SButton>
-      </SCustomerAccountAction>
+      <s-customer-account-action heading="Error">
+        <s-section padding="base">
+          <s-text tone="critical">{error}</s-text>
+        </s-section>
+        <s-button slot="primary-action" onClick={handleClose}>Close</s-button>
+      </s-customer-account-action>
     );
   }
 
   if (redirectUrl && (!missingItems || missingItems.length === 0)) {
     return (
-      <SCustomerAccountAction heading="Success">
-        <SSection padding="base">
-          <SText>All items are available and ready to reorder!</SText>
-          <SText>Click below to go to your cart if you aren't redirected automatically.</SText>
-        </SSection>
-        <SButton slot="primary-action" onClick={() => {
+      <s-customer-account-action heading="Success">
+        <s-section padding="base">
+          <s-text>All items are available and ready to reorder!</s-text>
+          <s-text>Click below to go to your cart if you aren't redirected automatically.</s-text>
+        </s-section>
+        <s-button slot="primary-action" onClick={() => {
           if (api?.navigation?.navigate) {
             api.navigation.navigate(redirectUrl);
           } else {
@@ -122,24 +118,26 @@ function ActionModal() {
           setTimeout(() => handleClose(), 5000);
         }}>
           Go to Cart
-        </SButton>
-        <SButton slot="secondary-actions" onClick={handleClose}>
+        </s-button>
+        <s-button slot="secondary-actions" onClick={handleClose}>
           Cancel
-        </SButton>
-      </SCustomerAccountAction>
+        </s-button>
+      </s-customer-account-action>
     );
   }
 
   return (
     <s-customer-account-action heading="Reordering from an older order?">
-      <s-box padding="none" paddingBlockStart="base">
-        <s-stack direction="block" gap="base" paddingBlockEnd="base">
+      <s-box padding="none" padding-block-start="base">
+        <s-stack direction="block" gap="base" padding-block-end="base">
           <s-text>
             Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
           </s-text>
           <s-box padding-block-start="base">
             <s-text>
-              Need help?{" "}
+              Need Help For your Order{" "}
+              <s-text id="order-id" type="strong">{olderOrderName}</s-text>
+              {" "}
               <s-link onClick={handleProceed}>
                 Click here
               </s-link>

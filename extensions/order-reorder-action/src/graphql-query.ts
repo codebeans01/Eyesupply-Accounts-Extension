@@ -9,6 +9,7 @@ export const SHOP_DOMAIN_QUERY = `
 export const ORDER_LINE_ITEMS_QUERY = `
   query getOrder($orderId: ID!) {
     order(id: $orderId) {
+      name
       lineItems(first: 50) {
         nodes {
           id

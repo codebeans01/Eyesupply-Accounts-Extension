@@ -34,7 +34,9 @@ export async function fetchReorderResult(
     throw new Error(json.errors[0]?.message ?? "GraphQL Error");
   }
 
-  const lineItems = json.data?.order?.lineItems?.nodes ?? [];
+  const order = json.data?.order;
+  const lineItems = order?.lineItems?.nodes ?? [];
+  const orderName = order?.name;
 
   if (!lineItems.length) {
     throw new Error("Order not found or has no line items");
@@ -44,5 +46,5 @@ export async function fetchReorderResult(
 
   const redirectUrl = buildCartPermalink(shopDomain, cartItems);
 
-  return { redirectUrl, missingItems };
+  return { redirectUrl, missingItems, orderName };
 }

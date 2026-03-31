@@ -13,6 +13,7 @@ export interface MissingItem {
 export interface ReorderResult {
   redirectUrl: string | null;
   missingItems: MissingItem[];
+  orderName?: string;
 }
 
 interface LineItem {

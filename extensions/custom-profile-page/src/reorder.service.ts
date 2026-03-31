@@ -56,6 +56,7 @@ export async function fetchReorderResult(
 
   console.log("[reorder.service] Received data for order GID:", orderData.id);
   
+  const orderName = orderData.name;
   const lineItems = orderData.lineItems?.nodes ?? [];
   console.log("[reorder.service] Item count from API:", lineItems.length);
 
@@ -71,5 +72,5 @@ export async function fetchReorderResult(
   const redirectUrl = buildCartPermalink(shopDomain, cartItems);
   
   console.log("[reorder.service] Returning redirectUrl:", redirectUrl);
-  return { redirectUrl, missingItems };
+  return { redirectUrl, missingItems, orderName };
 }

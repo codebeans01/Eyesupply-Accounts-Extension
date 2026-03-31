@@ -11,7 +11,7 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [customer, setCustomer] = useState<any | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<Error | null>(null);
@@ -22,12 +22,13 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
   const [reorderLoadingId, setReorderLoadingId] = useState<string | null>(null);
   const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
   const [reorderRedirectUrl, setReorderRedirectUrl] = useState<string | null>(null);
-  const [showReorderWarning, setShowReorderWarning] = useState(false);
+  const [showReorderWarning, setShowReorderWarning] = useState<boolean>(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showAllReviews, setShowAllReviews] = useState(false);
-  const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true);
-  const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showAllReviews, setShowAllReviews] = useState<boolean>(false);
+  const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState<boolean>(true);
+  const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState<boolean>(true);
+  const [olderOrderName, setOlderOrderName] = useState<string | null>(null);
 
   // The sandbox environment restricts window access. 
   // We use Shopify's native @container syntax instead of local state for responsiveness.
@@ -94,7 +95,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
     return () => unsubscribe?.();
   }, [api.settings]);
 
-  const handleReorder = async (orderId: string, menuId?: string) => {
+  const handleReorder = async (orderId: string, orderName?: string, menuId?: string) => {
     if (!currentShopDomain || !orderId) return;
     
    
@@ -127,6 +128,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
             // Force hide by removing from DOM (most reliable way)
             setIsAllOrdersModalVisible(false);
             setIsLineItemsModalVisible(false);
+            setOlderOrderName(orderName);
 
             // Fallback: close the currently active overlay to ensure UI stability
             api.ui.overlay.close();
@@ -135,20 +137,14 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
             if (menuId) {
               api.ui.overlay.close(menuId);
             }
-            
-            // Brief delay allows the modal closing animation to complete 
-            // before the page re-renders with the warning banner.
+          
             setTimeout(() => {
                 setShowReorderWarning(true);
                 api.toast?.show("Some items are unavailable");
 
-                // Scroll to the newly appeared banner
-                // Another tiny delay ensures the banner is rendered in the DOM before scrolling
                 setTimeout(() => {
                     api.navigation.navigate('#reorder-warning-banner');
                 }, 100);
-
-                // Reset render state so they can be opened again later
                 setIsAllOrdersModalVisible(true);
                 setIsLineItemsModalVisible(true);
             }, 200);
@@ -217,7 +213,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
             <s-stack gap="base">
               <s-text>Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. 
               Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account. </s-text>
-              <s-text>Need help? <s-link href={externaReorderLink} target="_blank">Click here</s-link> and we’ll load your previous order into cart for you.</s-text>
+              <s-text>Need Help For your Order <s-text type="strong" id="order-id">{olderOrderName}</s-text> <s-link href={externaReorderLink} target="_blank">Click here</s-link> and we’ll load your previous order into cart for you.</s-text>
 
               <s-stack direction="inline" gap="small">
                 <s-button
@@ -296,7 +292,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
               <s-stack direction="inline" gap="small" alignItems="center">
                 <s-button 
                   variant="primary" 
-                  onClick={() => orders?.[0]?.id && handleReorder(orders[0].id)}
+                  onClick={() => orders?.[0]?.id && handleReorder(orders[0].id, orders[0].name)}
                   loading={reorderLoadingId === ((orders || []).length > 0 ? orders[0].id : null)}
                   disabled={loading || (orders || []).length === 0}
                 >
@@ -370,7 +366,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
               <s-stack gap="base">
                 <s-grid gridTemplateColumns="1fr auto">
                   <s-heading id={"heading-" + navSection.id}>{navSection.title}</s-heading>
-                  <s-icon type="image" tone="neutral" />
+                  <s-icon type={navSection.icon} tone="neutral" />
                 </s-grid>
                 <s-stack gap="small">
                   {(navSection.links || []).map((link: any, index: number) => {
@@ -573,7 +569,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                               {/* Action */}
                               <s-button
                                 variant="secondary"
-                                onClick={() => handleReorder(order.id)}
+                                onClick={() => handleReorder(order.id, order.name)}
                                 loading={reorderLoadingId === order.id}
                                 disabled={reorderLoadingId !== null}
                               >
@@ -628,7 +624,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                                 <s-text type="strong">{orderPrice}</s-text>
                                 <s-button
                                   variant="secondary"
-                                  onClick={() => handleReorder(order.id)}
+                                  onClick={() => handleReorder(order.id, order.name)}
                                   loading={reorderLoadingId === order.id}
                                   disabled={reorderLoadingId !== null}
                                 >
@@ -674,7 +670,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                     <s-stack direction="inline" justifyContent={reorderButtonPosition.endsWith("right") ? "end" : "start"}>
                       <s-button 
                         variant="primary" 
-                        onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
+                        onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id, selectedOrder.name)}
                         loading={reorderLoadingId === selectedOrder?.id}
                         disabled={reorderLoadingId !== null}
                       >
@@ -741,7 +737,7 @@ export function ProfilePage({ api, shopDomain }: ProfilePageProps) {
                     <s-stack direction="inline" justifyContent={reorderButtonPosition.endsWith("right") ? "end" : "start"}>
                       <s-button 
                         variant="primary" 
-                        onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id)}
+                        onClick={() => selectedOrder?.id && handleReorder(selectedOrder.id, selectedOrder.name)}
                         loading={reorderLoadingId === selectedOrder?.id}
                         disabled={reorderLoadingId !== null}
                       >
