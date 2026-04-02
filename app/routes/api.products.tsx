@@ -66,23 +66,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }
     `;
 
-    const response = await storefront.graphql(productQuery, {
-      variables: { ids },
-    });
-
-    const result = await response.json();
-
+    // Batch in chunks of 250 — Storefront API nodes() limit
+    const BATCH_SIZE = 250;
     const products: Record<string, string> = {};
 
-    for (const node of result.data?.nodes || []) {
-      if (!node) continue;
-      
-      if (node.__typename === "Product" && node.id && node.handle) {
-        products[node.id] = node.handle;
-      } else if (node.__typename === "ProductVariant" && node.id && node.product?.handle) {
-        products[node.id] = node.product.handle;
-      } else if (node.id && node.handle) { // Fallback for simple Product match
-        products[node.id] = node.handle;
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const chunk = ids.slice(i, i + BATCH_SIZE);
+      const response = await storefront.graphql(productQuery, {
+        variables: { ids: chunk },
+      });
+      const result = await response.json();
+
+      for (const node of result.data?.nodes || []) {
+        if (!node) continue;
+        if (node.__typename === "Product" && node.id && node.handle) {
+          products[node.id] = node.handle;
+        } else if (node.__typename === "ProductVariant" && node.id && node.product?.handle) {
+          products[node.id] = node.product.handle;
+        } else if (node.id && node.handle) {
+          products[node.id] = node.handle;
+        }
       }
     }
 

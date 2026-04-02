@@ -19,13 +19,13 @@ declare module './src/components/PrescriptionListPage.tsx' {
 }
 
 //@ts-ignore
-declare module './src/helpers.ts' {
+declare module './src/navigation.json' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };
 }
 
 //@ts-ignore
-declare module './src/navigation.json' {
+declare module './src/constants.ts' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };
 }
@@ -44,6 +44,12 @@ declare module './src/loadCustomerData.ts' {
 
 //@ts-ignore
 declare module './src/reorder.service.ts' {
+  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
+declare module './src/helpers.ts' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };
 }

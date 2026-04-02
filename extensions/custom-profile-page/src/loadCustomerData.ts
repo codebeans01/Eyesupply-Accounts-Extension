@@ -39,6 +39,7 @@ const parsePrescriptionNode = (ref: any): Prescription => {
 };
 
 export async function loadCustomerData(
+  api: any,
   params: LoadCustomerDataParams = {},
 ): Promise<LoadCustomerDataResult> {
   const {
@@ -239,8 +240,8 @@ export async function loadCustomerData(
   };
 }
 
-export async function loadPrescriptions(limit: number = 2): Promise<{ prescriptions: Prescription[], prescriptionPageInfo?: PageInfo }> {
-  const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql`;
+export async function loadPrescriptions(api: any, limit: number = 2): Promise<{ prescriptions: Prescription[], prescriptionPageInfo?: PageInfo }> {
+  const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 
   const result = await fetchWithRetry(endpoint, {
     method: 'POST',
@@ -293,7 +294,6 @@ export async function loadPrescriptions(limit: number = 2): Promise<{ prescripti
 
   // Fetch details from backend
   try {
-    const api = (globalThis as any).shopify;
     const sessionToken = await api.sessionToken.get();
     
     const backendResponse = await fetchWithRetry(`${APP_URL}/api/prescription?ids=${encodeURIComponent(uniqueGids.join(','))}`, {
@@ -347,8 +347,8 @@ export async function reorder(orderId: string, sessionToken: string, shopDomain:
   return result.data;
 }
 
-export async function fetchAdditionalPrescriptions(cursor: string, limit: number = 10): Promise<{ prescriptions: Prescription[], pageInfo: PageInfo }> {
-  const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql`;
+export async function fetchAdditionalPrescriptions(api: any, cursor: string, limit: number = 10): Promise<{ prescriptions: Prescription[], pageInfo: PageInfo }> {
+  const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 
   const result = await fetchWithRetry(endpoint, {
     method: 'POST',
@@ -397,7 +397,6 @@ export async function fetchAdditionalPrescriptions(cursor: string, limit: number
 
   // Fetch details from backend
   try {
-    const api = (globalThis as any).shopify;
     const sessionToken = await api.sessionToken.get();
     
     const backendResponse = await fetchWithRetry(`${APP_URL}/api/prescription?ids=${encodeURIComponent(uniqueGids.join(','))}`, {
@@ -418,4 +417,4 @@ export async function fetchAdditionalPrescriptions(cursor: string, limit: number
     console.error('[fetchAdditionalPrescriptions] Backend fetch error:', err);
     throw err;
   }
-}
+}

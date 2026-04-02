@@ -63,22 +63,40 @@ export function partitionLineItems(
     const numericVariantId = variantGid ? extractNumericId(variantGid) : null;
 
     // Trial Pack / Specific ID Exclude Logic
-    if (excludeTrial) {
-      const name = (item.name || item.title || "").toLowerCase();
-      const sku = (item.sku || "").toLowerCase();
-      const type = (item.productType || "").toLowerCase();
+    const name = (item.name || item.title || "").toLowerCase();
+    const sku = (item.sku || "").toLowerCase();
+    const type = (item.productType || "").toLowerCase();
 
-      const isTrial = 
-        name.includes("trial pack") || 
-        sku.includes("trial") || 
-        type.includes("trial");
+    const isTrial = excludeTrial && (
+      name.includes("trial pack") || 
+      sku.includes("trial") || 
+      type.includes("trial")
+    );
 
-      // Check if this specific variant ID is in the exclusion list
-      const isSpecificExcluded = !!(numericVariantId && excludedIds.includes(numericVariantId));
+    // Check if this specific variant ID OR product ID is in the exclusion list
+    const numericProductId = item.productId ? extractNumericId(item.productId) : null;
+    
+    const variantMatch = !!(numericVariantId && excludedIds.includes(numericVariantId));
+    const productMatch = !!(numericProductId && excludedIds.includes(numericProductId));
+    const isSpecificExcluded = variantMatch || productMatch;
 
-      if (isTrial || isSpecificExcluded) {
-        console.log(`[reorder.helpers] Excluding item: ${item.name || item.title} (Reason: ${isTrial ? 'Trial' : 'Specific ID'})`);
-        continue;
+    if (isTrial || isSpecificExcluded) {
+      const reason = isTrial ? 'Trial' : (variantMatch ? 'Variant ID' : 'Product ID');
+      console.log(`[reorder.helpers] EXCLUDING item: ${item.name || item.title}`, {
+        numericVariantId,
+        numericProductId,
+        excludedIds,
+        reason
+      });
+      continue;
+    } else {
+      // Optional: log why it was NOT excluded if excludedIds is not empty
+      if (excludedIds.length > 0) {
+        console.log(`[reorder.helpers] NOT excluding item: ${item.name || item.title}`, {
+          variant: numericVariantId,
+          product: numericProductId,
+          excludedIds
+        });
       }
     }
 

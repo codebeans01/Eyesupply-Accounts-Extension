@@ -6,7 +6,6 @@ import { getNumericId } from "../helpers";
 
 interface PrescriptionListPageProps {
   api: any;
-  shopDomain: string;
 }
 
 const MOBILE_ONLY_LABEL = "@container (inline-size > 400px) none, auto";
@@ -39,7 +38,7 @@ const DocumentLink = ({ url }: { url: string }) => {
   );
 };
 
-export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPageProps) {
+export function PrescriptionListPage({ api }: PrescriptionListPageProps) {
   const [loading, setLoading] = useState(true);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
@@ -64,7 +63,7 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
     async function init() {
       setLoading(true);
       try {
-        const data = await loadPrescriptions();
+        const data = await loadPrescriptions(api);
         if (data.prescriptions) {
           setPrescriptions(sortPrescriptions(data.prescriptions));
           setPageInfo(data.prescriptionPageInfo || null);
@@ -83,7 +82,7 @@ export function PrescriptionListPage({ api, shopDomain }: PrescriptionListPagePr
     if (!pageInfo?.hasNextPage || !pageInfo.endCursor || fetchingMore) return;
     setFetchingMore(true);
     try {
-      const { prescriptions: newItems, pageInfo: newPageInfo } = await fetchAdditionalPrescriptions(pageInfo.endCursor);
+      const { prescriptions: newItems, pageInfo: newPageInfo } = await fetchAdditionalPrescriptions(api, pageInfo.endCursor);
       setPrescriptions(prev => sortPrescriptions([...prev, ...newItems]));
       setPageInfo(newPageInfo);
     } catch (err) {

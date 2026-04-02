@@ -1,7 +1,7 @@
-import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult } from "./interface";
+import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://touch-unto-voice-drums.trycloudflare.com";
+export const APP_URL = "https://picked-thoughts-call-hobbies.trycloudflare.com";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -371,12 +371,15 @@ export function getNumericId(gid?: string): string {
  */
 export async function fetchSmilePoints(
   sessionToken: string,
-  shopDomain: string
-) {
+  shopDomain: string,
+  email?: string | null
+): Promise<SmilePointsResponse | null> {
 
   try {
+    const url = new URL(`${APP_URL}/api/smile/points`);
+    if (email) url.searchParams.append("email", email);
 
-    const response = await fetchWithRetry(`${APP_URL}/api/smile/points`, {
+    const response = await fetchWithRetry<SmilePointsResponse>(url.toString(), {
       method: "GET",
       headers: {
         Authorization: `Bearer ${sessionToken}`,
@@ -413,8 +416,79 @@ export async function fetchSmilePoints(
 export function maskPatientId(id?: string | null): string {
   if (!id) return "";
   const strId = String(id);
+  // If it's already masked (contains *), just return it
+  if (strId.includes("*")) return strId;
   if (strId.length <= 4) return strId;
   const lastFour = strId.slice(-4);
-  const maskedLength = strId.length - 4;
+  const maskedLength = Math.min(strId.length - 4, 8); // Limit stars for cleaner UI
   return "*".repeat(maskedLength) + lastFour;
+}
+
+/**
+ * Resolve dynamic tokens and keys from context
+ */
+export function resolveDynamicToken(input: string, context: any): string {
+  if (!input) return "";
+
+  // 1. Handle handlebars-style tokens: {{customer.first_name}}
+  let resolved = input.replace(/\{\{\s*customer\.first_name\s*\}\}/g, context?.customer?.firstName || "");
+  resolved = resolved.replace(/\{\{\s*customer\.last_name\s*\}\}/g, context?.customer?.lastName || "");
+  resolved = resolved.replace(/\{\{\s*customer\.email\s*\}\}/g, context?.customer?.email || "");
+
+  // 2. Handle strict key-based resolution (if input is just a key like "loyalty.points")
+  if (input === "loyalty.points") {
+    return context?.points !== null ? `${context.points} pts` : "0 pts";
+  }
+  if (input === "lastOrder") {
+    return context?.orders?.[0]?.name || "No orders";
+  }
+  if (input === "daysLeft") {
+    return context?.daysRemaining !== null ? `${context.daysRemaining} days left of lenses` : "--";
+  }
+  if (input === "orderStatus") {
+    const unfulfilledCount = (context?.orders || []).filter((o: any) => o.fulfillmentStatus === "UNFULFILLED").length;
+    return `${unfulfilledCount} orders`;
+  }
+  if (input === "prescriptionStatus") {
+    return context?.customer?.prescription?.status || "No Active Prescription";
+  }
+  if (input === "medicalAid.number") {
+    return context?.customer?.medicalAidNumber || "Not Available";
+  }
+  if (input === "medicalAid.plan") {
+    return context?.customer?.medicalAidPlan || "Not Available";
+  }
+  if (input === "medicalAid.name") {
+    return context?.customer?.medicalAidName || "Not Available";
+  }
+  if (input === "medicalAid.patientId") {
+    return context?.customer?.patientIdNumber ? maskPatientId(context.customer.patientIdNumber) : "Not Available";
+  }
+
+  return resolved;
+}
+
+/**
+ * Calculate days remaining between today and a target date string
+ */
+export function calculateDaysRemaining(targetDateStr?: string | null): number | null {
+  if (!targetDateStr) return null;
+  
+  try {
+    const target = new Date(targetDateStr);
+    if (isNaN(target.getTime())) return null;
+
+    const now = new Date();
+    // Normalize both to midnight to count full days
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const end = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+
+    const diffMs = end.getTime() - start.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    return diffDays > 0 ? diffDays : 0;
+  } catch (e) {
+    console.error("[helpers] Failed to calculate days remaining:", e);
+    return null;
+  }
 }

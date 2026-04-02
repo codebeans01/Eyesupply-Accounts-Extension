@@ -6,7 +6,7 @@
 import { SHOP_DOMAIN_QUERY } from "./graphql-query";
 
 export const API_VERSION = "2026-01"
-export const APP_URL = "https://touch-unto-voice-drums.trycloudflare.com";
+export const APP_URL = "https://niagara-acute-utility-wax.trycloudflare.com";
 
 /* =========================================================
    Types

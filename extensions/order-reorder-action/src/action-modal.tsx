@@ -1,12 +1,13 @@
+/** @jsx h */
+/** @jsxFrag Fragment */
+import { h, Fragment, render } from "preact";
 import '@shopify/ui-extensions/preact';
-import { render, h } from "preact";
 import { useState, useEffect } from "preact/hooks";
-import { reorder, fetchShopDomain } from "./helpers";
+import { fetchShopDomain } from "./helpers";
 import { MissingItem } from './reorder.helpers';
 import { fetchReorderResult } from './reorder.service';
 
 function ActionModal() {
-
   const api = (globalThis as any).shopify;
   const [loading, setLoading] = useState(true);
   const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
@@ -14,8 +15,6 @@ function ActionModal() {
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState(api?.settings?.value ?? {});
   const [olderOrderName, setOlderOrderName] = useState<string | null>(null);
-  
-  const translate = api.i18n.translate;
   
   useEffect(() => {
     const unsubscribe = api.settings?.subscribe?.((newSettings: any) => {
@@ -31,28 +30,30 @@ function ActionModal() {
         if (!orderId) throw new Error("Order ID not found");
 
         const shopDomain = await fetchShopDomain();
-
         const excludeTrial = settings?.exclude_trial_pack === true;
 
-        const { redirectUrl: url, missingItems: missing, orderName } = await fetchReorderResult(
+        const result = await fetchReorderResult(
           orderId,
           shopDomain,
           excludeTrial
         );
 
+        const url = result?.redirectUrl ?? null;
+        const missing = result?.missingItems ?? [];
+        const orderName = result?.orderName ?? null;
+
         setRedirectUrl(url);
         setMissingItems(missing);
-        setOlderOrderName(orderName ?? null);
+        setOlderOrderName(orderName);
         setLoading(false);
 
-        if (!missing.length && url) {
+        // Auto-redirect ONLY if no missing items exist
+        if ((!missing || missing.length === 0) && url) {
           if (api?.navigation?.navigate) {
             api.navigation.navigate(url);
-          } else {
-            window.location.href = url;
+            // Brief delay before closing to allow navigation to start
+            setTimeout(() => api?.close?.(), 3000);
           }
-          
-          setTimeout(() => api?.close?.(), 5000);
         }
 
       } catch (err: any) {
@@ -67,22 +68,17 @@ function ActionModal() {
 
   const handleClose = () => api?.close?.();
 
-  const externalLink = settings?.external_reorder_link;
-
   const handleProceed = () => {
-    const targetUrl = externalLink || redirectUrl;
-    if (targetUrl) {
-      if (api?.navigation?.navigate) {
-        api.navigation.navigate(targetUrl);
-      } else {
-        window.location.href = targetUrl;
-      }
-      setTimeout(() => api?.close?.(), 5000);
+    const targetUrl = settings?.external_reorder_link || redirectUrl;
+    if (targetUrl && api?.navigation?.navigate) {
+      api.navigation.navigate(targetUrl);
+      setTimeout(() => api?.close?.(), 3000);
     }
   };
 
   if (loading) {
     return (
+      /* @ts-ignore */
       <s-customer-account-action heading="Reorder">
         <s-section>
           <s-text>Checking product availability...</s-text>
@@ -93,6 +89,7 @@ function ActionModal() {
 
   if (error) {
     return (
+      /* @ts-ignore */
       <s-customer-account-action heading="Error">
         <s-section padding="base">
           <s-text tone="critical">{error}</s-text>
@@ -102,21 +99,19 @@ function ActionModal() {
     );
   }
 
+  // Case 1: All items available OR we have a redirect but no UI needed for missing items
   if (redirectUrl && (!missingItems || missingItems.length === 0)) {
     return (
+      /* @ts-ignore */
       <s-customer-account-action heading="Success">
         <s-section padding="base">
-          <s-text>All items are available and ready to reorder!</s-text>
-          <s-text>Click below to go to your cart if you aren't redirected automatically.</s-text>
+          {/* @ts-ignore */}
+          <s-stack direction="block" gap="base">
+            <s-text>All items are available and ready to reorder!</s-text>
+            <s-text>Click below to go to your cart if you aren't redirected automatically.</s-text>
+          </s-stack>
         </s-section>
-        <s-button slot="primary-action" onClick={() => {
-          if (api?.navigation?.navigate) {
-            api.navigation.navigate(redirectUrl);
-          } else {
-            window.location.href = redirectUrl;
-          }
-          setTimeout(() => handleClose(), 5000);
-        }}>
+        <s-button slot="primary-action" onClick={handleProceed}>
           Go to Cart
         </s-button>
         <s-button slot="secondary-actions" onClick={handleClose}>
@@ -126,30 +121,26 @@ function ActionModal() {
     );
   }
 
+  // Case 2: Missing items exist (Upgrade/Availability mismatch)
   return (
+    /* @ts-ignore */
     <s-customer-account-action heading="Reordering from an older order?">
-      <s-box padding="none" padding-block-start="base">
-        <s-stack direction="block" gap="base" padding-block-end="base">
+      <s-section padding="base">
+        {/* @ts-ignore */}
+        <s-stack direction="block" gap="base">
           <s-text>
             Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
           </s-text>
-          <s-box padding-block-start="base">
-            <s-text>
-              Need Help For your Order{" "}
-              <s-text id="order-id" type="strong">{olderOrderName}</s-text>
-              {" "}
-              <s-link onClick={handleProceed}>
-                Click here
-              </s-link>
-              {" "}and we'll load your previous order into cart for you.
-            </s-text>
-          </s-box>
+          <s-text>
+            Need Help for your Order <s-text type="strong">{olderOrderName}</s-text>? <s-link onClick={handleProceed}>Click here</s-link> and we’ll load your previous order into cart for you.
+          </s-text>
         </s-stack>
-      </s-box>
+      </s-section>
     </s-customer-account-action>
   );
 }
 
 export default () => {
+  // Use Fragment as a wrapper if needed or just render the component
   render(<ActionModal />, document.body);
 };

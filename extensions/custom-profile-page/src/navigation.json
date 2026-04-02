@@ -80,5 +80,9 @@
         { "label": "Contact Us", "href": "mailto:support@eyesupply.co.uk" }
       ]
     }
+  ],
+  "quickCards": [
+    { "label": "Last Order", "subText": "{{last_order_name}}", "icon": "cart" },
+    { "label": "Loyalty Points", "subText": "{{customer.points}}", "icon": "star" }
   ]
 }
