@@ -252,19 +252,9 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const reviewTarget = '#' + (dynamicSettings?.cb_review_target as string || DEFAULT_SETTINGS.cb_review_target);
   const showDefaultNav = dynamicSettings?.cb_show_default_nav !== false;
   
-  // LOG FOR DEBUGGING 6 VS 8 SECTIONS
-  useEffect(function() {
-    console.log("sections count (full):", navConfig.sections?.length);
-    console.log("cb_show_default_nav setting:", dynamicSettings?.cb_show_default_nav);
-    console.log("showDefaultNav (effective):", showDefaultNav);
-  }, [showDefaultNav, dynamicSettings]);
 
   const reorderButtonPosition = dynamicSettings?.cb_reorder_button_position || DEFAULT_SETTINGS.cb_reorder_button_position;
 
-  // const filteredSections = (navConfig.sections || []).filter(function(section) {
-  //     if (!showDefaultNav && (section.id === 'orders' || section.id === 'support')) return false;
-  //     return true;
-  // });
   const filteredSections = navConfig.sections || [];
   const sections = filteredSections.map(function(section) {
     const dynamicSection = dynamicSettings?.sections?.[section.id];
@@ -480,29 +470,39 @@ export function ProfilePage({ api }: ProfilePageProps) {
                       const isClickable = (href && href !== "#") || link.command;
                       return (
                         <s-stack key={lIdx} gap="small-100">
-                          {isClickable ? (
-                            <s-clickable 
-                              id={"nav-l-" + lIdx} 
-                              href={href} 
-                              command={link.command} 
-                              commandFor={link.commandFor}
-                            >
-                              <s-grid gridTemplateColumns="1fr auto" alignItems="center">
-                                <s-text tone="info">{link.label}</s-text>
-                                <s-stack direction="inline" gap="small-300" alignItems="center">
-                                  {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
-                                  {link?.dynamicSub === 'orderStatus' && <s-icon type="arrow-right" size="small" tone="info"></s-icon>}
-                                </s-stack>
-                              </s-grid>
-                            </s-clickable>
-                          ) : (
-                            <s-grid gridTemplateColumns="1fr auto" alignItems="center">
-                              <s-text tone="neutral">{link.label}</s-text>
-                              <s-stack direction="inline" gap="small-200" alignItems="center">
-                                {dynamicSub && <s-text tone="neutral">{dynamicSub}</s-text>}
-                              </s-stack>
-                            </s-grid>
-                          )}
+                          <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+                            <s-stack direction="inline" gap="small" alignItems="center">
+                            {isClickable ? (
+                                <s-clickable 
+                                  id={"nav-l-" + lIdx} 
+                                  href={href} 
+                                  command={link.command} 
+                                  commandFor={link.commandFor}
+                                >
+                              <s-text tone="custom" >{link.label}</s-text>
+                              </s-clickable>
+                              ) : (
+                                <s-text tone="info" >{link.label}</s-text>
+                              )}
+                            </s-stack>
+                            <s-stack direction="inline" gap="small" alignItems="center" justifyContent="end">
+                             {(dynamicSub && link?.dynamicSub === 'orderStatus') ? (
+                               <s-clickable 
+                                  id={"nav-l-" + lIdx} 
+                                  href={href} 
+                                  command={link.command} 
+                                  commandFor={link.commandFor}
+                                >
+                                  <s-stack direction="inline" gap="small-300" alignItems="center">
+                                    <s-text tone="custom">{dynamicSub}</s-text>
+                                    <s-icon type="arrow-right" size="small" tone="custom"></s-icon>
+                                  </s-stack>
+                                </s-clickable>
+                              ) : (
+                                dynamicSub ? <s-text tone="neutral">{dynamicSub}</s-text> : null
+                              )}
+                            </s-stack>
+                          </s-grid>
                         </s-stack>
                       );
                     })}

@@ -501,16 +501,7 @@ export default function SettingsPage() {
                     </s-stack>
                   </s-box>
 
-                  {/* Promotion Banner matching design */}
-                  <s-box background="success" borderRadius="base" padding="base" shadow="base">
-                    <s-stack direction="inline" gap="base" alignItems="center">
-                      <s-icon type="checkmark" tone="info" />
-                      <s-stack gap="none">
-                        <s-text type="strong" tone="info">Important: Add Order Status Button to your store theme</s-text>
-                        <s-text tone="info" size="small">App embed extension is enabled. A floating button will appear on your storefront.</s-text>
-                      </s-stack>
-                    </s-stack>
-                  </s-box>
+                  
                 </>
               )}
 

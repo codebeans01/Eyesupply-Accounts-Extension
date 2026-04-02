@@ -1,7 +1,7 @@
 import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://picked-thoughts-call-hobbies.trycloudflare.com";
+export const APP_URL = "https://boxed-piano-favourite-bridges.trycloudflare.com";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
