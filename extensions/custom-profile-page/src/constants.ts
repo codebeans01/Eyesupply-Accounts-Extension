@@ -1,16 +1,55 @@
-export const DEFAULT_SETTINGS = {
-  cb_welcome_image_url: "https://cdn.shopify.com/s/files/1/0882/1004/7288/files/EYE-SUPPLY-LOGO_2.png?v=1738743179",
-  cb_review_google_url: "https://g.page/r/11164121505097059976/review",
-  cb_review_facebook_url: "https://www.facebook.com/eyesupply/reviews",
-  cb_review_target: "reviews",
-  cb_support_faq_url: "https://support.eyewearsystem.com/hc/en-us",
-  cb_support_contact_url: "https://support.eyewearsystem.com/hc/en-us/requests/new",
-  cb_reward_refferal_url: "https://support.eyewearsystem.com/hc/en-us/requests/new",
-  cb_reward_redeem_points_url: "https://support.eyewearsystem.com/hc/en-us/requests/new",
+import { type DashboardSettings } from "./interface";
+
+export const DEFAULT_SETTINGS: DashboardSettings = {
+  cb_welcome_image_url: "",
+  cb_review_google_url: "https://google.com",
+  cb_review_facebook_url: "https://facebook.com",
+  cb_review_target: "reviews-modal",
+  cb_support_faq_url: "mailto:support@eyesupply.co.uk",
+  cb_support_contact_url: "mailto:support@eyesupply.co.uk",
+  cb_reward_refferal_url: "#",
+  cb_reward_redeem_points_url: "#",
   exclude_trial_pack: false,
   exclude_variant_ids: "",
-  external_reorder_link: "https://eyesupply.co.za/pages/reorder-help",
-  cb_reorder_button_position: "bottom_right",
+  external_reorder_link: "",
+  cb_reorder_button_position: "bottom-right",
   cb_search_enable: true,
-  cb_show_default_nav: true
+  cb_show_default_nav: true,
+  sections: {}
 };
+
+export const LAYOUT_768_2COL = "@container (inline-size \x3e 768px) 1fr auto, 1fr";
+export const LAYOUT_448_2COL = "@container (inline-size \x3e 448px) repeat(2, 1fr), 1fr";
+export const LAYOUT_768_3COL = "@container (inline-size \x3e 768px) 1fr 1fr auto, 1fr";
+export const LAYOUT_768_4COL = "@container (inline-size \x3e 768px) auto 1fr auto, auto 1fr";
+export const LAYOUT_768_ORDER_LIST = "@container (inline-size \x3e 768px) 100px 1fr 120px 120px 80px, 1fr";
+export const LAYOUT_768_PRESCRIPTION_LIST = "@container (inline-size \x3e 768px) 1fr auto, 1fr";
+export const LAYOUT_768_2COL_STACK = "@container (inline-size \x3e 768px) 1fr 1fr, 1fr";
+export const LAYOUT_768_4COL_BLOCK = "@container (inline-size \x3e 768px) auto 1fr auto, block";
+export const LAYOUT_600_2COL = "@container (inline-size \x3e 600px) 1fr 1fr, 1fr";
+export const LAYOUT_600_4COL = "@container (inline-size \x3e 600px) auto 1fr auto 1fr, 1fr";
+export const LAYOUT_500_3COL = "@container (inline-size \x3e 500px) auto 1fr auto, 1fr";
+export const SIZE_600_RESP_200 = "@container (inline-size \x3e 600px) 200px, 80px";
+export const SIZE_600_RESP_100 = "@container (inline-size \x3e 600px) 100px, 80px";
+export const DISPLAY_768_GRID = "@container (inline-size \x3e 768px) grid, none";
+export const DISPLAY_768_NONE_GRID = "@container (inline-size \x3e 768px) none, grid";
+ 
+export const SPage = "s-page" as any;
+export const SSpinner = "s-spinner" as any;
+export const SBox = "s-box" as any;
+export const SStack = "s-stack" as any;
+export const SText = "s-text" as any;
+export const SQueryContainer = "s-query-container" as any;
+export const SBanner = "s-banner" as any;
+export const SLink = "s-link" as any;
+export const SGrid = "s-grid" as any;
+export const SGridItem = "s-grid-item" as any;
+export const SIcon = "s-icon" as any;
+export const SImage = "s-image" as any;
+export const SClickable = "s-clickable" as any;
+export const SButton = "s-button" as any;
+export const SHeading = "s-heading" as any;
+export const SDivider = "s-divider" as any;
+export const SProductThumbnail = "s-product-thumbnail" as any;
+export const SModal = "s-modal" as any;
+export const STextField = "s-text-field" as any;

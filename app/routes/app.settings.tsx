@@ -457,18 +457,7 @@ export default function SettingsPage() {
                   <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
                     <s-stack gap="base">
                       <s-text type="strong" size="medium">Reorder flow Configuration</s-text>
-                      
-                      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                        <s-stack gap="none">
-                          <s-text type="strong">Exclude Trial Packs</s-text>
-                          <s-text tone="subdued">Prevent trial products from being reordered automatically.</s-text>
-                        </s-stack>
-                        <s-checkbox 
-                          checked={settings.exclude_trial_pack === true} 
-                          onChange={(e: any) => updateSetting("exclude_trial_pack", e.target.checked)} 
-                        />
-                      </s-stack>
-                      
+                    
                       <s-divider />
                       
                       <s-stack gap="small" direction="inline" alignItems="end">
@@ -480,9 +469,7 @@ export default function SettingsPage() {
                             onInput={(e: any) => updateSetting("exclude_variant_ids", e.target.value)}
                           />
                         
-                        <s-button variant="secondary" onClick={handleSelectVariants}>
-                          {"Browse"}
-                        </s-button>
+                        
                       </s-stack>
                       
                       <s-text-field

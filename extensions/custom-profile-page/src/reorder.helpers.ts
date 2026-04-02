@@ -1,5 +1,6 @@
 export interface CartItem {
-  numericVariantId: string;
+  variantId: string; // ✅ Full GID format for Storefront API
+  numericVariantId: string; // Kept for compatibility / fallback
   quantity: number;
   customAttributes: { key: string; value: string }[];
 }
@@ -112,6 +113,7 @@ export function partitionLineItems(
     if (!numericVariantId) continue;
 
     cartItems.push({
+      variantId: variantGid, // ✅ Pass GID
       numericVariantId,
       quantity: item.quantity,
       customAttributes: item.customAttributes ?? [],
@@ -132,3 +134,22 @@ export function buildCartPermalink(shopDomain: string, cartItems: CartItem[]): s
   const segments = cartItems.map((i) => `${i.numericVariantId}:${i.quantity}`);
   return `https://${shopDomain}/cart/${segments.join(",")}`;
 }
+
+/**
+ * Storefront API mutation to create a cart with line items and custom attributes.
+ * This is used to preserve prescription details during reorder.
+ */
+export const CART_CREATE_MUTATION = `#graphql
+  mutation cartCreate($input: CartInput) {
+    cartCreate(input: $input) {
+      cart {
+        id
+        checkoutUrl
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
