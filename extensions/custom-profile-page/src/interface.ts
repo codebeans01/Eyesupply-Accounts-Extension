@@ -238,3 +238,24 @@ export interface ReorderResult {
 
 
 
+export interface OrderStatusHistoryItem {
+  changed_at: string;
+  changed_at_formatted?: string;
+  changed_by: string;
+  color: string;
+  due_date: string | null;
+  font_color: string;
+  private_notes: string | null;
+  public_name: string;
+  public_notes: string | null;
+  status_id: number;
+  status_name: string;
+}
+
+export interface CustomOrderStatusResponse {
+  success: boolean;
+  orders: Record<string, {
+    history?: OrderStatusHistoryItem[];
+    [key: string]: any;
+  }>;
+}

@@ -49,6 +49,12 @@ declare module './src/reorder.service.ts' {
 }
 
 //@ts-ignore
+declare module './src/ongoingOrders.service.ts' {
+  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
 declare module './src/helpers.ts' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };

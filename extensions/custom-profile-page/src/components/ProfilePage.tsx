@@ -19,6 +19,7 @@ import {
 import { type Order, type MissingItem, type DashboardSettings } from "../interface";
 import { loadCustomerData } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
+import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
 import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId } from "../helpers";
 
 const SPage = "s-page";
@@ -69,6 +70,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true);
   const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true);
   const [isPointsLoading, setIsPointsLoading] = useState(false);
+  const [customStatuses, setCustomStatuses] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function init() {
@@ -84,6 +86,20 @@ export function ProfilePage({ api }: ProfilePageProps) {
           setCustomer(data.customer);
           setOrders(data.orders || []);
           if (data.myshopifyDomain) setMyshopifyDomain(data.myshopifyDomain);
+
+          // Fetch custom order statuses for unfulfilled orders
+          const unfulfilledOrderIds = (data.orders || [])
+            .filter((o: any) => o.fulfillmentStatus === "UNFULFILLED" || o.fulfillmentStatus === "PARTIALLY_FULFILLED")
+            .map((o: any) => o.id);
+          console.log('unfulfilledOrderIds',data.orders)
+          if (unfulfilledOrderIds.length > 0) {
+            fetchCustomOrderStatuses(api, data.myshopifyDomain, unfulfilledOrderIds).then(statuses => {
+              setCustomStatuses(statuses);
+              console.log('customStatuses',statuses)
+            }).catch(err => {
+              console.warn("Failed to fetch custom statuses", err);
+            });
+          }
         }
       } catch (err) {
         console.error("Initialization failed", err);
@@ -630,7 +646,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
                                 </SStack>
                               </SClickable>
                               <SStack gap="small-100">
-                                <SText type="strong">{displayStatus}</SText>
+                                <SText type="strong">{customStatuses[order.id] || displayStatus}</SText>
                                 <SText tone="neutral">{order.processedAt ? new Date(order.processedAt).toLocaleDateString("en-GB") : ""}</SText>
                               </SStack>
                               <SText type="strong">{orderPrice}</SText>
@@ -652,7 +668,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
                                   <SStack gap="small-100">
                                     <SText type="strong">{order.name}</SText>
                                     <SText tone="neutral">{totalQuantity} {"items"}</SText>
-                                    <SText>{displayStatus}</SText>
+                                    <SText>{customStatuses[order.id] || displayStatus}</SText>
                                     <SText tone="neutral">{order.processedAt ? new Date(order.processedAt).toLocaleDateString("en-GB") : ""}</SText>
                                   </SStack>
                                 </SStack>

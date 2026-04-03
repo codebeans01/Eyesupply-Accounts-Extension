@@ -1,7 +1,7 @@
-import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse } from "./interface";
+import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse, CustomOrderStatusResponse } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://boxed-piano-favourite-bridges.trycloudflare.com";
+export const APP_URL = "https://angle-contributor-creating-late.trycloudflare.com";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -407,6 +407,44 @@ export async function fetchSmilePoints(
     console.error("[Extension] Failed to fetch Smile points:", error)
 
     return null
+  }
+}
+
+/**
+ * Fetch Custom Order Statuses through the backend proxy to bypass CORS
+ */
+export async function fetchCustomOrderStatusesProxy(
+  sessionToken: string,
+  shopDomain: string,
+  orderIds: number[]
+): Promise<CustomOrderStatusResponse | null> {
+
+  try {
+    const url = `${APP_URL}/api/custom-order-status`;
+    
+    const response = await fetchWithRetry<CustomOrderStatusResponse>(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+        "x-shop-domain": shopDomain
+      },
+      body: JSON.stringify({
+        order_ids: orderIds,
+        show_all_history: false
+      })
+    })
+
+    if (!response.ok) {
+      console.warn("[Extension] Status proxy replied with status:", response.status);
+      return null;
+    }
+
+    return response.data;
+
+  } catch (error) {
+    console.error("[Extension] Failed to fetch custom order statuses:", error);
+    return null;
   }
 }
 

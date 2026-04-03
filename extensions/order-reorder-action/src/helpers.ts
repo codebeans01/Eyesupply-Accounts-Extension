@@ -6,7 +6,7 @@
 import { SHOP_DOMAIN_QUERY } from "./graphql-query";
 
 export const API_VERSION = "2026-01"
-export const APP_URL = "https://boxed-piano-favourite-bridges.trycloudflare.com";
+export const APP_URL = "https://angle-contributor-creating-late.trycloudflare.com";
 
 /* =========================================================
    Types

@@ -125,6 +125,7 @@ export const ORDER_LINE_ITEMS_QUERY = `
   query getOrder($orderId: ID!) {
     order(id: $orderId) {
       name
+      customAttributes { key value }
       lineItems(first: 50) {
         nodes {
           id
