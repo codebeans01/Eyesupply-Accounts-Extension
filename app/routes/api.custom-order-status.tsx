@@ -30,8 +30,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return errorResponse("order_ids array is required", { status: 400, cors: corsWrapper });
     }
 
-    const API_URL = "https://custom-order-status.cblyst.com/api/v1/orders-status";
-    const API_KEY = process.env.ORDER_STATUS_API_KEY || "codebeansdev2:7ac352a2-6629-404c-babf-042c50a32639";
+    const API_URL = process.env.ORDER_STATUS_API_URL + "/api/v1/orders-status";
+    const API_KEY = process.env.ORDER_STATUS_API_KEY;
+
+    if (!API_URL || !API_KEY) {
+      console.warn("[Proxy] Missing ORDER_STATUS_API_URL or ORDER_STATUS_API_KEY environment variable");
+      return errorResponse("Server configuration error", { status: 500, cors: corsWrapper });
+    } 
     
     console.log("[Proxy] Fetching custom order statuses for IDs:", order_ids);
 

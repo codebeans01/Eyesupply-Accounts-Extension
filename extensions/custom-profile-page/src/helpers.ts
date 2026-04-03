@@ -1,23 +1,6 @@
 import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse, CustomOrderStatusResponse, Order } from "./interface";
 import { SETTINGS_QUERY } from "./graphql-query";
-
-export const API_VERSION = "2026-01";
-export const APP_URL = "https://angle-contributor-creating-late.trycloudflare.com";
-
-const SECOND = 1000;
-const MINUTE = 60 * SECOND;
-
-/**
- * Fixed retry schedule used by large Shopify apps
- */
-const RETRY_DELAYS = [
-  10 * SECOND,
-  1 * MINUTE,
-  5 * MINUTE,
-  10 * MINUTE,
-  15 * MINUTE
-];
-
+import { API_VERSION, APP_URL, RETRY_DELAYS, MINUTE, SECOND } from "./constants";
 
 /* =========================================================
    Types

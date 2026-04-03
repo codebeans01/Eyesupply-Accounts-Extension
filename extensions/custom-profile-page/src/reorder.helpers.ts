@@ -17,7 +17,6 @@ export interface ReorderResult {
 }
 
 interface LineItem {
-  id: string;
   title: string;
   name: string;
   quantity: number;
@@ -28,8 +27,6 @@ interface LineItem {
   sku?: string | null;
   productType?: string | null;
 }
-
-
 
 /**
  * GID se numeric ID extract karta hai
@@ -82,23 +79,7 @@ export function partitionLineItems(
     const isSpecificExcluded = variantMatch || productMatch;
 
     if (isTrial || isSpecificExcluded) {
-      const reason = isTrial ? 'Trial' : (variantMatch ? 'Variant ID' : 'Product ID');
-      console.log(`[reorder.helpers] EXCLUDING item: ${item.name || item.title}`, {
-        numericVariantId,
-        numericProductId,
-        excludedIds,
-        reason
-      });
       continue;
-    } else {
-      // Optional: log why it was NOT excluded if excludedIds is not empty
-      if (excludedIds.length > 0) {
-        console.log(`[reorder.helpers] NOT excluding item: ${item.name || item.title}`, {
-          variant: numericVariantId,
-          product: numericProductId,
-          excludedIds
-        });
-      }
     }
 
     // ✅ variantId directly available — no nesting
@@ -124,7 +105,6 @@ export function partitionLineItems(
 }
 
 
-
 /**
  * Cart permalink banata hai — customAttributes support nahi
  * Format: /cart/VAR1:QTY1,VAR2:QTY2
@@ -139,17 +119,4 @@ export function buildCartPermalink(shopDomain: string, cartItems: CartItem[]): s
  * Storefront API mutation to create a cart with line items and custom attributes.
  * This is used to preserve prescription details during reorder.
  */
-export const CART_CREATE_MUTATION = `#graphql
-  mutation cartCreate($input: CartInput) {
-    cartCreate(input: $input) {
-      cart {
-        id
-        checkoutUrl
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
+

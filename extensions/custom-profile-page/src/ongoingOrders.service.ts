@@ -42,7 +42,7 @@ export async function fetchCustomOrderStatuses(
     const sessionToken = await api.sessionToken.get();
 
     const result: CustomOrderStatusResponse | null = await fetchCustomOrderStatusesProxy(sessionToken, shopDomain, numericIds);
-    console.log('[Extension] Status proxy replied with data:', result);
+  
     if (!result || result.success !== true || !result.orders) {
       console.warn("[Custom-Status] Proxy returned invalid data or null");
       return {};

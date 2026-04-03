@@ -1,5 +1,19 @@
 import { type DashboardSettings } from "./interface";
 
+export const API_VERSION = "2026-01";
+export const APP_URL = "https://expected-lip-midwest-bidding.trycloudflare.com";
+
+export const SECOND = 1000;
+export const MINUTE = 60 * SECOND;
+
+export const RETRY_DELAYS = [
+  10 * SECOND,
+  1 * MINUTE,
+  5 * MINUTE,
+  10 * MINUTE,
+  15 * MINUTE
+];
+
 export const DEFAULT_SETTINGS: DashboardSettings = {
   cb_welcome_image_url: "",
   cb_review_google_url: "https://google.com",

@@ -201,3 +201,21 @@ export const SETTINGS_QUERY = `
     }
   }
 `;
+
+/**
+ * Mutation to create a cart with line items and custom attributes.
+ */
+export const CART_CREATE_MUTATION = `#graphql
+  mutation cartCreate($input: CartInput) {
+    cartCreate(input: $input) {
+      cart {
+        id
+        checkoutUrl
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;

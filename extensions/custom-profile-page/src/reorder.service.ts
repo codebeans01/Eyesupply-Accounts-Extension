@@ -1,8 +1,8 @@
-import { ORDER_LINE_ITEMS_QUERY } from "./graphql-query";
-import { partitionLineItems, buildCartPermalink, CART_CREATE_MUTATION } from "./reorder.helpers";
+import { ORDER_LINE_ITEMS_QUERY, CART_CREATE_MUTATION } from "./graphql-query";
+import { partitionLineItems, buildCartPermalink } from "./reorder.helpers";
 import type { ReorderResult } from "./reorder.helpers";
-import { API_VERSION, fetchWithRetry } from "./helpers";
-
+import { fetchWithRetry } from "./helpers";
+import { API_VERSION } from "./constants";
 
 const CUSTOMER_ACCOUNT_ENDPOINT = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 const STOREFRONT_ENDPOINT = `shopify://storefront/api/${API_VERSION}/graphql.json`;
@@ -18,13 +18,10 @@ export async function fetchReorderResult(
   excludeTrial: boolean = false,
   excludeVariantIds: string = ""
 ): Promise<ReorderResult> {
-  console.log("[reorder.service] START fetchReorderResult for orderId:", orderId);
-  
   // 1. Fetch Order Line Items using Customer Account API
   const orderBody = JSON.stringify({
     query: ORDER_LINE_ITEMS_QUERY,
     variables: { orderId: orderId },
-    _cacheBuster: Date.now(),
   });
 
   const orderResponse = await fetchWithRetry(CUSTOMER_ACCOUNT_ENDPOINT, {
@@ -62,8 +59,6 @@ export async function fetchReorderResult(
   }
 
   // 3. Create Cart via Storefront API to preserve attributes
-  console.log("[reorder.service] Creating cart with Storefront API for items:", cartItems.length);
-  
   const cartInput = {
     lines: cartItems.map(item => ({
       merchandiseId: item.variantId,
@@ -83,9 +78,7 @@ export async function fetchReorderResult(
       variables: { input: cartInput }
     }),
   });
-
   if (!cartResponse.ok) {
-    console.warn("[reorder.service] Storefront Cart API failed, falling back to permalink");
     return { 
       redirectUrl: buildCartPermalink(shopDomain, cartItems), 
       missingItems, 
@@ -95,8 +88,6 @@ export async function fetchReorderResult(
 
   const cartJson = cartResponse.data as any;
   if (cartJson.errors?.length || cartJson.data?.cartCreate?.userErrors?.length) {
-    const errorMsg = cartJson.errors?.[0]?.message || cartJson.data?.cartCreate?.userErrors?.[0]?.message;
-    console.warn("[reorder.service] Cart creation error:", errorMsg, "Falling back to permalink");
     return { 
       redirectUrl: buildCartPermalink(shopDomain, cartItems), 
       missingItems, 
@@ -105,8 +96,5 @@ export async function fetchReorderResult(
   }
 
   const redirectUrl = cartJson.data.cartCreate.cart.checkoutUrl;
-  console.log("[reorder.service] Success! Checkout URL:", redirectUrl);
-
   return { redirectUrl, missingItems, orderName };
 }
-

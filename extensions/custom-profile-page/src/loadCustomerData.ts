@@ -1,6 +1,7 @@
 import { CUSTOMER_DATA_QUERY, GET_PRESCRIPTIONS_PAGINATED, GET_CUSTOMER_ORDERS} from "./graphql-query";
-import { API_VERSION, fetchWithRetry, APP_URL, mapOrderNode} from "./helpers";
+import { fetchWithRetry, mapOrderNode} from "./helpers";
 import { CustomerDataQueryResponse, CustomerSummary, GraphQLResponse, LoadCustomerDataParams, LoadCustomerDataResult, Order, Prescription, PageInfo } from "./interface";
+import { APP_URL, API_VERSION } from "./constants";
 
 // Helper to parse a single prescription node
 const parsePrescriptionNode = (ref: any): Prescription => {

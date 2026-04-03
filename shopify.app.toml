@@ -2,14 +2,14 @@
 
 client_id = "add219b28c799342102235b88cddd193"
 name = "Eye Supply"
-application_url = "https://angle-contributor-creating-late.trycloudflare.com"
+application_url = "https://expected-lip-midwest-bidding.trycloudflare.com"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
 
 [app_proxy]
-url = "https://angle-contributor-creating-late.trycloudflare.com"
+url = "https://expected-lip-midwest-bidding.trycloudflare.com"
 subpath = "eyesupply"
 prefix = "apps"
 
@@ -29,7 +29,7 @@ api_version = "2026-01"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products,read_metaobjects,read_metaobject_definitions,read_customers,write_customers,customer_read_customers,unauthenticated_read_customers,customer_read_orders,read_orders,unauthenticated_read_metaobjects,unauthenticated_read_product_listings"
 
 [auth]
-redirect_urls = [ "https://angle-contributor-creating-late.trycloudflare.com/api/auth" ]
+redirect_urls = [ "https://expected-lip-midwest-bidding.trycloudflare.com/api/auth" ]
 
 
 
