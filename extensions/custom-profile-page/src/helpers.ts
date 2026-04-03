@@ -1,4 +1,5 @@
 import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse, CustomOrderStatusResponse, Order } from "./interface";
+import { SETTINGS_QUERY } from "./graphql-query";
 
 export const API_VERSION = "2026-01";
 export const APP_URL = "https://angle-contributor-creating-late.trycloudflare.com";
@@ -559,5 +560,29 @@ export function calculateDaysRemaining(targetDateStr?: string | null): number | 
   } catch (e) {
     console.error("[helpers] Failed to calculate days remaining:", e);
     return null;
+  }
+}
+
+export async function getSettings(api: any) {
+  try {
+    const response = await api.query(SETTINGS_QUERY);
+    
+    if (response?.errors && response.errors.length > 0) {
+      return { settings: null, error: response.errors[0].message };
+    }
+
+    const metafieldValue = response?.data?.shop?.metafield?.value;
+    if (metafieldValue) {
+      try {
+        const parsed = JSON.parse(metafieldValue);
+        return { settings: parsed, error: null };
+      } catch (parseError) {
+        return { settings: null, error: "Failed to parse dynamic settings JSON" };
+      }
+    }
+
+    return { settings: null, error: "Dynamic settings not found" };
+  } catch (e: any) {
+    return { settings: null, error: e.message || "Failed to fetch dynamic settings" };
   }
 }

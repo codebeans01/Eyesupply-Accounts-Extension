@@ -3,11 +3,8 @@
    Production Grade
    ========================================================= */
 
-import { SHOP_DOMAIN_QUERY } from "./graphql-query";
-
-export const API_VERSION = "2026-01"
-export const APP_URL = "https://angle-contributor-creating-late.trycloudflare.com";
-
+import { SETTINGS_QUERY, SHOP_DOMAIN_QUERY } from "./graphql-query";
+import { API_VERSION, APP_URL } from "./constants";
 /* =========================================================
    Types
    ========================================================= */
@@ -497,4 +494,39 @@ export async function fetchShopDomain(): Promise<string> {
   const domain = json.data?.shop?.myshopifyDomain;
   if (!domain) throw new Error("Shop domain not found");
   return domain;
+}
+
+export async function getSettings(api: any) {
+  try {
+    console.log("[helpers:getSettings] Querying with:", SETTINGS_QUERY);
+    const response = await api.query(SETTINGS_QUERY);
+    console.log("[helpers:getSettings] Raw response:", response);
+    
+    // Handle both { data: { shop: ... } } and { shop: ... }
+    const data = response?.data || response;
+    
+    // Check for GraphQL errors
+    if (response?.errors && response.errors.length > 0) {
+      console.error("[helpers:getSettings] GraphQL Errors:", response.errors);
+      return { settings: null, error: response.errors[0].message };
+    }
+
+    const metafieldValue = data?.shop?.metafield?.value;
+    if (metafieldValue) {
+      try {
+        const parsed = JSON.parse(metafieldValue);
+        console.log("[helpers:getSettings] Parsed settings successfully:", parsed);
+        return { settings: parsed, error: null };
+      } catch (parseError) {
+        console.error("[helpers:getSettings] JSON Parse error for value:", metafieldValue, parseError);
+        return { settings: null, error: "Failed to parse dynamic settings JSON" };
+      }
+    }
+
+    console.warn("[helpers:getSettings] Metafield value was null or undefined in data:", data);
+    return { settings: null, error: "Dynamic settings not found" };
+  } catch (e: any) {
+    console.error("[helpers:getSettings] Unexpected error:", e);
+    return { settings: null, error: e.message || "Failed to fetch dynamic settings" };
+  }
 }

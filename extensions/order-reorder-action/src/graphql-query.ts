@@ -27,3 +27,29 @@ export const ORDER_LINE_ITEMS_QUERY = `
     }
   }
 `;
+
+export const CART_CREATE_MUTATION = `#graphql
+  mutation cartCreate($input: CartInput) {
+    cartCreate(input: $input) {
+      cart {
+        id
+        checkoutUrl
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+
+export const SETTINGS_QUERY = `
+  query {
+    shop {
+      metafield(namespace: "eyesupply_dashboard", key: "settings") {
+        value
+      }
+    }
+  }
+`;

@@ -191,3 +191,13 @@ export const GET_CUSTOMER_ORDERS = `
     }
   }
 }`;
+
+export const SETTINGS_QUERY = `
+  query {
+    shop {
+      metafield(namespace: "eyesupply_dashboard", key: "settings") {
+        value
+      }
+    }
+  }
+`;

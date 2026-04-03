@@ -5,7 +5,7 @@ import { API_VERSION, fetchWithRetry } from "./helpers";
 
 
 const CUSTOMER_ACCOUNT_ENDPOINT = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
-const STOREFRONT_ENDPOINT = `shopify://storefront/api/2025-04/graphql.json`;
+const STOREFRONT_ENDPOINT = `shopify://storefront/api/${API_VERSION}/graphql.json`;
 
 /**
  * Customer Account API se order fetch karke aur Storefront Cart API se 

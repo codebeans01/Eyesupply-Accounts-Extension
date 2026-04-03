@@ -1,41 +1,83 @@
-/** @jsx h */
-/** @jsxFrag Fragment */
-import { h, Fragment, render } from "preact";
+import { render } from "preact";
 import '@shopify/ui-extensions/preact';
 import { useState, useEffect } from "preact/hooks";
-import { fetchShopDomain } from "./helpers";
+import { fetchShopDomain, getSettings } from "./helpers";
 import { MissingItem } from './reorder.helpers';
 import { fetchReorderResult } from './reorder.service';
+import { DashboardSettings } from "./interface";
+import { DEFAULT_SETTINGS } from "./constants";
 
 function ActionModal() {
-  const api = (globalThis as any).shopify;
+  const [api, setApi] = useState((globalThis as any).shopify);
   const [loading, setLoading] = useState(true);
   const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [settings, setSettings] = useState(api?.settings?.value ?? {});
   const [olderOrderName, setOlderOrderName] = useState<string | null>(null);
-  
+  const [dynamicSettings, setDynamicSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+
+  // Poll for Shopify API if not immediately available
   useEffect(() => {
-    const unsubscribe = api.settings?.subscribe?.((newSettings: any) => {
-      setSettings(newSettings ?? {});
-    });
-    return () => unsubscribe?.();
-  }, [api.settings]);
+    if (!api) {
+      console.log("[ActionModal] Waiting for Shopify API...");
+      const interval = setInterval(() => {
+        const currentShopify = (globalThis as any).shopify;
+        if (currentShopify?.query) {
+          console.log("[ActionModal] Shopify API detected!");
+          setApi(currentShopify);
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [api]);
 
   useEffect(() => {
+    async function loadSettings() {
+      try {
+        if (!api || !api.query) {
+          console.warn("[ActionModal] Shopify API not ready yet");
+          return;
+        }
+
+        const { settings, error } = await getSettings(api);
+        console.log("[ActionModal] Fetched settings:", { settings, error });
+
+        if (settings) {
+          setDynamicSettings((prev) => {
+            const updated = { ...prev, ...settings };
+            console.log("[ActionModal] Updating settings state with:", updated);
+            return updated;
+          });
+        } else if (error) {
+          console.error("[ActionModal] Settings load failed:", error);
+        }
+      } catch (e) {
+        console.error("[ActionModal] Failed to fetch dynamic settings", e);
+      } finally {
+        setIsSettingsLoaded(true);
+      }
+    }
+    loadSettings();
+  }, [api]);
+
+  useEffect(() => {
+    if (!isSettingsLoaded) return;
+
     async function runReorder() {
       try {
         const orderId: string = api?.orderId;
         if (!orderId) throw new Error("Order ID not found");
 
         const shopDomain = await fetchShopDomain();
-        const excludeTrial = settings?.exclude_trial_pack === true;
-
+        const excludeTrial = true;
+        const excludeVariantIds = (dynamicSettings?.exclude_variant_ids as string) || "";
         const result = await fetchReorderResult(
-          orderId,
-          shopDomain,
-          excludeTrial
+          orderId, 
+          shopDomain, 
+          excludeTrial,
+          excludeVariantIds
         );
 
         const url = result?.redirectUrl ?? null;
@@ -64,12 +106,12 @@ function ActionModal() {
     }
 
     runReorder();
-  }, []);
+  }, [isSettingsLoaded, api]);
 
   const handleClose = () => api?.close?.();
 
   const handleProceed = () => {
-    const targetUrl = settings?.external_reorder_link || redirectUrl;
+    const targetUrl = dynamicSettings?.external_reorder_link || redirectUrl;
     if (targetUrl && api?.navigation?.navigate) {
       api.navigation.navigate(targetUrl);
       setTimeout(() => api?.close?.(), 3000);
@@ -142,5 +184,6 @@ function ActionModal() {
 
 export default () => {
   // Use Fragment as a wrapper if needed or just render the component
-  render(<ActionModal />, document.body);
+  // Casting document.body to any to avoid potential linting mismatches in this specific environment
+  render(<ActionModal />, document.body as any);
 };

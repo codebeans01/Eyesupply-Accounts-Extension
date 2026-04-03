@@ -1,5 +1,5 @@
 import { useState, useEffect } from "preact/hooks";
-import { Fragment } from "preact";
+import { h, Fragment } from "preact";
 import "@shopify/ui-extensions/preact";
 import navConfig from "../navigation.json";
 import { 
@@ -20,27 +20,27 @@ import { type Order, type MissingItem, type DashboardSettings } from "../interfa
 import { fetchAdditionalOrders, loadCustomerData } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
 import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
-import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId } from "../helpers";
+import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId, getSettings } from "../helpers";
 
-const SPage = "s-page";
-const SSpinner = "s-spinner";
-const SBox = "s-box";
-const SStack = "s-stack";
-const SText = "s-text";
-const SQueryContainer = "s-query-container";
-const SBanner = "s-banner";
-const SLink = "s-link";
-const SGrid = "s-grid";
-const SGridItem = "s-grid-item";
-const SIcon = "s-icon";
-const SImage = "s-image";
-const SClickable = "s-clickable";
-const SButton = "s-button";
-const SHeading = "s-heading";
-const SDivider = "s-divider";
-const SProductThumbnail = "s-product-thumbnail";
-const SModal = "s-modal";
-const STextField = "s-text-field";
+const SPage = (props: any) => h("s-page", props);
+const SSpinner = (props: any) => h("s-spinner", props);
+const SBox = (props: any) => h("s-box", props);
+const SStack = (props: any) => h("s-stack", props);
+const SText = (props: any) => h("s-text", props);
+const SQueryContainer = (props: any) => h("s-query-container", props);
+const SBanner = (props: any) => h("s-banner", props);
+const SLink = (props: any) => h("s-link", props);
+const SGrid = (props: any) => h("s-grid", props);
+const SGridItem = (props: any) => h("s-grid-item", props);
+const SIcon = (props: any) => h("s-icon", props);
+const SImage = (props: any) => h("s-image", props);
+const SClickable = (props: any) => h("s-clickable", props);
+const SButton = (props: any) => h("s-button", props);
+const SHeading = (props: any) => h("s-heading", props);
+const SDivider = (props: any) => h("s-divider", props);
+const SProductThumbnail = (props: any) => h("s-product-thumbnail", props);
+const SModal = (props: any) => h("s-modal", props);
+const STextField = (props: any) => h("s-text-field", props);
 
 interface ProfilePageProps {
   api: any;
@@ -135,23 +135,12 @@ export function ProfilePage({ api }: ProfilePageProps) {
   useEffect(() => {
     async function getDynamicSettings() {
       try {
-        const response = await api.query(
-          `query {
-            shop {
-              metafield(namespace: "eyesupply_dashboard", key: "settings") {
-                value
-              }
-            }
-          }`
-        );
-        const metafieldValue = response?.data?.shop?.metafield?.value;
-        if (metafieldValue) {
-          try {
-            const parsed = JSON.parse(metafieldValue);
-            setDynamicSettings((prev: any) => ({ ...prev, ...parsed }));
-          } catch (parseError) {
-            console.error("Failed to parse dynamic settings JSON", parseError);
-          }
+        const { settings, error } = await getSettings(api);
+        if (settings) {
+          setDynamicSettings((prev: any) => ({ ...prev, ...settings }));
+        } else if (error) {
+          console.error("Settings load failed:", error);
+          setError(new Error(error));
         }
       } catch (e) {
         console.error("Failed to fetch dynamic settings", e);
@@ -340,14 +329,14 @@ export function ProfilePage({ api }: ProfilePageProps) {
 
   if (loading) {
     return (
-      <SPage heading="Loading Dashboard">
-        <SBox padding="base">
-          <SStack direction="block" alignItems="center" gap="base">
-            <SSpinner size="base"></SSpinner>
-            <SText>{"Loading..."}</SText>
-          </SStack>
-        </SBox>
-      </SPage>
+      <s-page heading="Loading Dashboard">
+        <s-box padding="base">
+          <s-stack direction="block" alignItems="center" gap="base">
+            <s-spinner size="base"></s-spinner>
+            <s-text>{"Loading..."}</s-text>
+          </s-stack>
+        </s-box>
+      </s-page>
     );
   }
 
