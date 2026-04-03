@@ -125,7 +125,6 @@ export const ORDER_LINE_ITEMS_QUERY = `
   query getOrder($orderId: ID!) {
     order(id: $orderId) {
       name
-      customAttributes { key value }
       lineItems(first: 50) {
         nodes {
           id
@@ -143,3 +142,52 @@ export const ORDER_LINE_ITEMS_QUERY = `
     }
   }
 `;
+
+export const GET_CUSTOMER_ORDERS = `
+  query GetCustomerOrders($ordersFirst: Int!, $lineItemsFirst: Int!) {
+  shop {
+    myshopifyDomain
+  }
+  customer {
+    orders(first: $ordersFirst, reverse: true, query: "fulfillment_status:unfulfilled OR fulfillment_status:partially_fulfilled") {
+      nodes {
+        id
+        name
+        processedAt
+        fulfillmentStatus
+        financialStatus
+        totalPrice {
+          amount
+          currencyCode
+        }
+        lineItems(first: $lineItemsFirst) {
+          nodes {
+            id
+            name
+            quantity
+            variantTitle
+            variantId
+            sku
+            productType
+            image {
+              url
+            }
+            productId
+            totalPrice {
+              amount
+              currencyCode
+            }
+            variantOptions {
+              name
+              value
+            }
+            customAttributes {
+              key
+              value
+            }
+          }
+        }
+      }
+    }
+  }
+}`;

@@ -1,4 +1,4 @@
-import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse, CustomOrderStatusResponse } from "./interface";
+import { RetryConfig, ShopifyCostExtension, ShopifyFetchResult, SmilePointsResponse, CustomOrderStatusResponse, Order } from "./interface";
 
 export const API_VERSION = "2026-01";
 export const APP_URL = "https://angle-contributor-creating-late.trycloudflare.com";
@@ -73,6 +73,37 @@ function getRetryDelay(
   const jitter = delay * 0.2 * Math.random()
 
   return Math.min(delay + jitter, max)
+}
+
+export function mapOrderNode(order: any): Order {
+  return {
+    id: order.id,
+    name: order.name,
+    processedAt: order.processedAt,
+    fulfillmentStatus: order.fulfillmentStatus,
+    financialStatus: order.financialStatus,
+    totalPrice: {
+      amount: order.totalPrice.amount,
+      currencyCode: order.totalPrice.currencyCode,
+    },
+    lineItems:
+      order.lineItems?.nodes?.map((li: any) => ({
+        id: li.id,
+        name: li.name,
+        quantity: li.quantity,
+        variantTitle: li.variantTitle ?? null,
+        variantId: li.variantId ?? null,
+        sku: li.sku ?? null,
+        image: li.image ? { url: li.image.url } : null,
+        productId: li.productId ?? null,
+        totalPrice: {
+          amount: li.totalPrice.amount,
+          currencyCode: li.totalPrice.currencyCode,
+        },
+        variantOptions: li.variantOptions ?? [],
+        customAttributes: li.customAttributes ?? [],
+      })) ?? [],
+  };
 }
 
 /**

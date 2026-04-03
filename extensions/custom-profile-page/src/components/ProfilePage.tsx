@@ -17,7 +17,7 @@ import {
   DISPLAY_768_NONE_GRID
 } from "../constants";
 import { type Order, type MissingItem, type DashboardSettings } from "../interface";
-import { loadCustomerData } from "../loadCustomerData";
+import { fetchAdditionalOrders, loadCustomerData } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
 import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
 import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId } from "../helpers";
@@ -55,6 +55,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [ongoingOrders, setOngoingOrders] = useState<Order[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [myshopifyDomain, setMyshopifyDomain] = useState("");
   const [points, setPoints] = useState<number | null>(null);
@@ -82,20 +83,20 @@ export function ProfilePage({ api }: ProfilePageProps) {
           lineItemsLimit: 250,
         });
 
+        const additionalOrders = await fetchAdditionalOrders(10);
+
         if (data.customer) {
           setCustomer(data.customer);
           setOrders(data.orders || []);
+          setOngoingOrders(additionalOrders.orders || []);
           if (data.myshopifyDomain) setMyshopifyDomain(data.myshopifyDomain);
-
+         
           // Fetch custom order statuses for unfulfilled orders
-          const unfulfilledOrderIds = (data.orders || [])
-            .filter((o: any) => o.fulfillmentStatus === "UNFULFILLED" || o.fulfillmentStatus === "PARTIALLY_FULFILLED")
-            .map((o: any) => o.id);
-          console.log('unfulfilledOrderIds',data.orders)
+          const unfulfilledOrderIds = additionalOrders.orders.map((o: any) => o.id);
+
           if (unfulfilledOrderIds.length > 0) {
             fetchCustomOrderStatuses(api, data.myshopifyDomain, unfulfilledOrderIds).then(statuses => {
               setCustomStatuses(statuses);
-              console.log('customStatuses',statuses)
             }).catch(err => {
               console.warn("Failed to fetch custom statuses", err);
             });
@@ -183,7 +184,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
   function resolveDynamicValue(key: string) {
     if (!key) return "";
     switch (key) {
-      case "orderStatus": return (orders.length !== 0) ? `${orders.length} orders` : "0 orders";
+      case "orderStatus": return (ongoingOrders.length !== 0) ? `${ongoingOrders.length} orders` : "0 orders";
       case "prescriptionStatus": return customer?.prescription?.status || "Completed"; 
       case "medicalAidNumber": return customer?.medicalAidNumber || "123456789";
       case "medicalAidPlan": return customer?.medicalAidPlan || "Plan";
@@ -607,7 +608,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
           <SQueryContainer>
             <SStack gap="large" alignItems="center">
               <SBox padding="large" background="base" border="base" borderRadius="large" inlineSize="100%">
-                {orders.length !== 0 ? (
+                {ongoingOrders.length !== 0 ? (
                 <SStack gap="large">
                   <SGrid gridTemplateColumns="2fr 1fr 1fr 1fr" display={DISPLAY_768_GRID} alignItems="center" paddingInline="base">
                     <SText type="strong" tone="neutral">{"Product"}</SText>
@@ -618,11 +619,10 @@ export function ProfilePage({ api }: ProfilePageProps) {
                   <SBox display={DISPLAY_768_GRID}>
                     <SDivider></SDivider>
                   </SBox>
-                  {(orders || [])
-                    .filter(function(o) { return o.fulfillmentStatus === "UNFULFILLED"; })
+                  {(ongoingOrders || [])
                     .map(function(order) {
                       const fulfillmentStatus = order.fulfillmentStatus || 'UNFULFILLED';
-                      const displayStatus = fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase();
+                      const displayStatus = (fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase()).replace(/_/g, ' ');
                       const totalQuantity = (order.lineItems || []).reduce(function(acc, item) { return acc + (item.quantity || 0); }, 0);
                       const orderPrice = order.totalPrice && api.i18n ? api.i18n.formatNumber(Number(order.totalPrice.amount), { precision: 2 }) + " " + order.totalPrice.currencyCode : "";
 

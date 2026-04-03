@@ -1,5 +1,5 @@
-import { CUSTOMER_DATA_QUERY, GET_PRESCRIPTIONS_PAGINATED } from "./graphql-query";
-import { API_VERSION, fetchWithRetry, APP_URL } from "./helpers";
+import { CUSTOMER_DATA_QUERY, GET_PRESCRIPTIONS_PAGINATED, GET_CUSTOMER_ORDERS} from "./graphql-query";
+import { API_VERSION, fetchWithRetry, APP_URL, mapOrderNode} from "./helpers";
 import { CustomerDataQueryResponse, CustomerSummary, GraphQLResponse, LoadCustomerDataParams, LoadCustomerDataResult, Order, Prescription, PageInfo } from "./interface";
 
 // Helper to parse a single prescription node
@@ -168,34 +168,7 @@ export async function loadCustomerData(
     prescriptionPageInfo: prescriptionPageInfo,
   };
 
-  const orders: Order[] = (customer.orders?.nodes ?? []).map((order: any) => ({
-    id: order.id,
-    name: order.name,
-    processedAt: order.processedAt,
-    fulfillmentStatus: order.fulfillmentStatus,
-    financialStatus: order.financialStatus,
-    totalPrice: {
-      amount: order.totalPrice.amount,
-      currencyCode: order.totalPrice.currencyCode,
-    },
-    lineItems:
-      order.lineItems?.nodes?.map((li: any) => ({
-        id: li.id,
-        name: li.name,
-        quantity: li.quantity,
-        variantTitle: li.variantTitle ?? null,
-        variantId: li.variantId ?? null,
-        sku: li.sku ?? null,
-        image: li.image ? { url: li.image.url } : null,
-        productId: li.productId ?? null,
-        totalPrice: {
-          amount: li.totalPrice.amount,
-          currencyCode: li.totalPrice.currencyCode,
-        },
-        variantOptions: li.variantOptions ?? [],
-        customAttributes: li.customAttributes ?? [],
-      })) ?? [],
-  }));
+  const orders: Order[] = (customer.orders?.nodes ?? []).map(mapOrderNode);
 
   const myshopifyDomain = json.data?.shop?.myshopifyDomain;
 
@@ -417,4 +390,31 @@ export async function fetchAdditionalPrescriptions(api: any, cursor: string, lim
     console.error('[fetchAdditionalPrescriptions] Backend fetch error:', err);
     throw err;
   }
-}
+}
+
+
+export async function fetchAdditionalOrders(limit: number = 10): Promise<{ orders: Order[], pageInfo: PageInfo }> {
+  const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
+
+  const result = await fetchWithRetry(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: GET_CUSTOMER_ORDERS,
+      variables: {
+        ordersFirst: limit,
+        lineItemsFirst: 50,
+      },
+    }),
+  });
+
+  const json = result.data as GraphQLResponse<{ customer: { orders: { nodes: any[], pageInfo: PageInfo } } }>;
+  const nodes = json.data?.customer?.orders?.nodes || [];
+  const orders = nodes.map(mapOrderNode);
+  const pageInfo = json.data?.customer?.orders?.pageInfo || { hasNextPage: false, endCursor: null };
+
+  return { orders, pageInfo };
+}
+
