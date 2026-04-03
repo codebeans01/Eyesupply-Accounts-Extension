@@ -387,41 +387,8 @@ export async function fetchShopifyAdaptive<T = any>(
 }
 
 /* =========================================================
-   Shopify GraphQL Helper
+   Shopify Fetch Helpers
    ========================================================= */
-
-export async function shopifyGraphQL<T>(
-  shop: string,
-  accessToken: string,
-  query: string,
-  variables?: Record<string, any>
-): Promise<T> {
-
-  const url =
-    `https://${shop}/admin/api/${API_VERSION}/graphql.json`
-
-  const result =
-    await fetchShopifyAdaptive<T>(
-      shop,
-      url,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": accessToken
-        },
-        body: JSON.stringify({
-          query,
-          variables
-        })
-      }
-    )
-
-  if (!result.ok)
-    throw new Error("Shopify request failed")
-
-  return result.data
-}
 
 export async function fetchWithRetry<T = any>(
   url: string,
@@ -498,14 +465,10 @@ export async function fetchShopDomain(): Promise<string> {
 
 export async function getSettings(api: any) {
   try {
-    console.log("[helpers:getSettings] Querying with:", SETTINGS_QUERY);
     const response = await api.query(SETTINGS_QUERY);
-    console.log("[helpers:getSettings] Raw response:", response);
     
-    // Handle both { data: { shop: ... } } and { shop: ... }
     const data = response?.data || response;
     
-    // Check for GraphQL errors
     if (response?.errors && response.errors.length > 0) {
       console.error("[helpers:getSettings] GraphQL Errors:", response.errors);
       return { settings: null, error: response.errors[0].message };
@@ -515,7 +478,6 @@ export async function getSettings(api: any) {
     if (metafieldValue) {
       try {
         const parsed = JSON.parse(metafieldValue);
-        console.log("[helpers:getSettings] Parsed settings successfully:", parsed);
         return { settings: parsed, error: null };
       } catch (parseError) {
         console.error("[helpers:getSettings] JSON Parse error for value:", metafieldValue, parseError);
@@ -523,7 +485,6 @@ export async function getSettings(api: any) {
       }
     }
 
-    console.warn("[helpers:getSettings] Metafield value was null or undefined in data:", data);
     return { settings: null, error: "Dynamic settings not found" };
   } catch (e: any) {
     console.error("[helpers:getSettings] Unexpected error:", e);

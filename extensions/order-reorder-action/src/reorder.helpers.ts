@@ -81,22 +81,7 @@ export function partitionLineItems(
 
     if (isTrial || isSpecificExcluded) {
       const reason = isTrial ? 'Trial' : (variantMatch ? 'Variant ID' : 'Product ID');
-      console.log(`[reorder.helpers] EXCLUDING item: ${item.name || item.title}`, {
-        numericVariantId,
-        numericProductId,
-        excludedIds,
-        reason
-      });
       continue;
-    } else {
-      // Optional: log why it was NOT excluded if excludedIds is not empty
-      if (excludedIds.length > 0) {
-        console.log(`[reorder.helpers] NOT excluding item: ${item.name || item.title}`, {
-          variant: numericVariantId,
-          product: numericProductId,
-          excludedIds
-        });
-      }
     }
 
     // ✅ variantId directly available — no nesting

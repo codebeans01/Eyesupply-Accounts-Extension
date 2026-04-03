@@ -6,6 +6,53 @@ import { MissingItem } from './reorder.helpers';
 import { fetchReorderResult } from './reorder.service';
 import { DashboardSettings } from "./interface";
 import { DEFAULT_SETTINGS } from "./constants";
+import { h } from "preact";
+
+const SCustomerAccountAction = (props: any) => h("s-customer-account-action", props);
+const SSection = (props: any) => h("s-section", props);
+const SStack = (props: any) => h("s-stack", props);
+const SText = (props: any) => h("s-text", props);
+const SLink = (props: any) => h("s-link", props);
+
+const ReorderBannerDescription = ({ text, olderOrderName, onProceed }: any) => {
+  if (!text) return null;
+  const paragraphs = text.split(/<br\s*\/?>/i);
+  return h(SStack, { direction: "block", gap: "small" },
+    paragraphs.map((p: string, idx: number) => {
+      let parts = [p] as (string | any)[];
+      
+      // Handle {{order_id}}
+      parts = parts.flatMap((part) => {
+        if (typeof part !== 'string') return [part];
+        const segments = part.split("{{order_id}}");
+        const res = [] as (string | any)[];
+        segments.forEach((seg, i) => {
+          if (seg) res.push(seg);
+          if (i < segments.length - 1) {
+            res.push(h(SText, { type: "strong" }, olderOrderName || ""));
+          }
+        });
+        return res;
+      });
+
+      // Handle {{click_here}}
+      parts = parts.flatMap((part) => {
+        if (typeof part !== 'string') return [part];
+        const segments = part.split("{{click_here}}");
+        const res = [] as (string | any)[];
+        segments.forEach((seg, i) => {
+          if (seg) res.push(seg);
+          if (i < segments.length - 1) {
+            res.push(h(SLink, { onClick: onProceed }, "Click here"));
+          }
+        });
+        return res;
+      });
+
+      return h(SText, { key: idx }, parts);
+    })
+  );
+};
 
 function ActionModal() {
   const [api, setApi] = useState((globalThis as any).shopify);
@@ -20,11 +67,9 @@ function ActionModal() {
   // Poll for Shopify API if not immediately available
   useEffect(() => {
     if (!api) {
-      console.log("[ActionModal] Waiting for Shopify API...");
       const interval = setInterval(() => {
         const currentShopify = (globalThis as any).shopify;
         if (currentShopify?.query) {
-          console.log("[ActionModal] Shopify API detected!");
           setApi(currentShopify);
           clearInterval(interval);
         }
@@ -42,12 +87,9 @@ function ActionModal() {
         }
 
         const { settings, error } = await getSettings(api);
-        console.log("[ActionModal] Fetched settings:", { settings, error });
-
         if (settings) {
           setDynamicSettings((prev) => {
             const updated = { ...prev, ...settings };
-            console.log("[ActionModal] Updating settings state with:", updated);
             return updated;
           });
         } else if (error) {
@@ -164,21 +206,16 @@ function ActionModal() {
   }
 
   // Case 2: Missing items exist (Upgrade/Availability mismatch)
-  return (
-    /* @ts-ignore */
-    <s-customer-account-action heading="Reordering from an older order?">
-      <s-section padding="base">
-        {/* @ts-ignore */}
-        <s-stack direction="block" gap="base">
-          <s-text>
-            Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.
-          </s-text>
-          <s-text>
-            Need Help for your Order <s-text type="strong">{olderOrderName}</s-text>? <s-link onClick={handleProceed}>Click here</s-link> and we’ll load your previous order into cart for you.
-          </s-text>
-        </s-stack>
-      </s-section>
-    </s-customer-account-action>
+  return h(SCustomerAccountAction, { 
+      heading: dynamicSettings?.cb_reorder_banner_heading || "Reordering from an older order?" 
+    },
+    h(SSection, { padding: "base" },
+      h(ReorderBannerDescription, {
+        text: dynamicSettings?.cb_reorder_banner_description || "",
+        olderOrderName: olderOrderName,
+        onProceed: handleProceed
+      })
+    )
   );
 }
 

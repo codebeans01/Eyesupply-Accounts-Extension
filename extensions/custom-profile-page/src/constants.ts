@@ -1,7 +1,7 @@
 import { type DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://expected-lip-midwest-bidding.trycloudflare.com";
+export const APP_URL = "https://phoenix-considered-hood-missile.trycloudflare.com";
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;
@@ -29,6 +29,8 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   cb_reorder_button_position: "bottom-right",
   cb_search_enable: true,
   cb_show_default_nav: true,
+  cb_reorder_banner_heading: "Reordering from an older order?",
+  cb_reorder_banner_description: "Because we’ve upgraded our website...",
   sections: {}
 };
 

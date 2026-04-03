@@ -28,6 +28,8 @@ export interface DashboardSettings {
   cb_banner_title?: string;
   cb_banner_subtitle?: string;
   cb_banner_image_url?: string;
+  cb_reorder_banner_heading?: string;
+  cb_reorder_banner_description?: string;
   cb_show_default_nav_links?: boolean;
   sections?: Record<string, {
     id: string;

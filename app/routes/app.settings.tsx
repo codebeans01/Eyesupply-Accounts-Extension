@@ -150,7 +150,9 @@ const DEFAULT_EXT_SETTINGS = {
   external_reorder_link: "https://eyesupply.co.za/pages/reorder-help",
   cb_reorder_button_position: "bottom_right",
   cb_search_enable: true,
-  cb_show_default_nav: true
+  cb_show_default_nav: true,
+  cb_reorder_banner_heading: "Reordering from an older order?",
+  cb_reorder_banner_description: "Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account."
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -406,7 +408,7 @@ export default function SettingsPage() {
                   
                   <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
                     <s-stack gap="base">
-                      <s-text type="strong" size="medium">Welcome Image & Branding</s-text>
+                      <s-heading size="medium">Welcome Image & Branding</s-heading>
                       
                       <s-text-field
                         label="Welcome Image URL"
@@ -416,12 +418,11 @@ export default function SettingsPage() {
                       />
                       
                       {settings.cb_welcome_image_url && (
-                        <s-box inlineSize="100%" borderRadius="base" overflow="hidden" border="base">
+                        <s-box inlineSize="fill" borderRadius="base" overflow="hidden" border="base">
                           <s-image 
                             src={settings.cb_welcome_image_url} 
                             alt="Welcome Preview" 
-                            objectFit="cover" 
-                            style={{ width: "100%", maxHeight: "200px" }}
+                            objectFit="cover"
                           />
                         </s-box>
                       )}
@@ -456,7 +457,7 @@ export default function SettingsPage() {
 
                   <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
                     <s-stack gap="base">
-                      <s-text type="strong" size="medium">Reorder flow Configuration</s-text>
+                      <s-heading>Reorder flow Configuration</s-heading>
                     
                       <s-divider />
                       
@@ -472,12 +473,7 @@ export default function SettingsPage() {
                         
                       </s-stack>
                       
-                      <s-text-field
-                        label="Helpful Reorder Link (Override)"
-                        helpText="Redirect users to a custom page for reordering."
-                        value={settings.external_reorder_link || ""}
-                        onInput={(e: any) => updateSetting("external_reorder_link", e.target.value)}
-                      />
+                      
 
                       <s-select label="Reorder Button Position" value={settings.cb_reorder_button_position || "bottom_right"} onInput={(e: any) => updateSetting("cb_reorder_button_position", e.target.value)}>
                           <s-option value="bottom_right">Bottom Right</s-option>
@@ -485,9 +481,39 @@ export default function SettingsPage() {
                           <s-option value="top_right">Top Right</s-option>
                           <s-option value="top_left">Top Left</s-option>
                         </s-select>
+
+                      <s-divider />
+                     
                     </s-stack>
                   </s-box>
 
+                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                    <s-stack gap="base">
+                      <s-heading>Reorder Warning Banner</s-heading>
+                      <s-divider />
+                      
+                      <s-text-field
+                        label="Reorder Banner Heading"
+                        value={settings.cb_reorder_banner_heading || "Reordering from an older order?"}
+                        onInput={(e: any) => updateSetting("cb_reorder_banner_heading", e.target.value)}
+                      />
+
+                      <s-text-area
+                        label="Reorder Banner Description"
+                        rows={4}
+                        value={settings.cb_reorder_banner_description || ""}
+                        onInput={(e: any) => updateSetting("cb_reorder_banner_description", e.target.value)}
+                        placeholder="Because we’ve upgraded our website..."
+                      />
+
+                      <s-text-field
+                        label="Helpful Reorder Link (Override)"
+                        helpText="Redirect users to a custom page for reordering."
+                        value={settings.external_reorder_link || ""}
+                        onInput={(e: any) => updateSetting("external_reorder_link", e.target.value)}
+                      />
+                    </s-stack>
+                  </s-box>
                   
                 </>
               )}

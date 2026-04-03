@@ -327,16 +327,62 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const daysRemainingDisplay = (daysRemainingVal ?? "0") + " days left of lenses";
   const pointsDisplay = isPointsLoading ? "..." : (points !== null ? points + " pts" : "0 pts");
 
+  function renderReorderBannerDescription(text: string) {
+    if (!text) return null;
+    
+    const paragraphs = text.split(/<br\s*\/?>/i);
+    
+    return h(SStack, { direction: "block", gap: "small" },
+      paragraphs.map(function(p: string, idx: number) {
+        let parts = [p] as (string | any)[];
+        
+        parts = parts.flatMap(function(part: any) {
+          if (typeof part !== 'string') return [part];
+          const segments = part.split("{{order_id}}");
+          const res = [] as (string | any)[];
+          segments.forEach(function(seg, i) {
+            if (seg) res.push(seg);
+            if (i < segments.length - 1) {
+              res.push(h(SText, { type: "strong" }, olderOrderName || ""));
+            }
+          });
+          return res;
+        });
+
+        parts = parts.flatMap(function(part: any) {
+          if (typeof part !== 'string') return [part];
+          const segments = part.split("{{click_here}}");
+          const res = [] as (string | any)[];
+          segments.forEach(function(seg, i) {
+            if (seg) res.push(seg);
+            if (i < segments.length - 1) {
+              if (externalReorderLink) {
+                res.push(
+                  h(SLink, { onClick: function() { api.navigation.navigate(externalReorderLink); } }, "Click here")
+                );
+              } else {
+                res.push("Click here");
+              }
+            }
+          });
+          return res;
+        });
+
+        return h(SText, { key: idx }, parts);
+      })
+    );
+  }
+
   if (loading) {
     return (
-      <s-page heading="Loading Dashboard">
-        <s-box padding="base">
-          <s-stack direction="block" alignItems="center" gap="base">
-            <s-spinner size="base"></s-spinner>
-            <s-text>{"Loading..."}</s-text>
-          </s-stack>
-        </s-box>
-      </s-page>
+      <SPage heading="Loading Dashboard">
+        <SBox padding="base">
+          <SStack direction="block" alignItems="center" gap="base">
+            <SSpinner size="base"></SSpinner>
+            <SText>{"Loading..."}</SText>
+          </SStack>
+        </SBox>
+      </SPage>
     );
   }
 
@@ -348,19 +394,9 @@ export function ProfilePage({ api }: ProfilePageProps) {
             <SBanner 
               id="reorder-warning"
               tone="warning"
-              heading="Reordering from an older order?"
+              heading={dynamicSettings?.cb_reorder_banner_heading}
             >
-              <SStack direction="block" gap="small">
-                <SText>{"Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account. "}</SText>
-                <SStack direction="inline" gap="none">
-                  <SText>{"Need Help For your Order "}<SText type="strong">{olderOrderName}</SText></SText>
-                  {externalReorderLink && (
-                    <SText>
-                      You can <SLink onClick={function() { api.navigation.navigate(externalReorderLink); }}>{"Click here"}</SLink> and we’ll load your previous order into cart for you. 
-                    </SText>
-                  )}
-                </SStack>
-              </SStack>
+              {renderReorderBannerDescription(dynamicSettings?.cb_reorder_banner_description || "")}
             </SBanner>
           )}
 

@@ -8,50 +8,6 @@ import { API_VERSION } from "./constants";
 
 const CUSTOMER_ACCOUNT_ENDPOINT = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 const STOREFRONT_ENDPOINT = `shopify://storefront/api/${API_VERSION}/graphql.json`;
-/**
- * Customer Account API se order fetch karke ReorderResult return karta hai
- */
-// export async function fetchReorderResult(
-//   orderId: string,
-//   shopDomain: string,
-//   excludeTrial: boolean = false
-// ): Promise<ReorderResult> {
-//   const response = await fetch(CUSTOMER_ACCOUNT_ENDPOINT, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       query: ORDER_LINE_ITEMS_QUERY,
-//       variables: { orderId },
-//     }),
-//   });
-
-//   if (!response.ok) {
-//     throw new Error(`Customer Account API error: ${response.status}`);
-//   }
-
-//   const json = await response.json();
-
-//   if (json.errors?.length) {
-//     console.error("[reorder.service] GraphQL errors:", json.errors);
-//     throw new Error(json.errors[0]?.message ?? "GraphQL Error");
-//   }
-
-//   const order = json.data?.order;
-//   const lineItems = order?.lineItems?.nodes ?? [];
-//   const orderName = order?.name;
-
-//   if (!lineItems.length) {
-//     throw new Error("Order not found or has no line items");
-//   }
-
-//   const { cartItems, missingItems } = partitionLineItems(lineItems, excludeTrial);
-
-//   const redirectUrl = buildCartPermalink(shopDomain, cartItems);
-
-//   return { redirectUrl, missingItems, orderName };
-// }
-
-
 
 export async function fetchReorderResult(
   orderId: string,
@@ -59,7 +15,6 @@ export async function fetchReorderResult(
   excludeTrial: boolean = false,
   excludeVariantIds: string = ""
 ): Promise<ReorderResult> {
-  console.log("[reorder.service] START fetchReorderResult for orderId:", orderId);
   
   // 1. Fetch Order Line Items using Customer Account API
   const orderBody = JSON.stringify({
@@ -102,9 +57,6 @@ export async function fetchReorderResult(
     return { redirectUrl: null, missingItems, orderName };
   }
 
-  // 3. Create Cart via Storefront API to preserve attributes
-  console.log("[reorder.service] Creating cart with Storefront API for items:", cartItems.length);
-  
   const cartInput = {
     lines: cartItems.map(item => ({
       merchandiseId: item.variantId,
@@ -146,7 +98,6 @@ export async function fetchReorderResult(
   }
 
   const redirectUrl = cartJson.data.cartCreate.cart.checkoutUrl;
-  console.log("[reorder.service] Success! Checkout URL:", redirectUrl);
 
   return { redirectUrl, missingItems, orderName };
 }
