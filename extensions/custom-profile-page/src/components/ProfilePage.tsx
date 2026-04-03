@@ -258,6 +258,13 @@ export function ProfilePage({ api }: ProfilePageProps) {
   }
 
   const lastOrder = (orders.length !== 0) ? orders[0] : null;
+  const excludeVariantIdsRaw = (dynamicSettings?.exclude_variant_ids as string) || "";
+  const excludeNumericIds = excludeVariantIdsRaw.split(',').map(function(id) {
+    const trimmed = id.trim();
+    return trimmed.includes('/') ? getNumericId(trimmed) : trimmed;
+  }).filter(function(id) { return id !== ""; });
+
+    
   const allReviewProducts = Array.from(new Map(
     (lastOrder?.lineItems || [])
       .filter(function(li: any) {
@@ -265,6 +272,16 @@ export function ProfilePage({ api }: ProfilePageProps) {
         const nameLower = (li.name || "").toLowerCase();
         const skuLower = (li.sku || "").toLowerCase();
         if (nameLower.includes("trial pack") || skuLower.includes("trial")) return false;
+        
+        const vId = li.variantId || "";
+        const pId = li.productId || "";
+        const numericVId = vId.includes('/') ? getNumericId(vId) : vId;
+        const numericPId = pId.includes('/') ? getNumericId(pId) : pId;
+
+        if (excludeNumericIds.includes(numericVId) || excludeNumericIds.includes(numericPId)) {
+          return false;
+        }
+
         return true;
       })
       .map(function(li: any) { 
