@@ -21,7 +21,6 @@ const DEFAULT_NAV = {
       id: "prescription",
       title: "Prescription",
       links: [
-        { label: "Current Prescription Status", href: "#" },
         { label: "All Prescription", href: "#" },
         { label: "Upload My Prescription", href: "#" }
       ]

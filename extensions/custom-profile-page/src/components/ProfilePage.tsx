@@ -1,28 +1,25 @@
 /** @jsx h */
-import { h } from "preact";
+import { h, Fragment } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
 import navConfig from "../navigation.json";
-import { renderReorderBannerDescription } from "./DashboardUtils";
 import { 
   DEFAULT_SETTINGS,
-  LAYOUT_768_2COL,
-  LAYOUT_768_2COL_STACK,
-  LAYOUT_768_4COL,
-  LAYOUT_768_4COL_BLOCK,
-  LAYOUT_600_2COL,
-  LAYOUT_600_4COL,
-  LAYOUT_500_3COL,
-  SIZE_600_RESP_200,
-  SIZE_600_RESP_100,
-  DISPLAY_768_GRID,
-  DISPLAY_768_NONE_GRID
+  REVIEW_PAGE_SIZE
 } from "../constants";
 import { type Order, type MissingItem, type DashboardSettings } from "../interface";
-import { fetchAdditionalOrders, loadCustomerData } from "../loadCustomerData";
+import { loadCustomerData, fetchAdditionalOrders } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
 import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
 import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId, getSettings } from "../helpers";
+
+// Sub-components
+import { DashboardBanner } from "./ProfilePage/DashboardBanner";
+import { QuickActions } from "./ProfilePage/QuickActions";
+import { StatCards } from "./ProfilePage/StatCards";
+import { NavigationSections } from "./ProfilePage/NavigationSections";
+import { Modals } from "./ProfilePage/Modals";
+import { ProfileSkeleton } from "./ProfilePage/ProfileSkeleton";
 
 interface ProfilePageProps {
   api: any;
@@ -44,10 +41,10 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const [dynamicSettings, setDynamicSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true); // Always mount for command access
-  const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true); // Always mount for command access
   const [isPointsLoading, setIsPointsLoading] = useState(false);
   const [customStatuses, setCustomStatuses] = useState<Record<string, string>>({});
+  const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true); 
+  const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true);
 
   useEffect(() => {
     async function init() {
@@ -191,8 +188,21 @@ export function ProfilePage({ api }: ProfilePageProps) {
         }
         setOlderOrderName(orderName);
         setShowReorderWarning(true);
-        api.toast?.show("Some items are unavailable");
-        api.navigation.navigate('#reorder-warning');
+
+        setIsAllOrdersModalVisible(false);
+        setIsLineItemsModalVisible(false);
+
+        setTimeout(() => {
+            setShowReorderWarning(true);
+            api.toast?.show("Some items are unavailable");
+
+            setTimeout(() => {
+                api.navigation.navigate('#reorder-warning');
+            }, 100);
+            setIsAllOrdersModalVisible(true);
+            setIsLineItemsModalVisible(true);
+        }, 200);
+
       } else if (result.redirectUrl) {
         api.navigation.navigate(result.redirectUrl);
       }
@@ -204,12 +214,14 @@ export function ProfilePage({ api }: ProfilePageProps) {
     }
   }
 
-  const lastOrder = (orders.length !== 0) ? orders[0] : null;
+  // Prep derived data for components
   const excludeVariantIdsRaw = (dynamicSettings?.exclude_variant_ids as string) || "";
   const excludeNumericIds = excludeVariantIdsRaw.split(',').map(id => {
     const trimmed = id.trim();
     return trimmed.includes('/') ? getNumericId(trimmed) : trimmed;
   }).filter(id => id !== "");
+
+  const lastOrder = (orders.length !== 0) ? orders[0] : null;
 
   const allReviewProducts = Array.from(new Map(
     (lastOrder?.lineItems || [])
@@ -229,7 +241,6 @@ export function ProfilePage({ api }: ProfilePageProps) {
       .map(li => [li.variantId || li.productId, li])
   ).values()) as any[];
 
-  const REVIEW_PAGE_SIZE = 5;
   const reviewProducts = allReviewProducts.slice(0, REVIEW_PAGE_SIZE);
   const remainingReviewCount = Math.max(0, allReviewProducts.length - REVIEW_PAGE_SIZE);
 
@@ -274,13 +285,10 @@ export function ProfilePage({ api }: ProfilePageProps) {
 
   if (loading) {
     return (
-      <s-page heading="Loading Dashboard">
-        <s-box padding="base">
-          <s-stack direction="block" alignItems="center" gap="base">
-            <s-spinner size="base"></s-spinner>
-            <s-text>Loading...</s-text>
-          </s-stack>
-        </s-box>
+      <s-page heading="My Dashboard">
+        <s-query-container>
+          <ProfileSkeleton />
+        </s-query-container>
       </s-page>
     );
   }
@@ -289,449 +297,67 @@ export function ProfilePage({ api }: ProfilePageProps) {
     <s-page heading="My Dashboard">
       <s-query-container>
         <s-stack direction="block" gap="base">
-          {showReorderWarning && (
-            <s-banner 
-              id="reorder-warning"
-              tone="warning"
-              heading={dynamicSettings?.cb_reorder_banner_heading}
-            >
-              {renderReorderBannerDescription(dynamicSettings?.cb_reorder_banner_description || "", olderOrderName, api, externalReorderLink)}
-            </s-banner>
-          )}
+          
+          <DashboardBanner 
+            bannerEnabled={bannerEnabled}
+            bannerTitle={bannerTitle}
+            bannerSubtitle={bannerSubtitle}
+            bannerImageUrl={bannerImageUrl}
+            showReorderWarning={showReorderWarning}
+            reorderBannerHeading={dynamicSettings?.cb_reorder_banner_heading}
+            reorderBannerDescription={dynamicSettings?.cb_reorder_banner_description}
+            olderOrderName={olderOrderName}
+            api={api}
+            externalReorderLink={externalReorderLink}
+          />
 
-          {bannerEnabled && (
-            <s-box background="subdued" borderRadius="base" padding="base">
-              <s-grid gridTemplateColumns={LAYOUT_768_2COL} gap="base" alignItems="center">
-                <s-grid-item>
-                  <s-stack direction="inline" gap="small" padding="small" alignItems="center">
-                    <s-icon type="info" size="small" tone="neutral"></s-icon>
-                    <s-stack direction="block" gap="small">
-                      <s-heading>{bannerTitle}</s-heading>
-                      <s-text tone="neutral">{bannerSubtitle}</s-text>
-                    </s-stack>
-                  </s-stack>
-                </s-grid-item>
-                <s-grid-item>
-                  <s-stack direction="block" alignItems="center">
-                    <s-box 
-                      inlineSize={SIZE_600_RESP_200}  
-                      blockSize={SIZE_600_RESP_100}
-                      borderRadius="base" 
-                      overflow="hidden"
-                    >
-                      <s-image 
-                        src={bannerImageUrl} 
-                        alt="Welcome" 
-                        loading="lazy" 
-                        objectFit="cover"
-                      ></s-image>
-                    </s-box>
-                  </s-stack>
-                </s-grid-item>
-              </s-grid>
-            </s-box>
-          )}
+          <QuickActions 
+            orders={orders}
+            recentOrderItemsCount={recentOrderItemsCount}
+            daysRemainingDisplay={daysRemainingDisplay}
+            reorderLoadingId={reorderLoadingId}
+            onReorder={handleReorder}
+            onShowRecentOrderDetails={() => setSelectedOrder(orders[0])}
+          />
 
-          <s-grid gridTemplateColumns={LAYOUT_768_2COL_STACK} gap="base">
-            <s-grid-item>
-              <s-box background="subdued" borderRadius="base" padding="base">
-                <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="base" alignItems="center">
-                  <s-grid-item>
-                    <s-icon type="cart" size="base"></s-icon>
-                  </s-grid-item>
-                  <s-grid-item>
-                    <s-clickable 
-                      onClick={() => setSelectedOrder(orders[0])}
-                      command="--show" 
-                      commandFor="order-line-items-modal"
-                    >
-                      <s-stack direction="block" gap="none">
-                        <s-text tone="neutral">Most Recent Order</s-text>
-                        <s-text type="strong" tone="info">{orders[0]?.name || "#1111"}</s-text>
-                        <s-text tone="neutral">{recentOrderItemsCount + " items"}</s-text>
-                      </s-stack>
-                    </s-clickable>
-                  </s-grid-item>
-                  <s-grid-item>
-                    <s-stack direction="inline" gap="small" alignItems="center">
-                      <s-button 
-                        variant="primary" 
-                        loading={reorderLoadingId === (orders[0]?.id || "none")}
-                        onClick={() => handleReorder(orders[0]?.id, orders[0]?.name || "")}
-                      >
-                        REORDER
-                      </s-button>
-                      <s-button 
-                        variant="secondary" 
-                        href="shopify://customer-account/orders"
-                      >
-                        <s-stack direction="inline" gap="small-200" alignItems="center">
-                          <s-text type="strong">Reorder Past Orders</s-text>
-                          <s-icon type="arrow-right" size="small"></s-icon>
-                        </s-stack>
-                      </s-button>
-                    </s-stack>
-                  </s-grid-item>
-                </s-grid>
-              </s-box>
-            </s-grid-item>
-            <s-grid-item>
-              <s-box background="subdued" borderRadius="base" padding="base">
-                <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="center">
-                  <s-grid-item>
-                    <s-stack direction="block" gap="none">
-                      <s-text tone="neutral">Days Till Run Out</s-text>
-                      <s-text type="strong">{daysRemainingDisplay}</s-text>
-                    </s-stack>
-                  </s-grid-item>
-                  <s-grid-item>
-                    <s-icon type="info" size="base"></s-icon>
-                  </s-grid-item>
-                </s-grid>
-              </s-box>
-            </s-grid-item>
-          </s-grid>
+          <StatCards 
+            pointsDisplay={pointsDisplay}
+            prescriptionExpiry={customer?.prescription?.expiry_date || "2027-03-09"}
+          />
 
-          <s-grid gridTemplateColumns={LAYOUT_768_2COL_STACK} gap="base">
-            <s-grid-item>
-              <s-box background="subdued" borderRadius="base" padding="base">
-                <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
-                  <s-grid-item>
-                    <s-icon type="star" size="base"></s-icon>
-                  </s-grid-item>
-                  <s-grid-item>
-                    <s-text type="strong">My Loyalty Points</s-text>
-                  </s-grid-item>
-                  <s-grid-item>
-                    <s-text type="strong">{pointsDisplay}</s-text>
-                  </s-grid-item>
-                </s-grid>
-              </s-box>
-            </s-grid-item>
-            <s-grid-item>
-              <s-box background="subdued" borderRadius="base" padding="base">
-                <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
-                  <s-grid-item>
-                    <s-icon type="calendar" size="base"></s-icon>
-                  </s-grid-item>
-                  <s-grid-item>
-                    <s-text type="strong">Prescription Expiry</s-text>
-                  </s-grid-item>
-                  <s-grid-item>
-                    <s-text type="strong">{customer?.prescription?.expiry_date || "2027-03-09"}</s-text>
-                  </s-grid-item>
-                </s-grid>
-              </s-box>
-            </s-grid-item>
-          </s-grid>
-
-          <s-grid gridTemplateColumns={LAYOUT_768_2COL_STACK} gap="base">
-            {(sections || []).map((section, sIdx) => (
-              <s-box key={sIdx} id={"section-" + sIdx} padding="base" background="base" borderRadius="base" border="base">
-                <s-stack gap="base">
-                  <s-grid gridTemplateColumns="1fr auto" gap="small" alignItems="center">
-                    <s-grid-item>
-                      <s-heading>{section.title}</s-heading>
-                    </s-grid-item>
-                    <s-grid-item>
-                      <s-icon type={section.icon} size="base"></s-icon>
-                    </s-grid-item>
-                  </s-grid>
-                    
-                  <s-stack gap="small">
-                    {(section.links || []).map((link, lIdx) => {
-                      const dynamicSub = link.dynamicSub ? resolveDynamicValue(link.dynamicSub) : "";
-                      const href = link.href || "";
-                      const isClickable = (href && href !== "#") || link.command;
-                      return (
-                        <s-stack key={lIdx} gap="small-100">
-                          <s-grid gridTemplateColumns="1fr auto" alignItems="center">
-                            <s-stack direction="inline" gap="small" alignItems="center">
-                            {isClickable ? (
-                                <s-clickable 
-                                  id={"nav-l-" + lIdx} 
-                                  href={href} 
-                                  command={link.command} 
-                                  commandFor={link.commandFor}
-                                >
-                                  <s-text tone="custom">{link.label}</s-text>
-                                </s-clickable>
-                              ) : (
-                                <s-text tone="info">{link.label}</s-text>
-                              )}
-                            </s-stack>
-                            <s-stack direction="inline" gap="small" alignItems="center" justifyContent="end">
-                             {(dynamicSub && link?.dynamicSub === 'orderStatus') ? (
-                                <s-clickable 
-                                  id={"nav-l-" + lIdx} 
-                                  href={href} 
-                                  command={link.command} 
-                                  commandFor={link.commandFor}
-                                >
-                                  <s-stack direction="inline" gap="small-300" alignItems="center">
-                                    <s-text tone="custom">{dynamicSub}</s-text>
-                                    <s-icon type="arrow-right" size="small" tone="custom"></s-icon>
-                                  </s-stack>
-                                </s-clickable>
-                              ) : (
-                                dynamicSub ? <s-text tone="neutral">{dynamicSub}</s-text> : null
-                              )}
-                            </s-stack>
-                          </s-grid>
-                        </s-stack>
-                      );
-                    })}
-                  </s-stack>
-
-                  {section.id === 'reviews' && reviewProducts.length !== 0 && (
-                    <s-stack direction="block" gap="none">
-                      <s-divider></s-divider>
-                      {reviewProducts.map((prod, pIdx) => (
-                        <s-box key={pIdx} padding="small">
-                          <s-grid gridTemplateColumns={LAYOUT_768_4COL_BLOCK} gap="small" alignItems="center">
-                            <s-grid-item>
-                              {prod.image?.url ? 
-                                <s-product-thumbnail src={prod.image?.url} alt={prod.name} size="base" totalItems={prod?.quantity}></s-product-thumbnail> : 
-                                <s-icon type="image" size="large-100"></s-icon>}
-                            </s-grid-item>
-                            <s-grid-item>
-                              <s-stack direction="block" gap="none">
-                                <s-text type="strong">{prod.name}</s-text>
-                                {prod.variantTitle && <s-text tone="neutral">{prod.variantTitle}</s-text>}
-                              </s-stack>
-                            </s-grid-item>
-                            <s-grid-item>
-                              <s-button
-                                variant="secondary"
-                                href={prod.productHandle && storefrontBase ? `${storefrontBase}/products/${prod.productHandle}${reviewTarget}` : undefined}
-                                target="_blank"
-                              >
-                                Review
-                              </s-button>
-                            </s-grid-item>
-                          </s-grid>
-                          {((pIdx + 1) !== reviewProducts.length) && (
-                            <s-stack gap="small">
-                              <s-divider></s-divider>
-                            </s-stack>
-                          )}
-                        </s-box>
-                      ))}
-                      {(allReviewProducts.length > REVIEW_PAGE_SIZE) && (
-                        <s-box padding="small">
-                          <s-divider></s-divider>
-                          <s-stack direction="block" alignItems="center" paddingBlock="small">
-                            <s-button 
-                              variant="secondary" 
-                              command="--show" 
-                              commandFor="reviews-modal"
-                            >
-                                {"View More (" + remainingReviewCount + " more)"}
-                            </s-button>
-                          </s-stack>
-                        </s-box>
-                      )}
-                    </s-stack>
-                  )}
-                </s-stack> 
-              </s-box>      
-            ))}
-          </s-grid>
+          <NavigationSections 
+            sections={sections}
+            resolveDynamicValue={resolveDynamicValue}
+            reviewProducts={reviewProducts}
+            allReviewProductsCount={allReviewProducts.length}
+            REVIEW_PAGE_SIZE={REVIEW_PAGE_SIZE}
+            remainingReviewCount={remainingReviewCount}
+            storefrontBase={storefrontBase}
+            reviewTarget={reviewTarget}
+          />
         </s-stack>
       </s-query-container>
       
-      {isAllOrdersModalVisible && ( 
-        <s-modal id="all-orders-modal" heading="Ongoing Order Status" size="max">
-          <s-query-container>
-            <s-stack gap="large" alignItems="center">
-              <s-box padding="large" background="base" border="base" borderRadius="large" inlineSize="100%">
-                {ongoingOrders.length !== 0 ? (
-                <s-stack gap="large">
-                  <s-grid gridTemplateColumns="2fr 1fr 1fr 1fr" display={DISPLAY_768_GRID} alignItems="center" paddingInline="base">
-                    <s-text type="strong" tone="neutral">Product</s-text>
-                    <s-text type="strong" tone="neutral">Status</s-text>
-                    <s-text type="strong" tone="neutral">Price</s-text>
-                    <s-text type="strong" tone="neutral">Action</s-text>
-                  </s-grid>
-                  <s-box display={DISPLAY_768_GRID}>
-                    <s-divider></s-divider>
-                  </s-box>
-                  {ongoingOrders.map(order => {
-                    const fulfillmentStatus = order.fulfillmentStatus || 'UNFULFILLED';
-                    const displayStatus = (fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase()).replace(/_/g, ' ');
-                    const totalQuantity = (order.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0), 0);
-                    const orderPrice = order.totalPrice && api.i18n ? api.i18n.formatNumber(Number(order.totalPrice.amount), { precision: 2 }) + " " + order.totalPrice.currencyCode : "";
-
-                    return (
-                      <s-box key={order.id} padding="base" border="base" borderRadius="large">
-                        <s-stack gap="base">
-                          <s-grid gridTemplateColumns="2fr 1fr 1fr 1fr" display={DISPLAY_768_GRID} alignItems="center" gap="base">
-                            <s-clickable onClick={() => api.navigation.navigate(`shopify://customer-account/orders/${getNumericId(order.id)}`)}>
-                              <s-stack direction="inline" gap="base" alignItems="center">
-                                <s-box borderRadius="base" overflow="hidden" inlineSize="56px" blockSize="56px">
-                                  {order.lineItems?.[0]?.image ? (
-                                    <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name}></s-image>
-                                  ) : (
-                                    <s-grid alignItems="center" blockSize="100%"><s-icon type="image" tone="neutral"></s-icon></s-grid>
-                                  )}
-                                </s-box>
-                                <s-stack gap="small-100">
-                                  <s-text type="strong">{order.name}</s-text>
-                                  <s-text tone="neutral">{totalQuantity} items</s-text>
-                                </s-stack>
-                              </s-stack>
-                            </s-clickable>
-                            <s-stack gap="small-100">
-                              <s-text type="strong">{customStatuses[order.id] || displayStatus}</s-text>
-                              <s-text tone="neutral">{order.processedAt ? new Date(order.processedAt).toLocaleDateString("en-GB") : ""}</s-text>
-                            </s-stack>
-                            <s-text type="strong">{orderPrice}</s-text>
-                            <s-button variant="secondary" onClick={() => handleReorder(order.id, order.name, 'all-orders-modal')} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
-                              Reorder
-                            </s-button>
-                          </s-grid>
-
-                          <s-grid gridTemplateColumns="1fr auto" display={DISPLAY_768_NONE_GRID} gap="small">
-                            <s-clickable onClick={() => api.navigation.navigate(`shopify://customer-account/orders/${getNumericId(order.id)}`)}>
-                              <s-stack direction="inline" gap="base">
-                                <s-box borderRadius="base" overflow="hidden" inlineSize="52px" blockSize="52px">
-                                  {order.lineItems?.[0]?.image ? (
-                                    <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name}></s-image>
-                                  ) : (
-                                    <s-grid alignItems="center" blockSize="100%"><s-icon type="image" tone="neutral"></s-icon></s-grid>
-                                  )}
-                                </s-box>
-                                <s-stack gap="small-100">
-                                  <s-text type="strong">{order.name}</s-text>
-                                  <s-text tone="neutral">{totalQuantity} items</s-text>
-                                  <s-text>{customStatuses[order.id] || displayStatus}</s-text>
-                                  <s-text tone="neutral">{order.processedAt ? new Date(order.processedAt).toLocaleDateString("en-GB") : ""}</s-text>
-                                </s-stack>
-                              </s-stack>
-                            </s-clickable>
-                            <s-stack alignItems="end" gap="small">
-                              <s-text type="strong">{orderPrice}</s-text>
-                              <s-button variant="secondary" onClick={() => handleReorder(order.id, order.name, 'all-orders-modal')} loading={reorderLoadingId === order.id} disabled={reorderLoadingId !== null}>
-                                Reorder
-                              </s-button>
-                            </s-stack>
-                          </s-grid>
-                        </s-stack>
-                      </s-box>
-                    );
-                  })}
-                </s-stack>
-                ) : (
-                  <s-stack padding="base" direction="inline" alignItems="center" justifyContent="center">
-                    <s-text>No orders found.</s-text>
-                  </s-stack>
-                )}
-              </s-box>
-            </s-stack>
-          </s-query-container>
-        </s-modal>
-      )}
-
-      {isLineItemsModalVisible && (
-        <s-modal id="order-line-items-modal" heading={lineItemsCount + " items"} size="max">
-          <s-query-container>
-            <s-stack gap="base">
-              {cbSearchEnabled && (
-                <s-text-field
-                  label="Search"
-                  icon="search"
-                  value={searchQuery}
-                  onInput={(e: any) => setSearchQuery(e.target.value)}
-                ></s-text-field>
-              )}
-              {showTopReorder && (
-                <s-box>
-                  <s-stack direction="inline" justifyContent={reorderButtonPosition.includes("right") ? "end" : "start"}>
-                    <s-button variant="primary" onClick={() => { if (selectedOrder?.id) handleReorder(selectedOrder.id, selectedOrder.name, 'order-line-items-modal'); }} loading={reorderLoadingId === selectedOrder?.id} disabled={reorderLoadingId !== null}>
-                      REORDER NOW
-                    </s-button>
-                  </s-stack>
-                </s-box>
-              )}
-
-              <s-divider></s-divider>
-               {selectedOrder?.lineItems && selectedOrder.lineItems.length !== 0 ? (
-              <s-box padding="base">
-                <s-stack gap="base">
-                  {(selectedOrder?.lineItems || [])
-                    .filter(item => !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map((item, index) => {
-                      const amount = Number(item.totalPrice?.amount || 0);
-                      const currency = item.totalPrice?.currencyCode || "";
-                      const itemPrice = (amount !== 0 && api.i18n) ? api.i18n.formatNumber(amount, { precision: 2 }) + " " + currency : "";
-                      return (
-                        <s-grid key={index} gridTemplateColumns="auto 1fr auto" alignItems="center" gap="base">
-                          <s-product-thumbnail src={item.image?.url ?? ""} alt={item.name} totalItems={item.quantity}></s-product-thumbnail>
-                          <s-stack gap="small-100">
-                            <s-text type="strong">{item.name}</s-text>
-                            <s-text tone="neutral">{item.variantTitle || 'Default'}</s-text>
-                          </s-stack>
-                          <s-text type="strong">{itemPrice}</s-text>
-                        </s-grid>
-                      );
-                    })}
-                </s-stack>
-              </s-box>
-              ) : (
-                <s-stack padding="base" direction="inline" alignItems="center" justifyContent="center">
-                  <s-text>No items found.</s-text>
-                </s-stack>
-              )}
-
-              {showBottomReorder && (
-                <s-stack gap="base">
-                  <s-divider></s-divider>
-                  <s-box inlineSize="100%">
-                    <s-stack direction="inline" justifyContent={reorderButtonPosition.includes('right') ? 'end' : 'start'}>
-                      <s-button variant="primary" onClick={() => { if (selectedOrder?.id) handleReorder(selectedOrder.id, selectedOrder.name, 'order-line-items-modal'); }} loading={reorderLoadingId === selectedOrder?.id} disabled={reorderLoadingId !== null}>
-                        REORDER NOW
-                      </s-button>
-                    </s-stack>
-                  </s-box>
-                </s-stack>
-              )}
-            </s-stack>
-          </s-query-container>
-        </s-modal>
-      )}
-
-      <s-modal id="reviews-modal" heading="Review Your Products" size="max">
-          <s-query-container>
-            <s-stack gap="base">
-              <s-box padding="base">
-                <s-stack gap="base">
-                  {allReviewProducts.map((prod, pIdx) => {
-                    const isLastItem = (pIdx + 1) === allReviewProducts.length;
-                    return (
-                    <s-stack key={pIdx} gap="base">
-                      <s-grid gridTemplateColumns={LAYOUT_768_4COL} alignItems="center" gap="base">
-                        <s-product-thumbnail src={prod.image?.url || ""} alt={prod.name} size="base" totalItems={prod?.quantity}></s-product-thumbnail>
-                        <s-stack direction="block" gap="none">
-                          <s-text type="strong">{prod.name}</s-text>
-                          {prod.variantTitle && <s-text tone="neutral">{prod.variantTitle}</s-text>}
-                        </s-stack>
-                        <s-button
-                          variant="secondary"
-                          href={prod.productHandle && storefrontBase ? `${storefrontBase}/products/${prod.productHandle}${reviewTarget}` : undefined}
-                          target="_blank"
-                        >
-                          Review
-                        </s-button>
-                      </s-grid>
-                      {!isLastItem && <s-divider></s-divider>}
-                    </s-stack>
-                    );
-                  })}
-                </s-stack>
-              </s-box>
-            </s-stack>
-          </s-query-container>
-      </s-modal>
+      <Modals 
+        ongoingOrders={ongoingOrders}
+        customStatuses={customStatuses}
+        reorderLoadingId={reorderLoadingId}
+        onReorder={handleReorder}
+        api={api}
+        selectedOrder={selectedOrder}
+        lineItemsCount={lineItemsCount}
+        cbSearchEnabled={cbSearchEnabled}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        showTopReorder={showTopReorder}
+        showBottomReorder={showBottomReorder}
+        reorderButtonPosition={reorderButtonPosition}
+        allReviewProducts={allReviewProducts}
+        storefrontBase={storefrontBase}
+        reviewTarget={reviewTarget}
+        isAllOrdersModalVisible={isAllOrdersModalVisible}
+        isLineItemsModalVisible={isLineItemsModalVisible}
+      />
     </s-page>
   );
 }

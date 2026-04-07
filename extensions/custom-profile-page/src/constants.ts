@@ -1,7 +1,7 @@
 import { type DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://daughters-any-tournaments-inflation.trycloudflare.com";
+export const APP_URL = "https://admitted-overall-lincoln-outline.trycloudflare.com";
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;
@@ -50,22 +50,4 @@ export const SIZE_600_RESP_100 = "@container (inline-size \x3e 600px) 100px, 80p
 export const DISPLAY_768_GRID = "@container (inline-size \x3e 768px) grid, none";
 export const DISPLAY_768_NONE_GRID = "@container (inline-size \x3e 768px) none, grid";
  
-export const SPage = "s-page" as any;
-export const SSpinner = "s-spinner" as any;
-export const SBox = "s-box" as any;
-export const SStack = "s-stack" as any;
-export const SText = "s-text" as any;
-export const SQueryContainer = "s-query-container" as any;
-export const SBanner = "s-banner" as any;
-export const SLink = "s-link" as any;
-export const SGrid = "s-grid" as any;
-export const SGridItem = "s-grid-item" as any;
-export const SIcon = "s-icon" as any;
-export const SImage = "s-image" as any;
-export const SClickable = "s-clickable" as any;
-export const SButton = "s-button" as any;
-export const SHeading = "s-heading" as any;
-export const SDivider = "s-divider" as any;
-export const SProductThumbnail = "s-product-thumbnail" as any;
-export const SModal = "s-modal" as any;
-export const STextField = "s-text-field" as any;
+export const REVIEW_PAGE_SIZE = 5;

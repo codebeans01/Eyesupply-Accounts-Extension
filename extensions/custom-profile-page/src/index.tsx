@@ -1,7 +1,7 @@
 import '@shopify/ui-extensions/preact';
 import { render } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
-
+import './style.css';
 import { ProfilePage } from './components/ProfilePage';
 import { PrescriptionListPage } from './components/PrescriptionListPage';
 
