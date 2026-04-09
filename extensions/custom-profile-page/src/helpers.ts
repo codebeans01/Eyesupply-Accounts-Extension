@@ -537,7 +537,7 @@ export function calculateDaysRemaining(targetDateStr?: string | null): number | 
     const end = new Date(target.getFullYear(), target.getMonth(), target.getDate());
 
     const diffMs = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     return diffDays > 0 ? diffDays : 0;
   } catch (e) {

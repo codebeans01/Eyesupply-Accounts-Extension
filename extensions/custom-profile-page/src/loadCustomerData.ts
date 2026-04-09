@@ -167,6 +167,7 @@ export async function loadCustomerData(
     prescription: latestPrescription,
     prescriptions: prescriptions,
     prescriptionPageInfo: prescriptionPageInfo,
+    tags: customer.tags || [],
   };
 
   const orders: Order[] = (customer.orders?.nodes ?? []).map(mapOrderNode);

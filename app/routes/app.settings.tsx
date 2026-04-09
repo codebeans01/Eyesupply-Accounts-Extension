@@ -151,7 +151,8 @@ const DEFAULT_EXT_SETTINGS = {
   cb_search_enable: true,
   cb_show_default_nav: true,
   cb_reorder_banner_heading: "Reordering from an older order?",
-  cb_reorder_banner_description: "Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account."
+  cb_reorder_banner_description: "Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.",
+  section_order: ["orders", "profile", "rewards", "prescription", "delivery", "medical_aid", "support", "reviews"]
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -318,6 +319,17 @@ export default function SettingsPage() {
     }));
   };
 
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    const currentOrder = settings.section_order || ["orders", "profile", "rewards", "prescription", "delivery", "medical_aid", "support", "reviews"];
+    const newOrder = [...currentOrder];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (targetIndex >= 0 && targetIndex < newOrder.length) {
+      [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
+      updateSetting("section_order", newOrder);
+    }
+  };
+
   const handleSelectVariants = async () => {
     // @ts-ignore
     if (typeof shopify !== 'undefined') {
@@ -450,6 +462,45 @@ export default function SettingsPage() {
                           checked={settings.cb_show_default_nav !== false} 
                           onChange={(e: any) => updateSetting("cb_show_default_nav", e.target.checked)} 
                         />
+                      </s-stack>
+                    </s-stack>
+                  </s-box>
+
+                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                    <s-stack gap="base">
+                      <s-heading size="medium">Dashboard Section Order</s-heading>
+                      <s-text tone="subdued">Rearrange how sections appear on the customer dashboard grid (2 columns per row).</s-text>
+                      
+                      <s-divider />
+                      
+                      <s-stack gap="small">
+                        {(settings.section_order || ["orders", "profile", "rewards", "prescription", "delivery", "medical_aid", "support", "reviews"]).map((sectionId: string, index: number, arr: string[]) => {
+                          const tab = TABS.find(t => t.id === sectionId) || { label: sectionId, icon: "person" };
+                          return (
+                            <s-box key={sectionId} padding="small" background="subdued" borderRadius="base" border="base">
+                              <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
+                                <s-icon type={tab.icon} size="base" />
+                                <s-text type="strong">{tab.label}</s-text>
+                                <s-stack direction="inline" gap="extra-tight">
+                                  <s-button 
+                                    variant="tertiary" 
+                                    disabled={index === 0} 
+                                    onClick={() => moveSection(index, 'up')}
+                                  >
+                                    <s-icon type="arrow-up" size="small" />
+                                  </s-button>
+                                  <s-button 
+                                    variant="tertiary" 
+                                    disabled={index === arr.length - 1} 
+                                    onClick={() => moveSection(index, 'down')}
+                                  >
+                                    <s-icon type="arrow-down" size="small" />
+                                  </s-button>
+                                </s-stack>
+                              </s-grid>
+                            </s-box>
+                          );
+                        })}
                       </s-stack>
                     </s-stack>
                   </s-box>

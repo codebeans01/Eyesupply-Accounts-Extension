@@ -1,7 +1,7 @@
 import { type DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://admitted-overall-lincoln-outline.trycloudflare.com";
+export const APP_URL = "https://benefits-evident-circuits-between.trycloudflare.com";
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;
@@ -49,5 +49,8 @@ export const SIZE_600_RESP_200 = "@container (inline-size \x3e 600px) 200px, 80p
 export const SIZE_600_RESP_100 = "@container (inline-size \x3e 600px) 100px, 80px";
 export const DISPLAY_768_GRID = "@container (inline-size \x3e 768px) grid, none";
 export const DISPLAY_768_NONE_GRID = "@container (inline-size \x3e 768px) none, grid";
+
+export const COL3 = '@container (inline-size > 480px) auto 1fr auto, 1fr';
+export const COL2 = '@container (inline-size > 600px) 1fr 1fr, 1fr';
  
 export const REVIEW_PAGE_SIZE = 5;

@@ -12,6 +12,25 @@
       ]
     },
     {
+      "id": "profile",
+      "title": "Profile",
+      "icon": "profile",
+      "links": [
+        { "label": "Personal Details", "href": "shopify://customer-account/profile" },
+        { "label": "Address", "href": "shopify://customer-account/profile" }
+      ]
+    },
+    {
+      "id": "rewards",
+      "title": "Rewards",
+      "icon": "gift",
+      "links": [
+        { "label": "My Loyality Points", "dynamicSub": "loyaltyPoints", "href": "#" },
+        { "label": "Referral", "href": "#" },
+        { "label": "How to Redeem Points", "href": "#" }
+      ]
+    },
+    {
       "id": "prescription",
       "title": "Prescription",
       "icon": "clipboard",
@@ -42,25 +61,15 @@
       ]
     },
     {
-      "id": "profile",
-      "title": "Profile",
-      "icon": "profile",
+      "id": "support",
+      "title": "Support",
+      "icon": "email",
       "links": [
-        { "label": "Personal Details", "href": "shopify://customer-account/profile" },
-        { "label": "Address", "href": "shopify://customer-account/profile" }
+        { "label": "FAQs", "href": "mailto:support@eyesupply.co.uk" },
+        { "label": "Contact Us", "href": "mailto:support@eyesupply.co.uk" }
       ]
     },
     {
-      "id": "rewards",
-      "title": "Rewards",
-      "icon": "gift",
-      "links": [
-        { "label": "My Loyality Points", "dynamicSub": "loyaltyPoints", "href": "#" },
-        { "label": "Referral", "href": "#" },
-        { "label": "How to Redeem Points", "href": "#" }
-      ]
-    },
-     {
       "id": "reviews",
       "title": "Reviews",
       "icon": "star",
@@ -68,15 +77,6 @@
         { "label": "Review Us on Google", "href": "https://google.com" },
         { "label": "Review Us on Facebook", "href": "https://facebook.com" },
         { "label": "Review Products", "href": "shopify://customer-account/orders" }
-      ]
-    },
-    {
-      "id": "support",
-      "title": "Support",
-      "icon": "email",
-      "links": [
-        { "label": "FAQs", "href": "mailto:support@eyesupply.co.uk" },
-        { "label": "Contact Us", "href": "mailto:support@eyesupply.co.uk" }
       ]
     }
   ],

@@ -12,6 +12,7 @@ export const CUSTOMER_DATA_QUERY = `
       phoneNumber {
         phoneNumber
       }
+      tags
         metafields(identifiers: [
           {namespace: "custom", key: "medical_aid_number"},
           {namespace: "custom", key: "medical_aid_plan"},

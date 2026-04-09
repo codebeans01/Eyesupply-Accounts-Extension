@@ -1,4 +1,3 @@
-/** @jsx h */
 import { h } from "preact";
 import { 
   LAYOUT_768_2COL_STACK,

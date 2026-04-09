@@ -256,8 +256,9 @@ export function ProfilePage({ api }: ProfilePageProps) {
   
   const reorderButtonPosition = dynamicSettings?.cb_reorder_button_position || DEFAULT_SETTINGS.cb_reorder_button_position;
 
+  const sectionOrder = (dynamicSettings?.section_order as string[]) || [];
   const filteredSections = navConfig.sections || [];
-  const sections = filteredSections.map(section => {
+  let sections = filteredSections.map(section => {
     const dynamicSection = dynamicSettings?.sections?.[section.id];
     if (!dynamicSection) return section;
     return {
@@ -274,6 +275,18 @@ export function ProfilePage({ api }: ProfilePageProps) {
       })
     };
   });
+
+  // Apply dynamic reordering if provided from backend
+  if (sectionOrder.length > 0) {
+    sections = [...sections].sort((a, b) => {
+      const indexA = sectionOrder.indexOf(a.id);
+      const indexB = sectionOrder.indexOf(b.id);
+      if (indexA === -1 && indexB === -1) return 0;
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  }
 
   const lineItemsCount = (selectedOrder?.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0), 0);
   const showTopReorder = !!lineItemsCount && reorderButtonPosition.startsWith("top");
@@ -320,11 +333,6 @@ export function ProfilePage({ api }: ProfilePageProps) {
             onShowRecentOrderDetails={() => setSelectedOrder(orders[0])}
           />
 
-          <StatCards 
-            pointsDisplay={pointsDisplay}
-            prescriptionExpiry={customer?.prescription?.expiry_date || "2027-03-09"}
-          />
-
           <NavigationSections 
             sections={sections}
             resolveDynamicValue={resolveDynamicValue}
@@ -334,6 +342,13 @@ export function ProfilePage({ api }: ProfilePageProps) {
             remainingReviewCount={remainingReviewCount}
             storefrontBase={storefrontBase}
             reviewTarget={reviewTarget}
+          />
+
+          <StatCards 
+            pointsDisplay={pointsDisplay}
+            prescriptionExpiry={customer?.prescription?.expiry_date || ""}
+            tags={customer?.tags || []}
+            ordersCount={orders?.length || 0}
           />
         </s-stack>
       </s-query-container>

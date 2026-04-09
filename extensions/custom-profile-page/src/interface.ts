@@ -44,6 +44,7 @@ export interface CustomerSummary {
   prescription?: Prescription | null;
   prescriptions?: Prescription[];
   prescriptionPageInfo?: PageInfo;
+  tags?: string[];
 }
 
 export interface PageInfo {
@@ -106,6 +107,7 @@ export interface CustomerDataQueryResponse {
         };
       }>;
     };
+    tags: string[];
     metafields: Array<{
       namespace: string;
       key: string;
@@ -219,6 +221,7 @@ export interface DashboardSettings {
   cb_show_default_nav_links?: boolean;
   cb_reorder_banner_heading?: string;
   cb_reorder_banner_description?: string;
+  section_order?: string[];
   sections?: Record<string, {
     id: string;
     title?: string;
