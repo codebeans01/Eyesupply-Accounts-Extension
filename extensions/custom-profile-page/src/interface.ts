@@ -194,6 +194,17 @@ export interface ShopifyCostExtension {
   throttleStatus: ShopifyThrottleStatus
 }
 
+export interface NavLink {
+  label: string;
+  href?: string;
+  action?: "link" | "reorder" | "modal";
+  command?: string;
+  commandFor?: string;
+  dynamicSub?: string;
+  tone?: string;
+  sub?: string;
+}
+
 export interface MissingItem {
   name: string;
   image?: string;
@@ -213,7 +224,14 @@ export interface DashboardSettings {
   external_reorder_link: string;
   cb_reorder_button_position: string;
   cb_search_enable: boolean;
+  cb_rewards_icon_url?: string;
+  cb_recent_order_icon_url?: string;
+  cb_rewards_card_icon_url?: string;
+  cb_prescription_icon_url?: string;
+  cb_days_run_out_icon_url?: string;
+  cb_review_subheading?: string;
   cb_show_default_nav: boolean;
+  cb_show_review_products: boolean;
   cb_banner_enabled?: boolean;
   cb_banner_title?: string;
   cb_banner_subtitle?: string;
@@ -226,13 +244,7 @@ export interface DashboardSettings {
     id: string;
     title?: string;
     icon?: string;
-    links?: Array<{
-      label?: string;
-      href?: string;
-      command?: string;
-      commandFor?: string;
-      dynamicSub?: string;
-    }>;
+    links?: NavLink[];
   }>;
 }
 

@@ -7,7 +7,7 @@ import {
   DEFAULT_SETTINGS,
   REVIEW_PAGE_SIZE
 } from "../constants";
-import { type Order, type MissingItem, type DashboardSettings } from "../interface";
+import { type Order, type MissingItem, type DashboardSettings, type NavLink } from "../interface";
 import { loadCustomerData, fetchAdditionalOrders } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
 import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
@@ -15,7 +15,6 @@ import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId, 
 
 // Sub-components
 import { DashboardBanner } from "./ProfilePage/DashboardBanner";
-import { QuickActions } from "./ProfilePage/QuickActions";
 import { StatCards } from "./ProfilePage/StatCards";
 import { NavigationSections } from "./ProfilePage/NavigationSections";
 import { Modals } from "./ProfilePage/Modals";
@@ -126,7 +125,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
     let resolved = text;
     resolved = resolved.replace(/\{\{customer\.first_name\}\}/g, customer?.firstName || "");
     resolved = resolved.replace(/\{\{customer\.last_name\}\}/g, customer?.lastName || "");
-    resolved = resolved.replace(/\{\{customer\.points\}\}/g, points !== null ? points.toString() : "...");
+    resolved = resolved.replace(/\{\{customer\.points\}\}/g, points !== null ? new Intl.NumberFormat().format(points) : "...");
     resolved = resolved.replace(/\{\{customer\.medical_aid_number\}\}/g, customer?.medicalAidNumber || "Not provided");
     const rawPatientId = customer?.patientIdNumber || "";
     const maskedId = maskPatientId(rawPatientId);
@@ -150,7 +149,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
       case "medicalAidPlan": return customer?.medicalAidPlan || "Plan";
       case "medicalAidName": return customer?.medicalAidName || "Medical Aid Name";
       case "patientIdNumber": return customer?.patientIdNumber ? maskPatientId(customer.patientIdNumber) : "Not provided";
-      case "loyaltyPoints": return isPointsLoading ? "..." : (points !== null ? points.toString() : "0");
+      case "loyaltyPoints": return isPointsLoading ? "..." : (points !== null ? new Intl.NumberFormat().format(points) + " points" : "0");
       case "daysRemaining": {
         const days = calculateDaysRemaining(customer?.daysTillRunOut);
         return days !== null ? `${days} days` : "0 days";
@@ -248,6 +247,13 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const externalReorderLink = (dynamicSettings?.external_reorder_link as string) || DEFAULT_SETTINGS.external_reorder_link;
   const cbSearchEnabled = (dynamicSettings?.cb_search_enable as boolean) ?? DEFAULT_SETTINGS.cb_search_enable;
   const bannerEnabled = (dynamicSettings?.cb_banner_enabled as boolean) ?? true;
+  const showReviewProducts = (dynamicSettings?.cb_show_review_products as boolean) ?? DEFAULT_SETTINGS.cb_show_review_products;
+  const rewardsIconUrl = (dynamicSettings?.cb_rewards_icon_url as string) || DEFAULT_SETTINGS.cb_rewards_icon_url;
+  const reviewSubheading = (dynamicSettings?.cb_review_subheading as string) || DEFAULT_SETTINGS.cb_review_subheading;
+  const recentOrderIconUrl = (dynamicSettings?.cb_recent_order_icon_url as string) || DEFAULT_SETTINGS.cb_recent_order_icon_url;
+  const rewardsCardIconUrl = (dynamicSettings?.cb_rewards_card_icon_url as string) || DEFAULT_SETTINGS.cb_rewards_card_icon_url;
+  const prescriptionIconUrl = (dynamicSettings?.cb_prescription_icon_url as string) || DEFAULT_SETTINGS.cb_prescription_icon_url;
+  const daysRunOutIconUrl = (dynamicSettings?.cb_days_run_out_icon_url as string) || DEFAULT_SETTINGS.cb_days_run_out_icon_url;
   const bannerTitle = resolve((dynamicSettings?.cb_banner_title as string) || "Welcome Back");
   const bannerSubtitle = resolve((dynamicSettings?.cb_banner_subtitle as string) || "{{customer.first_name}} {{customer.last_name}}");
   const bannerImageUrl = (dynamicSettings?.cb_banner_image_url as string) || welcomeImageUrl;
@@ -256,7 +262,12 @@ export function ProfilePage({ api }: ProfilePageProps) {
   
   const reorderButtonPosition = dynamicSettings?.cb_reorder_button_position || DEFAULT_SETTINGS.cb_reorder_button_position;
 
-  const sectionOrder = (dynamicSettings?.section_order as string[]) || [];
+  const normalizeId = (id: string) => (id || "").toLowerCase().replace(/_/g, '-');
+  const sectionOrderRaw = dynamicSettings?.section_order;
+  const sectionOrder = (Array.isArray(sectionOrderRaw) ? sectionOrderRaw : (typeof sectionOrderRaw === 'string' ? sectionOrderRaw.split(',') : []))
+    .map((id:String) => normalizeId(id.trim()))
+    .filter(Boolean);
+
   const filteredSections = navConfig.sections || [];
   let sections = filteredSections.map(section => {
     const dynamicSection = dynamicSettings?.sections?.[section.id];
@@ -264,23 +275,26 @@ export function ProfilePage({ api }: ProfilePageProps) {
     return {
       ...section,
       title: dynamicSection.title || section.title,
-      links: (section.links || []).map((link, idx) => {
+      links: ((section.links as NavLink[]) || []).map((link, idx) => {
         const dynamicLink = dynamicSection.links?.[idx];
         if (!dynamicLink) return link;
         return {
           ...link,
           label: dynamicLink.label || link.label,
-          href: dynamicLink.href || link.href
+          href: dynamicLink.href || link.href,
+          action: dynamicLink.action || link.action,
+          command: dynamicLink.command || link.command,
+          commandFor: dynamicLink.commandFor || link.commandFor
         };
       })
     };
   });
 
-  // Apply dynamic reordering if provided from backend
+  // Apply dynamic reordering if provided from backend (Normalized)
   if (sectionOrder.length > 0) {
     sections = [...sections].sort((a, b) => {
-      const indexA = sectionOrder.indexOf(a.id);
-      const indexB = sectionOrder.indexOf(b.id);
+      const indexA = sectionOrder.indexOf(normalizeId(a.id));
+      const indexB = sectionOrder.indexOf(normalizeId(b.id));
       if (indexA === -1 && indexB === -1) return 0;
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
@@ -288,13 +302,14 @@ export function ProfilePage({ api }: ProfilePageProps) {
     });
   }
 
+
   const lineItemsCount = (selectedOrder?.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0), 0);
   const showTopReorder = !!lineItemsCount && reorderButtonPosition.startsWith("top");
   const showBottomReorder = !!lineItemsCount && reorderButtonPosition.startsWith("bottom");
   const recentOrderItemsCount = (orders[0]?.lineItems || []).reduce((acc, li) => acc + (li.quantity || 0), 0);
   const daysRemainingVal = calculateDaysRemaining(customer?.daysTillRunOut);
   const daysRemainingDisplay = (daysRemainingVal ?? "0") + " days left of lenses";
-  const pointsDisplay = isPointsLoading ? "..." : (points !== null ? points + " pts" : "0 pts");
+  const pointsDisplay = isPointsLoading ? "..." : (points !== null ? new Intl.NumberFormat().format(points) + " pts" : "0 pts");
 
   if (loading) {
     return (
@@ -324,13 +339,21 @@ export function ProfilePage({ api }: ProfilePageProps) {
             externalReorderLink={externalReorderLink}
           />
 
-          <QuickActions 
+          <StatCards 
             orders={orders}
             recentOrderItemsCount={recentOrderItemsCount}
-            daysRemainingDisplay={daysRemainingDisplay}
+            daysRemaining={daysRemainingVal}
             reorderLoadingId={reorderLoadingId}
             onReorder={handleReorder}
             onShowRecentOrderDetails={() => setSelectedOrder(orders[0])}
+            pointsDisplay={pointsDisplay}
+            prescriptionExpiry={customer?.prescription?.expiry_date || ""}
+            tags={customer?.tags || []}
+            ordersCount={orders?.length || 0}
+            recentOrderIconUrl={recentOrderIconUrl}
+            rewardsCardIconUrl={rewardsCardIconUrl}
+            prescriptionIconUrl={prescriptionIconUrl}
+            daysRunOutIconUrl={daysRunOutIconUrl}
           />
 
           <NavigationSections 
@@ -342,13 +365,12 @@ export function ProfilePage({ api }: ProfilePageProps) {
             remainingReviewCount={remainingReviewCount}
             storefrontBase={storefrontBase}
             reviewTarget={reviewTarget}
-          />
-
-          <StatCards 
-            pointsDisplay={pointsDisplay}
-            prescriptionExpiry={customer?.prescription?.expiry_date || ""}
-            tags={customer?.tags || []}
-            ordersCount={orders?.length || 0}
+            onReorder={handleReorder}
+            reorderLoadingId={reorderLoadingId}
+            lastOrder={lastOrder}
+            showReviewProducts={showReviewProducts}
+            rewardsIconUrl={rewardsIconUrl}
+            reviewSubheading={reviewSubheading}
           />
         </s-stack>
       </s-query-container>
@@ -372,6 +394,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
         reviewTarget={reviewTarget}
         isAllOrdersModalVisible={isAllOrdersModalVisible}
         isLineItemsModalVisible={isLineItemsModalVisible}
+        customer={customer}
       />
     </s-page>
   );

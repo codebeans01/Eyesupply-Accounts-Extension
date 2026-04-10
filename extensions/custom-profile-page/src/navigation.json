@@ -6,7 +6,7 @@
       "icon": "email",
       "links": [
         { "label": "Ongoing Order Status", "dynamicSub": "orderStatus", "command": "--show", "commandFor": "all-orders-modal" },
-        { "label": "Reorder", "href": "shopify://customer-account/orders" },
+        { "label": "Reorder last order", "action": "reorder", "href": "#" },
         { "label": "Past Orders", "href": "shopify://customer-account/orders" },
         { "label": "Invoices", "href": "shopify://customer-account/orders" }
       ]
@@ -17,7 +17,8 @@
       "icon": "profile",
       "links": [
         { "label": "Personal Details", "href": "shopify://customer-account/profile" },
-        { "label": "Address", "href": "shopify://customer-account/profile" }
+        { "label": "Address", "href": "shopify://customer-account/profile" },
+        { "label": "Contact Details", "href": "shopify://customer-account/profile", "tone": "custom" }
       ]
     },
     {
@@ -25,9 +26,11 @@
       "title": "Rewards",
       "icon": "gift",
       "links": [
-        { "label": "My Loyality Points", "dynamicSub": "loyaltyPoints", "href": "#" },
-        { "label": "Referral", "href": "#" },
-        { "label": "How to Redeem Points", "href": "#" }
+        { "label": "My EyeSupply Rewards", "href": "#" },
+        { "label": "Use on your next order", "href": "#" },
+        { "label": "Points", "dynamicSub": "loyaltyPoints", "href": "#" },
+        { "label": "Earn more", "href": "#" },
+        { "label": "Redeem", "href": "#" }
       ]
     },
     {
@@ -35,8 +38,10 @@
       "title": "Prescription",
       "icon": "clipboard",
       "links": [
-        { "label": "All Prescription", "href": "extension:custom-profile-page/view-prescription" },
-        { "label": "Upload My Prescription", "sub": "", "href": "extension:custom-profile-page/view-prescription" }
+        { "label": "Upload Prescription", "href": "#" },
+        { "label": "View Prescriptions", "sub": "", "href": "extension:custom-profile-page/view-prescription" },
+        { "label": "How prescriptions work", "sub": "", "href": "#" }
+
       ]
     },
     {
@@ -54,10 +59,9 @@
       "title": "Medical Aid",
       "icon": "plus",
       "links": [
-        { "label": "Medical Aid Number", "dynamicSub": "medicalAidNumber", "href": "" },
-        { "label": "Medical Aid Plan", "dynamicSub": "medicalAidPlan", "href": "" },
-        { "label": "Medical Aid Name", "dynamicSub": "medicalAidName", "href": "" },
-        { "label": "Patient ID Number", "dynamicSub": "patientIdNumber", "href": "" }
+        { "label": "Medical aid details", "command": "--show", "commandFor": "medical-aid-modal" },
+        { "label": "Medical aid invoices", "href": "#" },
+        { "label": "How to claim", "href": "#" }
       ]
     },
     {
@@ -65,8 +69,9 @@
       "title": "Support",
       "icon": "email",
       "links": [
-        { "label": "FAQs", "href": "mailto:support@eyesupply.co.uk" },
-        { "label": "Contact Us", "href": "mailto:support@eyesupply.co.uk" }
+        { "label": "Contact us", "href": "#" },
+        { "label": "Speak to Lenny", "href": "#" },
+        { "label": "FAQs", "href": "#" }
       ]
     },
     {
@@ -74,9 +79,8 @@
       "title": "Reviews",
       "icon": "star",
       "links": [
-        { "label": "Review Us on Google", "href": "https://google.com" },
-        { "label": "Review Us on Facebook", "href": "https://facebook.com" },
-        { "label": "Review Products", "href": "shopify://customer-account/orders" }
+        { "label": "Review us", "href": "" },
+        { "label": "Review your products", "href": "" }
       ]
     }
   ],

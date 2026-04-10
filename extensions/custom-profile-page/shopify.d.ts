@@ -73,12 +73,6 @@ declare module './src/components/ProfilePage/DashboardBanner.tsx' {
 }
 
 //@ts-ignore
-declare module './src/components/ProfilePage/QuickActions.tsx' {
-  const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
-  const globalThis: { shopify: typeof shopify };
-}
-
-//@ts-ignore
 declare module './src/components/ProfilePage/StatCards.tsx' {
   const shopify: import('@shopify/ui-extensions/customer-account.page.render').Api;
   const globalThis: { shopify: typeof shopify };

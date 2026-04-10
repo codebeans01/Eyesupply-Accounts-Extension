@@ -6,7 +6,7 @@ import {
   DISPLAY_768_NONE_GRID,
   LAYOUT_768_4COL
 } from "../../constants";
-import { type Order } from "../../interface";
+import { type Order, type CustomerSummary } from "../../interface";
 import { getNumericId } from "../../helpers";
 
 interface ModalsProps {
@@ -28,6 +28,7 @@ interface ModalsProps {
   reviewTarget: string;
   isAllOrdersModalVisible: boolean;
   isLineItemsModalVisible: boolean;
+  customer: CustomerSummary | null;
 }
 
 export function Modals({
@@ -49,11 +50,12 @@ export function Modals({
   reviewTarget,
   isAllOrdersModalVisible,
   isLineItemsModalVisible,
+  customer,
 }: ModalsProps) {
   return (
     <Fragment>
       {isAllOrdersModalVisible && (
-        <s-modal id="all-orders-modal" heading="Ongoing Order Status" size="max">
+        <s-modal id="all-orders-modal" heading="Track Your Orders" size="max">
           <s-query-container>
             <s-stack gap="large" alignItems="center">
               <s-box padding="large" background="base" border="base" borderRadius="large" inlineSize="100%">
@@ -256,6 +258,36 @@ export function Modals({
               </s-stack>
             </s-box>
           </s-stack>
+        </s-query-container>
+      </s-modal>
+      
+      <s-modal id="medical-aid-modal" heading="Medical Aid Details" size="base">
+        <s-query-container>
+          <s-box padding="base">
+            <s-stack gap="base">
+              <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                <s-stack gap="small-100">
+                  <s-text tone="neutral">Medical Aid Number</s-text>
+                  <s-text type="strong">{customer?.medicalAidNumber || "Not provided"}</s-text>
+                </s-stack>
+                <s-stack gap="small-100">
+                  <s-text tone="neutral">Medical Aid Plan</s-text>
+                  <s-text type="strong">{customer?.medicalAidPlan || "Plan"}</s-text>
+                </s-stack>
+              </s-grid>
+              <s-divider></s-divider>
+              <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                <s-stack gap="small-100">
+                  <s-text tone="neutral">Medical Aid Name</s-text>
+                  <s-text type="strong">{customer?.medicalAidName || "Medical Aid Name"}</s-text>
+                </s-stack>
+                <s-stack gap="small-100">
+                  <s-text tone="neutral">Patient ID Number</s-text>
+                  <s-text type="strong">{customer?.patientIdNumber || "Not provided"}</s-text>
+                </s-stack>
+              </s-grid>
+            </s-stack>
+          </s-box>
         </s-query-container>
       </s-modal>
     </Fragment>

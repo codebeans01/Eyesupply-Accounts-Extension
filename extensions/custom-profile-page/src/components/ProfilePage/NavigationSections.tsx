@@ -13,6 +13,12 @@ interface NavigationSectionsProps {
   remainingReviewCount: number;
   storefrontBase: string;
   reviewTarget: string;
+  onReorder?: (id: string, name: string) => void;
+  reorderLoadingId?: string | null;
+  lastOrder?: any;
+  showReviewProducts?: boolean;
+  rewardsIconUrl?: string;
+  reviewSubheading?: string;
 }
 
 export function NavigationSections({
@@ -23,7 +29,13 @@ export function NavigationSections({
   REVIEW_PAGE_SIZE,
   remainingReviewCount,
   storefrontBase,
-  reviewTarget
+  reviewTarget,
+  onReorder,
+  reorderLoadingId,
+  lastOrder,
+  showReviewProducts = true,
+  rewardsIconUrl,
+  reviewSubheading
 }: NavigationSectionsProps) {
   return (
     <s-grid gridTemplateColumns={LAYOUT_768_2COL_STACK} gap="base">
@@ -32,10 +44,21 @@ export function NavigationSections({
           <s-stack gap="base">
             <s-grid gridTemplateColumns="1fr auto" gap="small" alignItems="center">
               <s-grid-item>
-                <s-heading>{section.title}</s-heading>
+                <s-stack direction="block" gap="extra-tight">
+                  <s-heading>{section.title}</s-heading>
+                  {section.id === 'reviews' && reviewSubheading && (
+                    <s-text tone="subdued" type="strong">{reviewSubheading}</s-text>
+                  )}
+                </s-stack>
               </s-grid-item>
               <s-grid-item>
-                <s-icon type={section.icon} size="base"></s-icon>
+                {section.id === 'rewards' && rewardsIconUrl ? (
+                  <s-box inlineSize="24px" blockSize="24px">
+                    <s-image src={rewardsIconUrl} alt="Rewards"></s-image>
+                  </s-box>
+                ) : (
+                  <s-icon type={section.icon} size="base"></s-icon>
+                )}
               </s-grid-item>
             </s-grid>
               
@@ -43,8 +66,16 @@ export function NavigationSections({
               {(section.links || []).map((link: any, lIdx: number) => {
                 const dynamicSub = link.dynamicSub ? resolveDynamicValue(link.dynamicSub) : "";
                 const href = link.href || "";
-                const isClickable = (href && href !== "#") || link.command;
+                const isReorder = link.action === 'reorder';
+                const isClickable = (href && href !== "#") || link.command || isReorder;
                 const isOrderStatus = link.dynamicSub === 'orderStatus';
+                const isLoading = isReorder && reorderLoadingId === lastOrder?.id && !!reorderLoadingId;
+
+                const handleClick = () => {
+                  if (isReorder && onReorder && lastOrder) {
+                    onReorder(lastOrder.id, lastOrder.name);
+                  }
+                };
 
                 return (
                   <s-stack key={lIdx} gap="small-100">
@@ -53,11 +84,15 @@ export function NavigationSections({
                       {isClickable ? (
                           <s-clickable 
                             id={"nav-l-" + lIdx} 
-                            href={href} 
+                            href={isReorder ? undefined : href} 
                             command={link.command} 
                             commandFor={link.commandFor}
+                            onClick={handleClick}
                           >
-                            <s-text tone="custom">{link.label}</s-text>
+                            <s-stack direction="inline" gap="small" alignItems="center">
+                              <s-text tone={link.tone || "custom"}>{link.label}</s-text>
+                              {isLoading && <s-spinner size="small"></s-spinner>}
+                            </s-stack>
                           </s-clickable>
                         ) : (
                           <s-text tone="info">{link.label}</s-text>
@@ -67,6 +102,7 @@ export function NavigationSections({
                        {(dynamicSub && isOrderStatus) ? (
                           <s-clickable 
                             id={"nav-l-" + lIdx} 
+                            // ... (rest of order status clickable)
                             href={href} 
                             command={link.command} 
                             commandFor={link.commandFor}
@@ -77,7 +113,17 @@ export function NavigationSections({
                             </s-stack>
                           </s-clickable>
                         ) : (
-                          dynamicSub ? <s-text tone="neutral">{dynamicSub}</s-text> : null
+                          dynamicSub ? (
+                            link.dynamicSub === 'loyaltyPoints' ? (
+                              <s-box>
+                                <s-stack direction="inline" gap="small" alignItems="center">
+                                  <s-text type="strong" tone="info">{dynamicSub}</s-text>
+                                </s-stack>
+                              </s-box>
+                            ) : (
+                              <s-text tone="neutral">{dynamicSub}</s-text>
+                            )
+                          ) : null
                         )}
                       </s-stack>
                     </s-grid>
@@ -86,7 +132,7 @@ export function NavigationSections({
               })}
             </s-stack>
 
-            {section.id === 'reviews' && reviewProducts.length !== 0 && (
+            {section.id === 'reviews' && showReviewProducts && reviewProducts.length !== 0 && (
               <s-stack direction="block" gap="none">
                 <s-divider></s-divider>
                 {reviewProducts.map((prod, pIdx) => (
