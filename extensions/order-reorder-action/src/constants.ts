@@ -1,7 +1,7 @@
 import { DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01"
-export const APP_URL = "https://benefits-evident-circuits-between.trycloudflare.com";
+export const APP_URL = "https://tourism-constant-hammer-encouraged.trycloudflare.com";
 
 export const DEFAULT_SETTINGS: DashboardSettings = {
   cb_welcome_image_url: "",

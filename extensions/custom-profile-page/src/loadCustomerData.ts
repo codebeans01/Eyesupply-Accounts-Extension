@@ -72,11 +72,16 @@ export async function loadCustomerData(
   }
 
   const customer = json.data?.customer ?? null;
+  const myshopifyDomain = json.data?.shop?.myshopifyDomain;
+
+    console.log('myshopifyDomain',myshopifyDomain)
+    console.log('shopdata',json.data?.shop)
+
   if (!customer) {
     return {
       customer: null,
       orders: [],
-      myshopifyDomain: "",
+      myshopifyDomain: myshopifyDomain || "",
     };
   }
 
@@ -117,14 +122,14 @@ export async function loadCustomerData(
 
   if (uniqueGids.length > 0) {
     try {
-      const api = (globalThis as any).shopify;
       const sessionToken = await api.sessionToken.get();
-      
+    
       const backendResponse = await fetchWithRetry(`${APP_URL}/api/prescription?ids=${encodeURIComponent(uniqueGids.join(','))}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionToken}`,
+          'x-shop-domain': myshopifyDomain || "",
         },
       });
 
@@ -172,8 +177,6 @@ export async function loadCustomerData(
 
   const orders: Order[] = (customer.orders?.nodes ?? []).map(mapOrderNode);
 
-  const myshopifyDomain = json.data?.shop?.myshopifyDomain;
-
   // Extract unique product IDs from orders
   const productIds = Array.from(new Set(
     orders.flatMap(order => order.lineItems.map(li => li.productId)).filter(Boolean)
@@ -181,7 +184,6 @@ export async function loadCustomerData(
 
   if (productIds.length > 0) {
     try {
-      const api = (globalThis as any).shopify;
       const sessionToken = await api.sessionToken.get();
       
       const productResponse = await fetchWithRetry(`${APP_URL}/api/products?ids=${encodeURIComponent(productIds.join(','))}`, {
@@ -215,7 +217,7 @@ export async function loadCustomerData(
   };
 }
 
-export async function loadPrescriptions(api: any, limit: number = 2): Promise<{ prescriptions: Prescription[], prescriptionPageInfo?: PageInfo }> {
+export async function loadPrescriptions(api: any, limit: number = 2, shopDomain?: string): Promise<{ prescriptions: Prescription[], prescriptionPageInfo?: PageInfo }> {
   const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 
   const result = await fetchWithRetry(endpoint, {
@@ -276,6 +278,7 @@ export async function loadPrescriptions(api: any, limit: number = 2): Promise<{ 
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${sessionToken}`,
+        'x-shop-domain': shopDomain || "",
       },
     });
 
@@ -322,7 +325,7 @@ export async function reorder(orderId: string, sessionToken: string, shopDomain:
   return result.data;
 }
 
-export async function fetchAdditionalPrescriptions(api: any, cursor: string, limit: number = 10): Promise<{ prescriptions: Prescription[], pageInfo: PageInfo }> {
+export async function fetchAdditionalPrescriptions(api: any, cursor: string, limit: number = 10, shopDomain?: string): Promise<{ prescriptions: Prescription[], pageInfo: PageInfo }> {
   const endpoint = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 
   const result = await fetchWithRetry(endpoint, {
@@ -379,6 +382,7 @@ export async function fetchAdditionalPrescriptions(api: any, cursor: string, lim
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${sessionToken}`,
+        'x-shop-domain': shopDomain || "",
       },
     });
 

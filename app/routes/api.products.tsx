@@ -12,12 +12,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const { sessionToken, cors } = await authenticate.public.customerAccount(
       request,
-      { corsHeaders: ["Authorization", "x-shop-domain"] }
+      { corsHeaders: ["Authorization", "Content-Type", "x-shop-domain"] }
     );
 
     corsWrapper = cors;
 
-    const shopDomain = sessionToken.dest.replace(/^https?:\/\//, "");
+    const shopDomain = request.headers.get("x-shop-domain") || 
+                       sessionToken.dest.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
     if (!shopDomain) {
       return errorResponse("Invalid shop domain", { status: 400, cors: corsWrapper });

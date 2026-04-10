@@ -12,12 +12,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const { sessionToken, cors } = await authenticate.public.customerAccount(
       request,
-      { corsHeaders: ["Authorization", "x-shop-domain"] }
+      { corsHeaders: ["Authorization", "Content-Type", "x-shop-domain"] }
     );
 
     corsWrapper = cors;
-
-    const shopDomain = sessionToken.dest.replace(/^https?:\/\//, "");
+    const shopDomain = request.headers.get("x-shop-domain") || 
+                       sessionToken.dest.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
     if (!shopDomain) {
       return errorResponse("Invalid shop domain", { status: 400, cors: corsWrapper });
@@ -44,6 +44,46 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       } catch {
         return [val];
       }
+    };
+
+    const normalizeDate = (dateStr: string) => {
+      if (!dateStr) return dateStr;
+      
+      const parts = dateStr.split(/[-/.]/);
+      if (parts.length !== 3) return dateStr;
+
+      let year, month, day;
+
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        year = parts[0];
+        month = parts[1];
+        day = parts[2];
+      } else if (parts[2].length === 4) {
+        // DD-MM-YYYY or MM-DD-YYYY
+        year = parts[2];
+        const p1 = parseInt(parts[0], 10);
+        const p2 = parseInt(parts[1], 10);
+
+        if (p1 > 12) {
+          // DD-MM-YYYY
+          day = parts[0];
+          month = parts[1];
+        } else if (p2 > 12) {
+          // MM-DD-YYYY
+          month = parts[0];
+          day = parts[1];
+        } else {
+          // Default to DD-MM-YYYY for ambiguous cases
+          day = parts[0];
+          month = parts[1];
+        }
+      } else {
+        return dateStr;
+      }
+
+      const pad = (n: string) => n.toString().padStart(2, '0');
+      return `${year}-${pad(month)}-${pad(day)}`;
     };
 
     // 🔥 Resolve Media IDs -> URLs
@@ -100,7 +140,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         }
 
         if (key.includes("expiry")) {
-          fields.expiry_dates.push(...parse(f.value));
+          const rawDates = parse(f.value);
+          fields.expiry_dates.push(...rawDates.map(normalizeDate));
         }
 
         if (key.includes("status")) {
