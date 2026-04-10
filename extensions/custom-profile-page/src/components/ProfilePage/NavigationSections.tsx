@@ -44,7 +44,7 @@ export function NavigationSections({
           <s-stack gap="base">
             <s-grid gridTemplateColumns="1fr auto" gap="small" alignItems="center">
               <s-grid-item>
-                <s-stack direction="block" gap="extra-tight">
+                <s-stack direction="block" gap="large">
                   <s-heading>{section.title}</s-heading>
                   {section.id === 'reviews' && reviewSubheading && (
                     <s-text tone="subdued" type="strong">{reviewSubheading}</s-text>

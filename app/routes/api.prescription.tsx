@@ -167,9 +167,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           id: `${node.id}-${i}`,
           metaobjectId: node.id,
           handle: node.handle,
-          image_url: fields.images[i] || fields.images[0] || null,
-          expiry_date: fields.expiry_dates[i] || fields.expiry_dates[0] || null,
-          status: fields.statuses[i] || fields.statuses[0] || "Active",
+          image_url: fields.images[i] || "-",
+          expiry_date: fields.expiry_dates[i] || "-",
+          status: fields.statuses[i] || "-",
           customer_email: fields.customer_email,
           updatedAt: node.updatedAt,
         });

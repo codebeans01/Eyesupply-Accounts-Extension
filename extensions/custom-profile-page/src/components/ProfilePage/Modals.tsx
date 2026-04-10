@@ -1,5 +1,3 @@
-/** @jsx h */
-/** @jsxFrag Fragment */
 import { h, Fragment } from "preact";
 import { 
   DISPLAY_768_GRID,
@@ -272,14 +270,14 @@ export function Modals({
                 </s-stack>
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Medical Aid Plan</s-text>
-                  <s-text type="strong">{customer?.medicalAidPlan || "Plan"}</s-text>
+                  <s-text type="strong">{customer?.medicalAidPlan || "Not provided"}</s-text>
                 </s-stack>
               </s-grid>
               <s-divider></s-divider>
               <s-grid gridTemplateColumns="1fr 1fr" gap="base">
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Medical Aid Name</s-text>
-                  <s-text type="strong">{customer?.medicalAidName || "Medical Aid Name"}</s-text>
+                  <s-text type="strong">{customer?.medicalAidName || "Not provided"}</s-text>
                 </s-stack>
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Patient ID Number</s-text>

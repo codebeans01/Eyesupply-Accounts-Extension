@@ -1,7 +1,7 @@
 import { type DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://construct-pittsburgh-pottery-ireland.trycloudflare.com";
+export const APP_URL = "https://airplane-twice-identification-cio.trycloudflare.com";
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;

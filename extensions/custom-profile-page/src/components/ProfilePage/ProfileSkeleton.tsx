@@ -1,4 +1,3 @@
-/** @jsx h */
 import { h } from "preact";
 import '@shopify/ui-extensions/preact';
 import { COL2, COL3 } from "../../constants";

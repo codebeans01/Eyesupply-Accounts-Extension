@@ -1,4 +1,3 @@
-/** @jsx h */
 import { h } from "preact";
 import { 
   LAYOUT_768_2COL_STACK,
@@ -42,7 +41,12 @@ export function StatCards({
   daysRunOutIconUrl
 }: StatCardsProps) {
   const firstOrder = orders[0];
-  const daysLeft = calculateDaysRemaining(prescriptionExpiry);
+
+  const daysLeft = (prescriptionExpiry === "-") 
+    ? "-" 
+    : (prescriptionExpiry === null 
+        ? null 
+        : calculateDaysRemaining(prescriptionExpiry));
   // Check for loyalty override: 3+ orders AND ('prescription' OR 'prescription-override' tags)
   const isLoyalCustomer = ordersCount >= 3 && tags.some(tag => {
     const lowTag = tag.toLowerCase();
@@ -50,20 +54,21 @@ export function StatCards({
   });
 
   const statusLabels = {
-    all: `All up to date — ${daysLeft} days left`,
-    soon: `Expiring soon — ${daysLeft} days left`,
+    all: `All up to date — ${daysLeft ?? '-'} days left`,
+    soon: `Expiring soon — ${daysLeft ?? '-'} days left`,
     expired: `Expired — 0 days left`,
     loyalty: "All up to date"
   };
 
   const statusText = isLoyalCustomer ? statusLabels.loyalty : 
     daysLeft === null ? "Not provided" : 
+    typeof daysLeft !== 'number' ? "-" : 
     daysLeft >= 60 ? statusLabels.all :
     daysLeft >= 30 ? statusLabels.soon :
     daysLeft > 0 ? statusLabels.soon : statusLabels.expired;
 
   const tone: "neutral" | "success" | "warning" | "critical" = isLoyalCustomer ? "success" :
-    daysLeft === null ? "neutral" : 
+    (daysLeft === null || typeof daysLeft !== 'number') ? "neutral" : 
     daysLeft >= 60 ? "success" : 
     daysLeft >= 30 ? "warning" : "critical";
 
