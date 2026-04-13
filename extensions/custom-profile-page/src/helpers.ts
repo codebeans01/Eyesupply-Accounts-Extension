@@ -569,3 +569,66 @@ export async function getSettings(api: any) {
     return { settings: null, error: e.message || "Failed to fetch dynamic settings" };
   }
 }
+
+/**
+ * Format a date string into "Expires DD Month YYYY"
+ */
+export function formatDateString(dateStr?: string | null): string | null {
+  if (!dateStr || dateStr === "-") return null;
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return null;
+    
+    const day = date.getDate();
+    const monthNames = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `Expires ${day} ${month} ${year}`;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Get prescription status text and tone based on expiry date and customer tags
+ */
+export function getPrescriptionStatus(
+  prescriptionExpiry: string | null | undefined,
+  ordersCount: number,
+  tags: string[]
+): { text: string; tone: "neutral" | "success" | "warning" | "critical" } {
+  const daysLeft = (prescriptionExpiry === "-") 
+    ? "-" 
+    : (prescriptionExpiry === null || prescriptionExpiry === undefined
+        ? null 
+        : calculateDaysRemaining(prescriptionExpiry));
+
+  // Check for loyalty override: 3+ orders AND ('prescription' OR 'prescription-override' tags)
+  const isLoyalCustomer = ordersCount >= 3 && tags.some(tag => {
+    const lowTag = tag.toLowerCase();
+    return lowTag.includes("prescription-override") || lowTag.includes("prescription");
+  });
+
+  const statusLabels = {
+    all: `All up to date — ${daysLeft ?? '-'} days left`,
+    soon: `Expiring soon — ${daysLeft ?? '-'} days left`,
+    expired: `Expired — 0 days left`,
+    loyalty: "All up to date"
+  };
+
+  const statusText = isLoyalCustomer ? statusLabels.loyalty : 
+    daysLeft === null ? "Not provided" : 
+    typeof daysLeft !== 'number' ? "-" : 
+    daysLeft >= 60 ? statusLabels.all :
+    daysLeft >= 30 ? statusLabels.soon :
+    daysLeft > 0 ? statusLabels.soon : statusLabels.expired;
+
+  const tone: "neutral" | "success" | "warning" | "critical" = isLoyalCustomer ? "success" :
+    (daysLeft === null || typeof daysLeft !== 'number') ? "neutral" : 
+    daysLeft >= 60 ? "success" : 
+    daysLeft >= 30 ? "warning" : "critical";
+
+  return { text: statusText, tone };
+}

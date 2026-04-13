@@ -4,7 +4,7 @@ import {
   LAYOUT_768_2COL_STACK,
   LAYOUT_500_3COL
 } from "../../constants";
-import { calculateDaysRemaining } from "../../helpers";
+import { calculateDaysRemaining, formatDateString, getPrescriptionStatus } from "../../helpers";
 
 interface StatCardsProps {
   // From original QuickActions
@@ -42,50 +42,9 @@ export function StatCards({
   daysRunOutIconUrl
 }: StatCardsProps) {
   const firstOrder = orders[0];
-  const daysLeft = calculateDaysRemaining(prescriptionExpiry);
-  // Check for loyalty override: 3+ orders AND ('prescription' OR 'prescription-override' tags)
-  const isLoyalCustomer = ordersCount >= 3 && tags.some(tag => {
-    const lowTag = tag.toLowerCase();
-    return lowTag.includes("prescription-override") || lowTag.includes("prescription");
-  });
+  const { text: statusText, tone } = getPrescriptionStatus(prescriptionExpiry, ordersCount, tags);
 
-  const statusLabels = {
-    all: `All up to date — ${daysLeft} days left`,
-    soon: `Expiring soon — ${daysLeft} days left`,
-    expired: `Expired — 0 days left`,
-    loyalty: "All up to date"
-  };
-
-  const statusText = isLoyalCustomer ? statusLabels.loyalty : 
-    daysLeft === null ? "Not provided" : 
-    daysLeft >= 60 ? statusLabels.all :
-    daysLeft >= 30 ? statusLabels.soon :
-    daysLeft > 0 ? statusLabels.soon : statusLabels.expired;
-
-  const tone: "neutral" | "success" | "warning" | "critical" = isLoyalCustomer ? "success" :
-    daysLeft === null ? "neutral" : 
-    daysLeft >= 60 ? "success" : 
-    daysLeft >= 30 ? "warning" : "critical";
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return null;
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return null;
-      
-      const day = date.getDate();
-      const monthNames = ["January", "February", "March", "April", "May", "June", 
-                          "July", "August", "September", "October", "November", "December"];
-      const month = monthNames[date.getMonth()];
-      const year = date.getFullYear();
-      
-      return `Expires ${day} ${month} ${year}`;
-    } catch (e) {
-      return null;
-    }
-  };
-
-  const formattedExpiry = formatDate(prescriptionExpiry);
+  const formattedExpiry = formatDateString(prescriptionExpiry);
   
   const getCoveredUntilDate = (days?: number | null) => {
     if (days === null || days === undefined) return "";

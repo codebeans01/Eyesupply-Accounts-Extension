@@ -7,6 +7,7 @@ import {
 interface NavigationSectionsProps {
   sections: any[];
   resolveDynamicValue: (key: string) => string;
+  resolveDynamicTone?: (key: string) => "neutral" | "success" | "warning" | "critical" | "info";
   reviewProducts: any[];
   allReviewProductsCount: number;
   REVIEW_PAGE_SIZE: number;
@@ -24,6 +25,7 @@ interface NavigationSectionsProps {
 export function NavigationSections({
   sections,
   resolveDynamicValue,
+  resolveDynamicTone,
   reviewProducts,
   allReviewProductsCount,
   REVIEW_PAGE_SIZE,
@@ -108,7 +110,7 @@ export function NavigationSections({
                             commandFor={link.commandFor}
                           >
                             <s-stack direction="inline" gap="small-300" alignItems="center">
-                              <s-text tone="custom">{dynamicSub}</s-text>
+                              <s-text tone={resolveDynamicTone ? resolveDynamicTone(link.dynamicSub) : "custom"}>{dynamicSub}</s-text>
                               <s-icon type="arrow-right" size="small" tone="custom"></s-icon>
                             </s-stack>
                           </s-clickable>
@@ -121,7 +123,7 @@ export function NavigationSections({
                                 </s-stack>
                               </s-box>
                             ) : (
-                              <s-text tone="neutral">{dynamicSub}</s-text>
+                              <s-text tone={resolveDynamicTone ? resolveDynamicTone(link.dynamicSub) : "neutral"}>{dynamicSub}</s-text>
                             )
                           ) : null
                         )}

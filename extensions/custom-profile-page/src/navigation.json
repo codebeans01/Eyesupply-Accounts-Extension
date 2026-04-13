@@ -40,7 +40,9 @@
       "links": [
         { "label": "Upload Prescription", "href": "#" },
         { "label": "View Prescriptions", "sub": "", "href": "extension:custom-profile-page/view-prescription" },
-        { "label": "How prescriptions work", "sub": "", "href": "#" }
+        { "label": "How prescriptions work", "sub": "", "href": "#" },
+        { "label": "Expiry Date", "dynamicSub": "prescriptionExpiryDate", "href": "#" },
+        { "label": "Status", "dynamicSub": "prescriptionExpiryStatus", "href": "#" }
 
       ]
     },

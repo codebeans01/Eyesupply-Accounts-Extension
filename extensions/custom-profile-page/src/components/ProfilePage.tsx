@@ -11,7 +11,7 @@ import { type Order, type MissingItem, type DashboardSettings, type NavLink } fr
 import { loadCustomerData, fetchAdditionalOrders } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
 import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
-import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId, getSettings } from "../helpers";
+import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId, getSettings, formatDateString, getPrescriptionStatus } from "../helpers";
 
 // Sub-components
 import { DashboardBanner } from "./ProfilePage/DashboardBanner";
@@ -154,7 +154,34 @@ export function ProfilePage({ api }: ProfilePageProps) {
         const days = calculateDaysRemaining(customer?.daysTillRunOut);
         return days !== null ? `${days} days` : "0 days";
       }
+      case "prescriptionExpiryDate": {
+        return formatDateString(customer?.prescription?.expiry_date) || "Not provided";
+      }
+      case "prescriptionExpiryStatus": {
+        const { text } = getPrescriptionStatus(
+          customer?.prescription?.expiry_date,
+          orders?.length || 0,
+          customer?.tags || []
+        );
+        return text;
+      }
       default: return "";
+    }
+  }
+
+  function resolveDynamicTone(key: string): "neutral" | "success" | "warning" | "critical" | "info" {
+    if (!key) return "neutral";
+    switch (key) {
+      case "prescriptionExpiryStatus": {
+        const { tone } = getPrescriptionStatus(
+          customer?.prescription?.expiry_date,
+          orders?.length || 0,
+          customer?.tags || []
+        );
+        return tone;
+      }
+      case "loyaltyPoints": return "info";
+      default: return "neutral";
     }
   }
 
@@ -358,7 +385,8 @@ export function ProfilePage({ api }: ProfilePageProps) {
 
           <NavigationSections 
             sections={sections}
-            resolveDynamicValue={resolveDynamicValue}
+             resolveDynamicValue={resolveDynamicValue}
+            resolveDynamicTone={resolveDynamicTone}
             reviewProducts={reviewProducts}
             allReviewProductsCount={allReviewProducts.length}
             REVIEW_PAGE_SIZE={REVIEW_PAGE_SIZE}
