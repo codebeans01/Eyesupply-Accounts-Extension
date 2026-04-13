@@ -156,7 +156,7 @@ export function NavigationSections({
                           variant="secondary"
                           href={prod.productHandle && storefrontBase ? `${storefrontBase}/products/${prod.productHandle}${reviewTarget}` : undefined}
                           target="_blank"
-                        >
+                        > 
                           Review
                         </s-button>
                       </s-grid-item>

@@ -13,7 +13,7 @@ export const RETRY_DELAYS = [
   10 * MINUTE,
   15 * MINUTE
 ];
-
+ 
 export const DEFAULT_SETTINGS: DashboardSettings = {
   cb_welcome_image_url: "",
   cb_review_google_url: "https://google.com",
