@@ -1,5 +1,10 @@
 import { fetchCustomOrderStatusesProxy, getNumericId } from "./helpers";
-import { CustomOrderStatusResponse } from "./interface";
+import { CustomOrderStatusResponse, OrderStatusHistoryItem } from "./interface";
+
+export interface CustomOrderStatusData {
+  public_name: string;
+  history: OrderStatusHistoryItem[];
+}
 
 export interface OngoingOrder {
   id: string;
@@ -28,7 +33,7 @@ export async function fetchCustomOrderStatuses(
   api: any, 
   shopDomain: string, 
   orderIds: string[]
-): Promise<Record<string, string>> {
+): Promise<Record<string, CustomOrderStatusData>> {
   if (!api || !shopDomain || !orderIds || orderIds.length === 0) {
     console.warn("[Custom-Status] Missing required params:", { hasApi: !!api, shopDomain, orderCount: orderIds?.length });
     return {};
@@ -48,18 +53,23 @@ export async function fetchCustomOrderStatuses(
       return {};
     }
 
-    const statuses: Record<string, string> = {};
+    const statuses: Record<string, CustomOrderStatusData> = {};
     
-    // Use the last history item's public_name as the status
+    // Extract history and the latest public_name
     Object.entries(result.orders).forEach(([orderId, orderData]) => {
       if (orderData && orderData.history && Array.isArray(orderData.history) && orderData.history.length > 0) {
-        // Get the last status from the history array
-        const lastStatus = orderData.history[orderData.history.length - 1];
-        if (lastStatus && lastStatus.public_name) {
-          // We use both GID and numeric ID as keys for flexibility
+        // Get the last status from the history array (it's the top one in the requested JSON but let's be sure)
+        const history = orderData.history;
+        const currentStatus = history[0]; // Assuming latest first based on snippet
+
+        if (currentStatus && currentStatus.public_name) {
           const gid = `gid://shopify/Order/${orderId}`;
-          statuses[gid] = lastStatus.public_name;
-          statuses[String(orderId)] = lastStatus.public_name;
+          const data = {
+            public_name: currentStatus.public_name,
+            history: history
+          };
+          statuses[gid] = data;
+          statuses[String(orderId)] = data;
         }
       }
     });

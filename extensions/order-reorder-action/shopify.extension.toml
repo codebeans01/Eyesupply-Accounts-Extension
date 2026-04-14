@@ -18,6 +18,10 @@ target = "customer-account.order.action.render"
 api_access = true
 network_access = true
 
+[[extensions.metafields]]
+namespace = "eyesupply_dashboard"
+key = "settings"
+
 [extensions.settings]
 [[extensions.settings.fields]]
 key = "exclude_trial_pack"

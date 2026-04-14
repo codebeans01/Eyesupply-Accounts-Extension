@@ -15,3 +15,7 @@ target = "customer-account.page.render"
 [extensions.capabilities]
 api_access = true
 network_access = true
+
+[[extensions.metafields]]
+namespace = "eyesupply_dashboard"
+key = "settings"

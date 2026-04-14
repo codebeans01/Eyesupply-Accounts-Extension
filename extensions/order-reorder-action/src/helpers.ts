@@ -467,6 +467,7 @@ export async function getSettings(api: any) {
   try {
     const response = await api.query(SETTINGS_QUERY);
     
+    // api.query might return the data object directly or wrapped in a data property
     const data = response?.data || response;
     
     if (response?.errors && response.errors.length > 0) {
@@ -485,9 +486,10 @@ export async function getSettings(api: any) {
       }
     }
 
+    console.warn("[helpers:getSettings] Dynamic settings metafield not found in response:", data);
     return { settings: null, error: "Dynamic settings not found" };
   } catch (e: any) {
-    console.error("[helpers:getSettings] Unexpected error:", e);
+    console.error("[helpers:getSettings] Unexpected error during fetch:", e);
     return { settings: null, error: e.message || "Failed to fetch dynamic settings" };
   }
 }

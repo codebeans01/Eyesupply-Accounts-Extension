@@ -1,4 +1,3 @@
-/** @jsx h */
 import { h } from "preact";
 import { renderReorderBannerDescription } from "../DashboardUtils";
 import { 
@@ -58,7 +57,7 @@ export function DashboardBanner({
                 <s-box 
                   inlineSize={SIZE_600_RESP_200}  
                   blockSize={SIZE_600_RESP_100}
-                  borderRadius="base" 
+                  borderRadius="large" 
                   overflow="hidden"
                 >
                   <s-image 

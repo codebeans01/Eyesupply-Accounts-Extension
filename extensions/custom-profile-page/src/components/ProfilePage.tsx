@@ -42,7 +42,6 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isPointsLoading, setIsPointsLoading] = useState(false);
   const [customStatuses, setCustomStatuses] = useState<Record<string, string>>({});
-  const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true); 
   const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true);
 
   useEffect(() => {
@@ -169,7 +168,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
     }
   }
 
-  function resolveDynamicTone(key: string): "neutral" | "success" | "warning" | "critical" | "info" {
+  function resolveDynamicTone(key: string): "neutral" | "success" | "warning" | "critical" | "info" | "custom" {
     if (!key) return "neutral";
     switch (key) {
       case "prescriptionExpiryStatus": {
@@ -181,6 +180,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
         return tone;
       }
       case "loyaltyPoints": return "info";
+      case "orderStatus": return "custom";
       default: return "neutral";
     }
   }
@@ -215,7 +215,6 @@ export function ProfilePage({ api }: ProfilePageProps) {
         setOlderOrderName(orderName);
         setShowReorderWarning(true);
 
-        setIsAllOrdersModalVisible(false);
         setIsLineItemsModalVisible(false);
 
         setTimeout(() => {
@@ -225,7 +224,6 @@ export function ProfilePage({ api }: ProfilePageProps) {
             setTimeout(() => {
                 api.navigation.navigate('#reorder-warning');
             }, 100);
-            setIsAllOrdersModalVisible(true);
             setIsLineItemsModalVisible(true);
         }, 200);
 
@@ -305,13 +303,19 @@ export function ProfilePage({ api }: ProfilePageProps) {
       links: ((section.links as NavLink[]) || []).map((link, idx) => {
         const dynamicLink = dynamicSection.links?.[idx];
         if (!dynamicLink) return link;
+
+        // If action is explicitly set in dynamic settings, it should take precedence
+        const action = dynamicLink.action || link.action;
+        const isModal = action === 'modal';
+
         return {
           ...link,
           label: dynamicLink.label || link.label,
           href: dynamicLink.href || link.href,
-          action: dynamicLink.action || link.action,
-          command: dynamicLink.command || link.command,
-          commandFor: dynamicLink.commandFor || link.commandFor
+          action: action,
+          // Only use static command if no dynamic action is set, or if dynamic action IS modal
+          command: isModal ? (dynamicLink.command || link.command) : (dynamicLink.action ? undefined : link.command),
+          commandFor: isModal ? (dynamicLink.commandFor || link.commandFor) : (dynamicLink.action ? undefined : link.commandFor)
         };
       })
     };
@@ -420,7 +424,6 @@ export function ProfilePage({ api }: ProfilePageProps) {
         allReviewProducts={allReviewProducts}
         storefrontBase={storefrontBase}
         reviewTarget={reviewTarget}
-        isAllOrdersModalVisible={isAllOrdersModalVisible}
         isLineItemsModalVisible={isLineItemsModalVisible}
         customer={customer}
       />

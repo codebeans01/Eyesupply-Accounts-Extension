@@ -155,6 +155,7 @@ const DEFAULT_EXT_SETTINGS = {
   cb_show_default_nav: true,
   cb_reorder_banner_heading: "Reordering from an older order?",
   cb_reorder_banner_description: "Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.",
+  cb_hide_track_order_reorder: false,
   section_order: ["orders", "profile", "rewards", "prescription", "delivery", "medical-aid", "support", "reviews"]
 };
 
@@ -248,6 +249,7 @@ export default function SettingsPage() {
   const TABS = [
     { id: "general", label: "General settings", icon: "settings" },
     { id: "orders", label: "Orders", icon: "cart" },
+    { id: "track-order", label: "Track Order", icon: "order" },
     { id: "profile", label: "Profile", icon: "person" },
     { id: "prescription", label: "Prescription", icon: "note" },
     { id: "delivery", label: "Delivery", icon: "shipping-label" },
@@ -653,6 +655,33 @@ export default function SettingsPage() {
                     </s-stack>
                   </s-box>
                   
+
+                </>
+              )}
+
+              {activeTab === "track-order" && (
+                <>
+                  <s-heading>{ "Track Order Settings" }</s-heading>
+                  
+                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                    <s-stack gap="base">
+                      <s-heading size="medium">Reorder Action</s-heading>
+                      <s-text tone="subdued">Configure reorder behavior on the Track Your Orders page.</s-text>
+                      
+                      <s-divider />
+                      
+                      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                        <s-stack gap="none">
+                          <s-text type="strong">Hide Reorder Button</s-text>
+                          <s-text tone="subdued">Remove the Reorder action button from the Track Your Orders page.</s-text>
+                        </s-stack>
+                        <s-checkbox 
+                          checked={settings.cb_hide_track_order_reorder === true} 
+                          onChange={(e: any) => updateSetting("cb_hide_track_order_reorder", e.target.checked)} 
+                        />
+                      </s-stack>
+                    </s-stack>
+                  </s-box>
                 </>
               )}
 

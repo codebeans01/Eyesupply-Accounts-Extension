@@ -39,6 +39,7 @@ export function NavigationSections({
   rewardsIconUrl,
   reviewSubheading
 }: NavigationSectionsProps) {
+
   return (
     <s-grid gridTemplateColumns={LAYOUT_768_2COL_STACK} gap="base">
       {(sections || []).map((section, sIdx) => (
@@ -69,7 +70,8 @@ export function NavigationSections({
                 const dynamicSub = link.dynamicSub ? resolveDynamicValue(link.dynamicSub) : "";
                 const href = link.href || "";
                 const isReorder = link.action === 'reorder';
-                const isClickable = (href && href !== "#") || link.command || isReorder;
+                const isModal = !!link.command;
+                const isClickable = (href && href !== "#") || isModal || isReorder;
                 const isOrderStatus = link.dynamicSub === 'orderStatus';
                 const isLoading = isReorder && reorderLoadingId === lastOrder?.id && !!reorderLoadingId;
 
@@ -86,7 +88,7 @@ export function NavigationSections({
                       {isClickable ? (
                           <s-clickable 
                             id={"nav-l-" + lIdx} 
-                            href={isReorder ? undefined : href} 
+                            href={(isReorder || isModal) ? undefined : href} 
                             command={link.command} 
                             commandFor={link.commandFor}
                             onClick={handleClick}
@@ -103,9 +105,8 @@ export function NavigationSections({
                       <s-stack direction="inline" gap="small" alignItems="center" justifyContent="end">
                        {(dynamicSub && isOrderStatus) ? (
                           <s-clickable 
-                            id={"nav-l-" + lIdx} 
-                            // ... (rest of order status clickable)
-                            href={href} 
+                            id={"nav-status-" + lIdx} 
+                            href={(isReorder || isModal) ? undefined : href} 
                             command={link.command} 
                             commandFor={link.commandFor}
                           >
@@ -119,7 +120,7 @@ export function NavigationSections({
                             link.dynamicSub === 'loyaltyPoints' ? (
                               <s-box>
                                 <s-stack direction="inline" gap="small" alignItems="center">
-                                  <s-text type="strong" tone="info">{dynamicSub}</s-text>
+                                  <s-heading>{dynamicSub}</s-heading>
                                 </s-stack>
                               </s-box>
                             ) : (

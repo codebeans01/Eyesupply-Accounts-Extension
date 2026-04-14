@@ -158,7 +158,7 @@ export function StatCards({
               <s-text type="strong">My Loyalty Points</s-text>
             </s-grid-item>
             <s-grid-item>
-              <s-text type="strong">{pointsDisplay}</s-text>
+              <s-heading type="strong">{pointsDisplay}</s-heading>
             </s-grid-item>
           </s-grid>
         </s-box>

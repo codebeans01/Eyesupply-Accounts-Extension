@@ -1,7 +1,7 @@
 import { type DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://expects-chairs-invention-contributions.trycloudflare.com";
+export const APP_URL = "https://hierarchy-principles-equality-conducting.trycloudflare.com";
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;
@@ -38,10 +38,11 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   cb_show_review_products: true,
   cb_reorder_banner_heading: "Reordering from an older order?",
   cb_reorder_banner_description: "Because we’ve upgraded our website...",
+  cb_hide_track_order_reorder: false,
   sections: {}
 };
 
-export const LAYOUT_768_2COL = "@container (inline-size \x3e 768px) 1fr auto, 1fr";
+export const LAYOUT_768_2COL = "@container (inline-size \x3e 600px) 1fr auto, 1fr";
 export const LAYOUT_448_2COL = "@container (inline-size \x3e 448px) repeat(2, 1fr), 1fr";
 export const LAYOUT_768_3COL = "@container (inline-size \x3e 768px) 1fr 1fr auto, 1fr";
 export const LAYOUT_768_4COL = "@container (inline-size \x3e 768px) auto 1fr auto, auto 1fr";
@@ -52,8 +53,8 @@ export const LAYOUT_768_4COL_BLOCK = "@container (inline-size \x3e 768px) auto 1
 export const LAYOUT_600_2COL = "@container (inline-size \x3e 600px) 1fr 1fr, 1fr";
 export const LAYOUT_600_4COL = "@container (inline-size \x3e 600px) auto 1fr auto 1fr, 1fr";
 export const LAYOUT_500_3COL = "@container (inline-size \x3e 500px) auto 1fr auto, 1fr";
-export const SIZE_600_RESP_200 = "@container (inline-size > 600px) 200px, 100%";
-export const SIZE_600_RESP_100 = "@container (inline-size > 600px) 100px, 20%";
+export const SIZE_600_RESP_200 = "@container (inline-size > 600px) 191px, 117px";
+export const SIZE_600_RESP_100 = "@container (inline-size > 600px) 117px, 191px";
 export const DISPLAY_768_GRID = "@container (inline-size \x3e 768px) grid, none";
 export const DISPLAY_768_NONE_GRID = "@container (inline-size \x3e 768px) none, grid";
 

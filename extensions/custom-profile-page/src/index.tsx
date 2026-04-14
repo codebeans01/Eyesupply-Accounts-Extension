@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 import './style.css';
 import { ProfilePage } from './components/ProfilePage';
 import { PrescriptionListPage } from './components/PrescriptionListPage';
+import { TrackOrderPage } from './components/TrackOrderPage';
 
 
 
@@ -51,6 +52,10 @@ function App() {
 
   if (currentUrl.includes("view-prescription")) {
     return <PrescriptionListPage api={api} />;
+  }
+
+  if (currentUrl.includes("track-order")) {
+    return <TrackOrderPage api={api} />;
   }
 
   const MainPage = ProfilePage;

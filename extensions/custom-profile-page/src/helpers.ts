@@ -446,7 +446,7 @@ export async function fetchCustomOrderStatusesProxy(
       },
       body: JSON.stringify({
         order_ids: orderIds,
-        show_all_history: false
+        show_all_history: true
       })
     })
 
@@ -550,22 +550,29 @@ export async function getSettings(api: any) {
   try {
     const response = await api.query(SETTINGS_QUERY);
     
+    // api.query might return the data object directly or wrapped in a data property
+    const data = response?.data || response;
+    
     if (response?.errors && response.errors.length > 0) {
+      console.error("[helpers:getSettings] GraphQL Errors:", response.errors);
       return { settings: null, error: response.errors[0].message };
     }
 
-    const metafieldValue = response?.data?.shop?.metafield?.value;
+    const metafieldValue = data?.shop?.metafield?.value;
     if (metafieldValue) {
       try {
         const parsed = JSON.parse(metafieldValue);
         return { settings: parsed, error: null };
       } catch (parseError) {
+        console.error("[helpers:getSettings] JSON Parse error for value:", metafieldValue, parseError);
         return { settings: null, error: "Failed to parse dynamic settings JSON" };
       }
     }
 
+    console.warn("[helpers:getSettings] Dynamic settings metafield not found in response:", data);
     return { settings: null, error: "Dynamic settings not found" };
   } catch (e: any) {
+    console.error("[helpers:getSettings] Unexpected error during fetch:", e);
     return { settings: null, error: e.message || "Failed to fetch dynamic settings" };
   }
 }
@@ -631,4 +638,29 @@ export function getPrescriptionStatus(
     daysLeft >= 30 ? "warning" : "critical";
 
   return { text: statusText, tone };
+}
+
+/**
+ * Format a date string into "MM/DD/YY, h:mm A" for the timeline
+ */
+export function formatTimelineDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "";
+    
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const y = String(date.getFullYear()).slice(-2);
+    
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    
+    return `${m}/${d}/${y}, ${hours}:${minutes} ${ampm}`;
+  } catch (e) {
+    return "";
+  }
 }

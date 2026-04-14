@@ -240,6 +240,7 @@ export interface DashboardSettings {
   cb_reorder_banner_heading?: string;
   cb_reorder_banner_description?: string;
   section_order?: string[];
+  cb_hide_track_order_reorder?: boolean;
   sections?: Record<string, {
     id: string;
     title?: string;

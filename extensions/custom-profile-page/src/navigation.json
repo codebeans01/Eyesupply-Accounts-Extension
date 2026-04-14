@@ -5,7 +5,7 @@
       "title": "Orders",
       "icon": "email",
       "links": [
-        { "label": "Ongoing Order Status", "dynamicSub": "orderStatus", "command": "--show", "commandFor": "all-orders-modal" },
+        { "label": "Ongoing Order Status", "dynamicSub": "orderStatus", "href": "extension:custom-profile-page/track-order" },
         { "label": "Reorder last order", "action": "reorder", "href": "#" },
         { "label": "Past Orders", "href": "shopify://customer-account/orders" },
         { "label": "Invoices", "href": "shopify://customer-account/orders" }
