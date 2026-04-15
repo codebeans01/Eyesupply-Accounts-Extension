@@ -23,6 +23,19 @@ interface StatCardsProps {
   rewardsCardIconUrl?: string;
   prescriptionIconUrl?: string;
   daysRunOutIconUrl?: string;
+  statRecentOrderTitle?: string;
+  statReorderBtnLabel?: string;
+  statPastOrdersBtnLabel?: string;
+  statShowReorderBtn?: boolean;
+  statShowPastOrdersBtn?: boolean;
+  statShowReorderNowBtn?: boolean;
+  statCoveredUntilText?: string;
+  statDaysRemainingText?: string;
+  statReorderNowBtnLabel?: string;
+  statLoyaltyTitle?: string;
+  statLoyaltyLinkText?: string;
+  statPrescriptionTitle?: string;
+  rewardsPageUrl?: string;
 }
 
 export function StatCards({
@@ -39,7 +52,20 @@ export function StatCards({
   recentOrderIconUrl,
   rewardsCardIconUrl,
   prescriptionIconUrl,
-  daysRunOutIconUrl
+  daysRunOutIconUrl,
+  statRecentOrderTitle = "Most Recent Order",
+  statReorderBtnLabel = "REORDER",
+  statPastOrdersBtnLabel = "Reorder Past Orders",
+  statShowReorderBtn = true,
+  statShowPastOrdersBtn = true,
+  statShowReorderNowBtn = true,
+  statCoveredUntilText = "You’re covered until",
+  statDaysRemainingText = "days remaining",
+  statReorderNowBtnLabel = "Reorder now",
+  statLoyaltyTitle = "My Loyalty Points",
+  statLoyaltyLinkText = "Earn & Redeem",
+  statPrescriptionTitle = "Prescription Expiry",
+  rewardsPageUrl = "/pages/rewards"
 }: StatCardsProps) {
   const firstOrder = orders[0];
   const { text: statusText, tone } = getPrescriptionStatus(prescriptionExpiry, ordersCount, tags);
@@ -79,7 +105,7 @@ export function StatCards({
                 commandFor="order-line-items-modal"
               >
                 <s-stack direction="block" gap="none">
-                  <s-text tone="neutral">Most Recent Order</s-text>
+                  <s-text tone="neutral">{statRecentOrderTitle}</s-text>
                   <s-text type="strong" tone="info">{firstOrder?.name || "#1111"}</s-text>
                   <s-text tone="neutral">{recentOrderItemsCount + " items"}</s-text>
                 </s-stack>
@@ -87,22 +113,26 @@ export function StatCards({
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="inline" gap="small" alignItems="center">
-                <s-button 
-                  variant="primary" 
-                  loading={reorderLoadingId === (firstOrder?.id || "none")}
-                  onClick={() => onReorder(firstOrder?.id, firstOrder?.name || "")}
-                >
-                  REORDER
-                </s-button>
-                <s-button 
-                  variant="secondary" 
-                  href="shopify://customer-account/orders"
-                >
-                  <s-stack direction="inline" gap="small-200" alignItems="center">
-                    <s-text type="strong">Reorder Past Orders</s-text>
-                    <s-icon type="arrow-right" size="small"></s-icon>
-                  </s-stack>
-                </s-button>
+                {statShowReorderBtn && (
+                  <s-button 
+                    variant="primary" 
+                    loading={reorderLoadingId === (firstOrder?.id || "none")}
+                    onClick={() => onReorder(firstOrder?.id, firstOrder?.name || "")}
+                  >
+                    {statReorderBtnLabel}
+                  </s-button>
+                )}
+                {statShowPastOrdersBtn && (
+                  <s-button 
+                    variant="secondary" 
+                    href="shopify://customer-account/orders"
+                  >
+                    <s-stack direction="inline" gap="small-200" alignItems="center">
+                      <s-text type="strong">{statPastOrdersBtnLabel}</s-text>
+                      <s-icon type="arrow-right" size="small"></s-icon>
+                    </s-stack>
+                  </s-button>
+                )}
               </s-stack>
             </s-grid-item>
           </s-grid>
@@ -124,18 +154,20 @@ export function StatCards({
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="none">
-                <s-text type="strong">You’re covered until {coveredUntil || "..."}</s-text>
-                <s-text tone="neutral">{daysRemaining ?? "0"} days remaining</s-text>
+                <s-text type="strong">{statCoveredUntilText} {coveredUntil || "..."}</s-text>
+                <s-text tone="neutral">{daysRemaining ?? "0"} {statDaysRemainingText}</s-text>
               </s-stack>
             </s-grid-item>
             <s-grid-item>
-              <s-button 
-                variant="primary" 
-                loading={reorderLoadingId === (firstOrder?.id || "none")}
-                onClick={() => onReorder(firstOrder?.id, firstOrder?.name || "")}
-              >
-                Reorder now
-              </s-button>
+              {statShowReorderNowBtn && (
+                <s-button 
+                  variant="primary" 
+                  loading={reorderLoadingId === (firstOrder?.id || "none")}
+                  onClick={() => onReorder(firstOrder?.id, firstOrder?.name || "")}
+                >
+                  {statReorderNowBtnLabel}
+                </s-button>
+              )}
             </s-grid-item>
           </s-grid>
         </s-box>
@@ -155,10 +187,15 @@ export function StatCards({
               )}
             </s-grid-item>
             <s-grid-item>
-              <s-text type="strong">My Loyalty Points</s-text>
+              <s-stack direction="block" gap="small">
+                <s-text type="strong">{statLoyaltyTitle}</s-text>
+                <s-clickable href={rewardsPageUrl}>
+                  <s-text tone="custom">{statLoyaltyLinkText}</s-text> 
+                </s-clickable>
+              </s-stack>
             </s-grid-item>
             <s-grid-item>
-              <s-heading type="strong">{pointsDisplay}</s-heading>
+              <s-heading>{pointsDisplay}</s-heading>
             </s-grid-item>
           </s-grid>
         </s-box>
@@ -179,7 +216,7 @@ export function StatCards({
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="small">
-                <s-text type="strong">Prescription Expiry</s-text>
+                <s-text type="strong">{statPrescriptionTitle}</s-text>
                 {formattedExpiry && (
                   <s-text tone="neutral">{formattedExpiry}</s-text>
                 )}

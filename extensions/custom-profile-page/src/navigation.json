@@ -23,14 +23,12 @@
     },
     {
       "id": "rewards",
-      "title": "Rewards",
+      "title": "EyeSupply Rewards",
       "icon": "gift",
       "links": [
-        { "label": "My EyeSupply Rewards", "href": "#" },
-        { "label": "Use on your next order", "href": "#" },
         { "label": "Points", "dynamicSub": "loyaltyPoints", "href": "#" },
-        { "label": "Earn more", "href": "#" },
-        { "label": "Redeem", "href": "#" }
+        { "label": "Use on your next order", "href": "#" },
+        { "label": "Earn & Redeem", "href": "#" }
       ]
     },
     {

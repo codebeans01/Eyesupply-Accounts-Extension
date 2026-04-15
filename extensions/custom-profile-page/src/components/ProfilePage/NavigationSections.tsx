@@ -7,7 +7,7 @@ import {
 interface NavigationSectionsProps {
   sections: any[];
   resolveDynamicValue: (key: string) => string;
-  resolveDynamicTone?: (key: string) => "neutral" | "success" | "warning" | "critical" | "info";
+  resolveDynamicTone?: (key: string) => "neutral" | "success" | "warning" | "critical" | "info" | "custom";
   reviewProducts: any[];
   allReviewProductsCount: number;
   REVIEW_PAGE_SIZE: number;
@@ -18,7 +18,6 @@ interface NavigationSectionsProps {
   reorderLoadingId?: string | null;
   lastOrder?: any;
   showReviewProducts?: boolean;
-  rewardsIconUrl?: string;
   reviewSubheading?: string;
 }
 
@@ -36,7 +35,6 @@ export function NavigationSections({
   reorderLoadingId,
   lastOrder,
   showReviewProducts = true,
-  rewardsIconUrl,
   reviewSubheading
 }: NavigationSectionsProps) {
 
@@ -47,17 +45,17 @@ export function NavigationSections({
           <s-stack gap="base">
             <s-grid gridTemplateColumns="1fr auto" gap="small" alignItems="center">
               <s-grid-item>
-                <s-stack direction="block" gap="extra-tight">
+                <s-stack direction="block" gap="large">
                   <s-heading>{section.title}</s-heading>
                   {section.id === 'reviews' && reviewSubheading && (
-                    <s-text tone="subdued" type="strong">{reviewSubheading}</s-text>
+                    <s-text type="strong">{reviewSubheading}</s-text>
                   )}
                 </s-stack>
               </s-grid-item>
               <s-grid-item>
-                {section.id === 'rewards' && rewardsIconUrl ? (
+                {section.iconUrl ? (
                   <s-box inlineSize="24px" blockSize="24px">
-                    <s-image src={rewardsIconUrl} alt="Rewards"></s-image>
+                    <s-image src={section.iconUrl} alt={section.title}></s-image>
                   </s-box>
                 ) : (
                   <s-icon type={section.icon} size="base"></s-icon>

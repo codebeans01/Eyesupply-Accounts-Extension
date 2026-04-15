@@ -150,7 +150,7 @@ export function PrescriptionListPage({ api }: PrescriptionListPageProps) {
              <s-box display={MOBILE_ONLY_LABEL}>
                <s-text type="strong" tone="neutral">Expiry Date</s-text>
              </s-box>
-             <s-text>{p.expiry_date || "No Expiry"}</s-text>
+             <s-text>{p.expiry_date || ""}</s-text>
           </s-stack>
 
           {/* Status Column */}
@@ -158,7 +158,11 @@ export function PrescriptionListPage({ api }: PrescriptionListPageProps) {
              <s-box display={MOBILE_ONLY_LABEL}>
                 <s-text type="strong" tone="neutral">Status</s-text>
              </s-box>
-             <s-badge tone={isActive ? "neutral" : "neutral"}>{p.status || "Active"}</s-badge>
+             {p.status ? (
+               <s-badge tone={isActive ? "neutral" : "neutral"}>{p.status}</s-badge>
+             ) : (
+               <s-text> </s-text>
+             )}
           </s-stack>
 
           {/* Documents Column */}
@@ -167,17 +171,17 @@ export function PrescriptionListPage({ api }: PrescriptionListPageProps) {
                 <s-text type="strong" tone="neutral">Documents</s-text>
              </s-box>
              <s-stack gap="small-500">
-               {(() => {
-                 const allUrls = [
-                   ...(p.image_urls || []),
-                   ...(p.image_url ? [p.image_url] : [])
-                 ].filter(Boolean);
-                 
-                 if (allUrls.length > 0) {
-                   return allUrls.map((url, i) => <DocumentLink key={i} url={url} />);
-                 }
-                 return <s-text tone="neutral">No documents</s-text>;
-               })()}
+                {(() => {
+                  const allUrls = Array.from(new Set([
+                    ...(p.image_urls || []),
+                    ...(p.image_url ? [p.image_url] : [])
+                  ])).filter(Boolean);
+                  
+                  if (allUrls.length > 0) {
+                    return allUrls.map((url, i) => <DocumentLink key={i} url={url} />);
+                  }
+                  return <s-text> </s-text>;
+                })()}
              </s-stack>
           </s-stack>
         

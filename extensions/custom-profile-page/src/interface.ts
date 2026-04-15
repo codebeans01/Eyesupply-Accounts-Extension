@@ -241,6 +241,19 @@ export interface DashboardSettings {
   cb_reorder_banner_description?: string;
   section_order?: string[];
   cb_hide_track_order_reorder?: boolean;
+  cb_stat_recent_order_title?: string;
+  cb_stat_reorder_btn_label?: string;
+  cb_stat_past_orders_btn_label?: string;
+  cb_stat_show_reorder_btn?: boolean;
+  cb_stat_show_past_orders_btn?: boolean;
+  cb_stat_show_reorder_now_btn?: boolean;
+  cb_stat_covered_until_text?: string;
+  cb_stat_days_remaining_text?: string;
+  cb_stat_reorder_now_btn_label?: string;
+  cb_stat_loyalty_title?: string;
+  cb_stat_loyalty_link_text?: string;
+  cb_stat_prescription_title?: string;
+  cb_rewards_page_url?: string;
   sections?: Record<string, {
     id: string;
     title?: string;

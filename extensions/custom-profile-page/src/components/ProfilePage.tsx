@@ -43,6 +43,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const [isPointsLoading, setIsPointsLoading] = useState(false);
   const [customStatuses, setCustomStatuses] = useState<Record<string, string>>({});
   const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true);
+  const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true);
 
   useEffect(() => {
     async function init() {
@@ -148,7 +149,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
       case "medicalAidPlan": return customer?.medicalAidPlan || "Plan";
       case "medicalAidName": return customer?.medicalAidName || "Medical Aid Name";
       case "patientIdNumber": return customer?.patientIdNumber ? maskPatientId(customer.patientIdNumber) : "Not provided";
-      case "loyaltyPoints": return isPointsLoading ? "..." : (points !== null ? new Intl.NumberFormat().format(points) + " points" : "0");
+      case "loyaltyPoints": return isPointsLoading ? "..." : (points !== null ? new Intl.NumberFormat().format(points) + " points" : "0 points");
       case "daysRemaining": {
         const days = calculateDaysRemaining(customer?.daysTillRunOut);
         return days !== null ? `${days} days` : "0 days";
@@ -216,6 +217,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
         setShowReorderWarning(true);
 
         setIsLineItemsModalVisible(false);
+        setIsAllOrdersModalVisible(false);
 
         setTimeout(() => {
             setShowReorderWarning(true);
@@ -225,6 +227,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
                 api.navigation.navigate('#reorder-warning');
             }, 100);
             setIsLineItemsModalVisible(true);
+            setIsAllOrdersModalVisible(true);
         }, 200);
 
       } else if (result.redirectUrl) {
@@ -279,6 +282,21 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const rewardsCardIconUrl = (dynamicSettings?.cb_rewards_card_icon_url as string) || DEFAULT_SETTINGS.cb_rewards_card_icon_url;
   const prescriptionIconUrl = (dynamicSettings?.cb_prescription_icon_url as string) || DEFAULT_SETTINGS.cb_prescription_icon_url;
   const daysRunOutIconUrl = (dynamicSettings?.cb_days_run_out_icon_url as string) || DEFAULT_SETTINGS.cb_days_run_out_icon_url;
+
+  // Stat Card Settings
+  const statRecentOrderTitle = (dynamicSettings?.cb_stat_recent_order_title as string) || "Most Recent Order";
+  const statReorderBtnLabel = (dynamicSettings?.cb_stat_reorder_btn_label as string) || "REORDER";
+  const statPastOrdersBtnLabel = (dynamicSettings?.cb_stat_past_orders_btn_label as string) || "Reorder Past Orders";
+  const statShowReorderBtn = (dynamicSettings?.cb_stat_show_reorder_btn as boolean) ?? true;
+  const statShowPastOrdersBtn = (dynamicSettings?.cb_stat_show_past_orders_btn as boolean) ?? true;
+  const statShowReorderNowBtn = (dynamicSettings?.cb_stat_show_reorder_now_btn as boolean) ?? true;
+  const statCoveredUntilText = (dynamicSettings?.cb_stat_covered_until_text as string) || "You’re covered until";
+  const statDaysRemainingText = (dynamicSettings?.cb_stat_days_remaining_text as string) || "days remaining";
+  const statReorderNowBtnLabel = (dynamicSettings?.cb_stat_reorder_now_btn_label as string) || "Reorder now";
+  const statLoyaltyTitle = (dynamicSettings?.cb_stat_loyalty_title as string) || "My Loyalty Points";
+  const statLoyaltyLinkText = (dynamicSettings?.cb_stat_loyalty_link_text as string) || "Earn & Redeem";
+  const statPrescriptionTitle = (dynamicSettings?.cb_stat_prescription_title as string) || "Prescription Expiry";
+  const rewardsPageUrl = (dynamicSettings?.cb_rewards_page_url as string) || "/pages/rewards";
   const bannerTitle = resolve((dynamicSettings?.cb_banner_title as string) || "Welcome Back");
   const bannerSubtitle = resolve((dynamicSettings?.cb_banner_subtitle as string) || "{{customer.first_name}} {{customer.last_name}}");
   const bannerImageUrl = (dynamicSettings?.cb_banner_image_url as string) || welcomeImageUrl;
@@ -296,12 +314,14 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const filteredSections = navConfig.sections || [];
   let sections = filteredSections.map(section => {
     const dynamicSection = dynamicSettings?.sections?.[section.id];
-    if (!dynamicSection) return section;
+    const sectionIconUrl = dynamicSettings[`cb_${section.id}_icon_url` as keyof DashboardSettings] as string;
+    
     return {
       ...section,
-      title: dynamicSection.title || section.title,
+      iconUrl: sectionIconUrl,
+      title: dynamicSection?.title || section.title,
       links: ((section.links as NavLink[]) || []).map((link, idx) => {
-        const dynamicLink = dynamicSection.links?.[idx];
+        const dynamicLink = dynamicSection?.links?.[idx];
         if (!dynamicLink) return link;
 
         // If action is explicitly set in dynamic settings, it should take precedence
@@ -385,6 +405,19 @@ export function ProfilePage({ api }: ProfilePageProps) {
             rewardsCardIconUrl={rewardsCardIconUrl}
             prescriptionIconUrl={prescriptionIconUrl}
             daysRunOutIconUrl={daysRunOutIconUrl}
+            statRecentOrderTitle={statRecentOrderTitle}
+            statReorderBtnLabel={statReorderBtnLabel}
+            statPastOrdersBtnLabel={statPastOrdersBtnLabel}
+            statShowReorderBtn={statShowReorderBtn}
+            statShowPastOrdersBtn={statShowPastOrdersBtn}
+            statShowReorderNowBtn={statShowReorderNowBtn}
+            statCoveredUntilText={statCoveredUntilText}
+            statDaysRemainingText={statDaysRemainingText}
+            statReorderNowBtnLabel={statReorderNowBtnLabel}
+            statLoyaltyTitle={statLoyaltyTitle}
+            statLoyaltyLinkText={statLoyaltyLinkText}
+            statPrescriptionTitle={statPrescriptionTitle}
+            rewardsPageUrl={rewardsPageUrl}
           />
 
           <NavigationSections 
@@ -401,7 +434,6 @@ export function ProfilePage({ api }: ProfilePageProps) {
             reorderLoadingId={reorderLoadingId}
             lastOrder={lastOrder}
             showReviewProducts={showReviewProducts}
-            rewardsIconUrl={rewardsIconUrl}
             reviewSubheading={reviewSubheading}
           />
         </s-stack>
@@ -425,6 +457,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
         storefrontBase={storefrontBase}
         reviewTarget={reviewTarget}
         isLineItemsModalVisible={isLineItemsModalVisible}
+        isAllOrdersModalVisible={isAllOrdersModalVisible}
         customer={customer}
       />
     </s-page>

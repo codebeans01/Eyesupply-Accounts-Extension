@@ -55,13 +55,11 @@ const DEFAULT_NAV = {
     },
     {
       id: "rewards",
-      title: "Rewards",
+      title: "EyeSupply Rewards",
       links: [
-        { label: "My EyeSupply Rewards", href: "#" },
-        { label: "Use on your next order", href: "#" },
         { label: "Points", href: "#" },
-        { label: "Earn more", href: "#" },
-        { label: "Redeem", href: "#" }
+        { label: "Use on your next order", href: "#" },
+        { label: "Earn & Redeem", href: "#" }
       ]
     },
     {
@@ -140,6 +138,7 @@ const MUTATION_UPDATE_DEFINITION = `#graphql
 
 const DEFAULT_EXT_SETTINGS = {
   cb_welcome_image_url: "https://cdn.shopify.com/s/files/1/0882/1004/7288/files/EYE-SUPPLY-LOGO_2.png?v=1738743179",
+  cb_banner_title: "Welcome Back",
   cb_review_google_url: "https://g.page/r/11164121505097059976/review",
   cb_review_facebook_url: "https://www.facebook.com/eyesupply/reviews",
   cb_review_target: "reviews",
@@ -156,6 +155,19 @@ const DEFAULT_EXT_SETTINGS = {
   cb_reorder_banner_heading: "Reordering from an older order?",
   cb_reorder_banner_description: "Because we’ve upgraded our website, older orders can’t be reordered directly through the new system. Please add your items to cart manually this time. Going forward, reordering will work smoothly from your account.",
   cb_hide_track_order_reorder: false,
+  cb_stat_recent_order_title: "Most Recent Order",
+  cb_stat_reorder_btn_label: "REORDER",
+  cb_stat_past_orders_btn_label: "Reorder Past Orders",
+  cb_stat_show_reorder_btn: true,
+  cb_stat_show_past_orders_btn: true,
+  cb_stat_show_reorder_now_btn: true,
+  cb_stat_covered_until_text: "You’re covered until",
+  cb_stat_days_remaining_text: "days remaining",
+  cb_stat_reorder_now_btn_label: "Reorder now",
+  cb_stat_loyalty_title: "My Loyalty Points",
+  cb_stat_loyalty_link_text: "Earn & Redeem",
+  cb_stat_prescription_title: "Prescription Expiry",
+  cb_rewards_page_url: "/pages/rewards",
   section_order: ["orders", "profile", "rewards", "prescription", "delivery", "medical-aid", "support", "reviews"]
 };
 
@@ -248,6 +260,7 @@ export default function SettingsPage() {
 
   const TABS = [
     { id: "general", label: "General settings", icon: "settings" },
+    { id: "quick-actions", label: "Quick Actions", icon: "channels" },
     { id: "orders", label: "Orders", icon: "cart" },
     { id: "track-order", label: "Track Order", icon: "order" },
     { id: "profile", label: "Profile", icon: "person" },
@@ -409,7 +422,7 @@ export default function SettingsPage() {
       <s-box paddingBlock="base">
         <s-stack gap="small" direction="inline" alignItems="center">
           <s-button variant="tertiary" onClick={() => history.back()} icon="arrow-left" />
-          <s-heading size="large">Settings</s-heading>
+          <s-heading>Settings</s-heading>
         </s-stack>
       </s-box>
 
@@ -420,18 +433,18 @@ export default function SettingsPage() {
         <s-grid gridTemplateColumns="240px 1fr" gap="large" alignItems="start">
           {/* Sidebar Area - Unified premium container */}
           <s-grid-item>
-            <s-box background="base" border="base" borderRadius="large" shadow="base" padding="base">
+            <s-box background="base" border="base" borderRadius="large" padding="base">
               <s-stack gap="base">
                 {/* Store Identity Block */}
                 <s-stack direction="inline" gap="base" alignItems="center">
                   <s-box background="subdued" borderRadius="base" padding="small" inlineSize="40px" blockSize="40px">
                     <s-stack alignItems="center" justifyContent="center" blockSize="100%">
-                      <s-text type="strong" tone="neutral" size="large">{shopName.charAt(0).toUpperCase()}</s-text>
+                      <s-text type="strong" tone="neutral">{shopName.charAt(0).toUpperCase()}</s-text>
                     </s-stack>
                   </s-box>
                   <s-stack gap="none">
-                    <s-text type="strong" size="small">{shopName}</s-text>
-                    <s-text tone="subdued" size="small">{shopUrl.replace("https://", "")}</s-text>
+                    <s-text type="strong">{shopName}</s-text>
+                    <s-text>{shopUrl.replace("https://", "")}</s-text>
                   </s-stack>
                 </s-stack>
 
@@ -448,8 +461,8 @@ export default function SettingsPage() {
                         border={activeTab === tab.id ? "base" : "none"}
                       >
                         <s-stack direction="inline" gap="base" alignItems="center">
-                          <s-icon type={tab.icon} size="base" tone={activeTab === tab.id ? "info" : "neutral"} />
-                          <s-text tone={activeTab === tab.id ? "info" : "neutral"} type={activeTab === tab.id ? "strong" : "regular"}>
+                          <s-icon type={tab.icon as any} size="base" tone={activeTab === tab.id ? "info" : "neutral"} />
+                          <s-text tone={activeTab === tab.id ? "info" : "neutral"} type={activeTab === tab.id ? "strong" : "generic"}>
                             {tab.label}
                           </s-text>
                         </s-stack>
@@ -468,10 +481,18 @@ export default function SettingsPage() {
                 <>
                   <s-heading>{ "General Settings" }</s-heading>
                   
-                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
                     <s-stack gap="base">
-                      <s-heading size="medium">Welcome Image & Branding</s-heading>
-                      
+                      <s-heading>Welcome Banner Title</s-heading>
+                      <s-text-field
+                        label="Welcome Banner Title"
+                        value={settings.cb_banner_title || ""}
+                        onInput={(e: any) => updateSetting("cb_banner_title", e.target.value)}
+                        placeholder="Welcome Back"
+                      />
+                      <s-divider />
+                      <s-heading>Welcome Image & Branding</s-heading>
+                    
                       <s-text-field
                         label="Welcome Image URL"
                         value={settings.cb_welcome_image_url || ""}
@@ -480,7 +501,7 @@ export default function SettingsPage() {
                       />
                       
                       {settings.cb_welcome_image_url && (
-                        <s-box inlineSize="fill" borderRadius="base" overflow="hidden" border="base">
+                        <s-box inlineSize="auto" borderRadius="base" overflow="hidden" border="base">
                           <s-image 
                             src={settings.cb_welcome_image_url} 
                             alt="Welcome Preview" 
@@ -494,7 +515,7 @@ export default function SettingsPage() {
                       <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                         <s-stack gap="none">
                           <s-text type="strong">Enable Search Bar</s-text>
-                          <s-text tone="subdued">Show a search input on the customer dashboard.</s-text>
+                          <s-text>Show a search input on the customer dashboard.</s-text>
                         </s-stack>
                         <s-checkbox 
                           checked={settings.cb_search_enable !== false} 
@@ -507,7 +528,7 @@ export default function SettingsPage() {
                       <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                         <s-stack gap="none">
                           <s-text type="strong">Show Default Navigation</s-text>
-                          <s-text tone="subdued">Enable systemic links like Orders and Support.</s-text>
+                          <s-text>Enable systemic links like Orders and Support.</s-text>
                         </s-stack>
                         <s-checkbox 
                           checked={settings.cb_show_default_nav !== false} 
@@ -517,49 +538,12 @@ export default function SettingsPage() {
                     </s-stack>
                   </s-box>
 
-                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                  
+
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
                     <s-stack gap="base">
-                      <s-heading size="medium">Dashboard Card Icons</s-heading>
-                      <s-text tone="subdued">Custom images for the summary cards at the top of your dashboard. (Recommended size: 24px x 24px).</s-text>
-                      
-                      <s-divider />
-
-                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
-                        <s-text-field
-                          label="Recent Order Icon URL"
-                          helpText="Recommended size: 24px x 24px"
-                          value={settings.cb_recent_order_icon_url || ""}
-                          onInput={(e: any) => updateSetting("cb_recent_order_icon_url", e.target.value)}
-                        />
-                        <s-text-field
-                          label="Days Till Run Out Icon URL"
-                          helpText="Recommended size: 24px x 24px"
-                          value={settings.cb_days_run_out_icon_url || ""}
-                          onInput={(e: any) => updateSetting("cb_days_run_out_icon_url", e.target.value)}
-                        />
-                      </s-grid>
-
-                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
-                        <s-text-field
-                          label="Rewards Card Icon URL"
-                          helpText="Recommended size: 24px x 24px"
-                          value={settings.cb_rewards_card_icon_url || ""}
-                          onInput={(e: any) => updateSetting("cb_rewards_card_icon_url", e.target.value)}
-                        />
-                        <s-text-field
-                          label="Prescription Icon URL"
-                          helpText="Recommended size: 24px x 24px"
-                          value={settings.cb_prescription_icon_url || ""}
-                          onInput={(e: any) => updateSetting("cb_prescription_icon_url", e.target.value)}
-                        />
-                      </s-grid>
-                    </s-stack>
-                  </s-box>
-
-                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
-                    <s-stack gap="base">
-                      <s-heading size="medium">Dashboard Section Order</s-heading>
-                      <s-text tone="subdued">Rearrange how sections appear on the customer dashboard grid (2 columns per row).</s-text>
+                      <s-heading>Dashboard Section Order</s-heading>
+                      <s-text>Rearrange how sections appear on the customer dashboard grid (2 columns per row).</s-text>
                       
                       <s-divider />
                       
@@ -569,22 +553,22 @@ export default function SettingsPage() {
                           return (
                             <s-box key={sectionId} padding="small" background="subdued" borderRadius="base" border="base">
                               <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
-                                <s-icon type={tab.icon} size="base" />
+                                <s-icon type={tab.icon as any} size="base" />
                                 <s-text type="strong">{tab.label}</s-text>
-                                <s-stack direction="inline" gap="extra-tight">
+                                <s-stack direction="inline" gap="large">
                                   <s-button 
                                     variant="tertiary" 
                                     disabled={index === 0} 
                                     onClick={() => moveSection(index, 'up')}
                                   >
-                                    <s-icon type="arrow-up" size="small" />
+                                    <s-icon type="arrow-up" />
                                   </s-button>
                                   <s-button 
                                     variant="tertiary" 
                                     disabled={index === arr.length - 1} 
                                     onClick={() => moveSection(index, 'down')}
                                   >
-                                    <s-icon type="arrow-down" size="small" />
+                                    <s-icon type="arrow-down" />
                                   </s-button>
                                 </s-stack>
                               </s-grid>
@@ -595,7 +579,7 @@ export default function SettingsPage() {
                     </s-stack>
                   </s-box>
 
-                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
                     <s-stack gap="base">
                       <s-heading>Reorder flow Configuration</s-heading>
                     
@@ -605,7 +589,6 @@ export default function SettingsPage() {
                        
                           <s-text-field
                             label="Exclude Variant IDs"
-                            helpText="Comma separated IDs of variants to hide from reorder."
                             value={settings.exclude_variant_ids || ""}
                             onInput={(e: any) => updateSetting("exclude_variant_ids", e.target.value)}
                           />
@@ -627,7 +610,7 @@ export default function SettingsPage() {
                     </s-stack>
                   </s-box>
 
-                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
                     <s-stack gap="base">
                       <s-heading>Reorder Warning Banner</s-heading>
                       <s-divider />
@@ -648,7 +631,6 @@ export default function SettingsPage() {
 
                       <s-text-field
                         label="Helpful Reorder Link (Override)"
-                        helpText="Redirect users to a custom page for reordering."
                         value={settings.external_reorder_link || ""}
                         onInput={(e: any) => updateSetting("external_reorder_link", e.target.value)}
                       />
@@ -663,17 +645,17 @@ export default function SettingsPage() {
                 <>
                   <s-heading>{ "Track Order Settings" }</s-heading>
                   
-                  <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
                     <s-stack gap="base">
-                      <s-heading size="medium">Reorder Action</s-heading>
-                      <s-text tone="subdued">Configure reorder behavior on the Track Your Orders page.</s-text>
+                      <s-heading>Reorder Action</s-heading>
+                      <s-text>Configure reorder behavior on the Track Your Orders page.</s-text>
                       
                       <s-divider />
                       
                       <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                         <s-stack gap="none">
                           <s-text type="strong">Hide Reorder Button</s-text>
-                          <s-text tone="subdued">Remove the Reorder action button from the Track Your Orders page.</s-text>
+                          <s-text>Remove the Reorder action button from the Track Your Orders page.</s-text>
                         </s-stack>
                         <s-checkbox 
                           checked={settings.cb_hide_track_order_reorder === true} 
@@ -693,33 +675,27 @@ export default function SettingsPage() {
                   <s-stack key={navSection.id} gap="base">
                     <s-heading>{navSection.title} Settings</s-heading>
                     
-                    <s-box background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                    <s-box background="base" border="base" borderRadius="large" padding="base">
                       <s-stack gap="base">
-                        <s-text type="strong" size="medium">Section Content</s-text>
+                        <s-text type="strong">Section Content</s-text>
                         <s-text-field
                           label="Section Title Override"
                           value={currentSection.title || ""}
                           onInput={(e: any) => updateSectionTitle(navSection.id, e.target.value)}
                           placeholder={navSection.title}
                         />
-                        {navSection.id === 'rewards' && (
-                          <>
-                            <s-divider />
-                            <s-text-field
-                                label="Rewards Icon URL"
-                                helpText="Optionally provide an image URL to replace the default gift icon."
-                                value={settings.cb_rewards_icon_url || ""}
-                                onInput={(e: any) => updateSetting("cb_rewards_icon_url", e.target.value)}
-                                placeholder="https://example.com/icon.png"
-                            />
-                          </>
-                        )}
+                        <s-divider />
+                        <s-text-field
+                            label={`${navSection.title} Icon URL`}
+                            value={settings[`cb_${navSection.id}_icon_url`] || ""}
+                            onInput={(e: any) => updateSetting(`cb_${navSection.id}_icon_url`, e.target.value)}
+                            placeholder="https://example.com/icon.png"
+                        />
                         {navSection.id === 'reviews' && (
                           <>
                             <s-divider />
                             <s-text-field
                                 label="Review Subheading"
-                                helpText="Appears below the section title."
                                 value={settings.cb_review_subheading || ""}
                                 onInput={(e: any) => updateSetting("cb_review_subheading", e.target.value)}
                                 placeholder="Earn rewards when you leave a review"
@@ -728,7 +704,7 @@ export default function SettingsPage() {
                             <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                               <s-stack gap="none">
                                 <s-text type="strong">Show Review Products List</s-text>
-                                <s-text tone="subdued">Display the list of products for customers to review directly on the dashboard.</s-text>
+                                <s-text>Display the list of products for customers to review directly on the dashboard.</s-text>
                               </s-stack>
                               <s-checkbox 
                                 checked={settings.cb_show_review_products !== false} 
@@ -743,9 +719,9 @@ export default function SettingsPage() {
                     {navSection.links.map((link: any, idx: number) => {
                       const currentLink = (currentSection.links && currentSection.links[idx]) || {};
                       return (
-                        <s-box key={idx} background="base" border="base" borderRadius="large" padding="base" shadow="base">
+                        <s-box key={idx} background="base" border="base" borderRadius="large" padding="base">
                           <s-stack gap="base">
-                            <s-text type="strong" size="small">Link: {link.label}</s-text>
+                            <s-text type="strong">Link: {link.label}</s-text>
                             <s-stack gap="small">
                               <s-text-field
                                 label={`Label (Default: ${link.label})`}
@@ -793,6 +769,152 @@ export default function SettingsPage() {
                   </s-stack>
                 );
               })}
+
+              {activeTab === 'quick-actions' && (
+                <s-stack direction="block" gap="large">
+                  <s-box background="base" borderRadius="base" padding="base" border="base">
+                    <s-stack direction="block" gap="base">
+                      <s-heading>Most Recent Order Card</s-heading>
+                      <s-text-field
+                        label="Card Title"
+                        value={settings.cb_stat_recent_order_title || ""}
+                        onInput={(e: any) => updateSetting("cb_stat_recent_order_title", e.target.value)}
+                      />
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="Reorder Button Label"
+                          value={settings.cb_stat_reorder_btn_label || ""}
+                          onInput={(e: any) => updateSetting("cb_stat_reorder_btn_label", e.target.value)}
+                        />
+                        <s-text-field
+                          label="Past Orders Button Label"
+                          value={settings.cb_stat_past_orders_btn_label || ""}
+                          onInput={(e: any) => updateSetting("cb_stat_past_orders_btn_label", e.target.value)}
+                        />
+                      </s-grid>
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-grid-item>
+                          <s-stack gap="base">
+                            <s-text type="strong">Visibility</s-text>
+                            
+                            <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                              <s-text>Show REORDER Button</s-text>
+                              <s-checkbox 
+                                checked={settings.cb_stat_show_reorder_btn !== false} 
+                                onChange={(e: any) => updateSetting("cb_stat_show_reorder_btn", e.target.checked)} 
+                              />
+                            </s-stack>
+
+                            <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                              <s-text>Show Past Orders Link</s-text>
+                              <s-checkbox 
+                                checked={settings.cb_stat_show_past_orders_btn !== false} 
+                                onChange={(e: any) => updateSetting("cb_stat_show_past_orders_btn", e.target.checked)} 
+                              />
+                            </s-stack>
+                          </s-stack>
+                        </s-grid-item>
+                      </s-grid>
+                    </s-stack>
+                  </s-box>
+
+                  <s-box background="base" borderRadius="base" padding="base" border="base">
+                    <s-stack direction="block" gap="base">
+                      <s-heading>Days Till Run Out Card</s-heading>
+                      <s-text-field
+                        label="Covered Until Text"
+                        value={settings.cb_stat_covered_until_text || ""}
+                        onInput={(e: any) => updateSetting("cb_stat_covered_until_text", e.target.value)}
+                      />
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="Days Remaining Text"
+                          value={settings.cb_stat_days_remaining_text || ""}
+                          onInput={(e: any) => updateSetting("cb_stat_days_remaining_text", e.target.value)}
+                        />
+                        <s-text-field
+                          label="Reorder Button Label"
+                          value={settings.cb_stat_reorder_now_btn_label || ""}
+                          onInput={(e: any) => updateSetting("cb_stat_reorder_now_btn_label", e.target.value)}
+                        />
+                      </s-grid>
+                      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                        <s-stack gap="none">
+                          <s-text type="strong">Show Reorder now Button</s-text>
+                        </s-stack>
+                        <s-checkbox 
+                          checked={settings.cb_stat_show_reorder_now_btn !== false} 
+                          onChange={(e: any) => updateSetting("cb_stat_show_reorder_now_btn", e.target.checked)} 
+                        />
+                      </s-stack>
+                    </s-stack>
+                  </s-box>
+
+                  <s-box background="base" borderRadius="base" padding="base" border="base">
+                    <s-stack direction="block" gap="base">
+                      <s-heading>Other Cards</s-heading>
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base" gridTemplateRows="auto auto">
+                        <s-text-field
+                          label="Loyalty Points Title"
+                          value={settings.cb_stat_loyalty_title || ""}
+                          onInput={(e: any) => updateSetting("cb_stat_loyalty_title", e.target.value)}
+                        />
+                        <s-text-field
+                          label="Prescription Expiry Title"
+                          value={settings.cb_stat_prescription_title || ""}
+                          onInput={(e: any) => updateSetting("cb_stat_prescription_title", e.target.value)}
+                        />
+                        <s-text-field
+                          label="Earn & Redeem Link Text"
+                          value={settings.cb_stat_loyalty_link_text || ""}
+                          onInput={(e: any) => updateSetting("cb_stat_loyalty_link_text", e.target.value)}
+                        />
+                        <s-text-field
+                          label="Rewards Page URL"
+                          value={settings.cb_rewards_page_url || ""}
+                          onInput={(e: any) => updateSetting("cb_rewards_page_url", e.target.value)}
+                        />
+                      </s-grid>
+                    </s-stack>
+                  </s-box>
+
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
+                    <s-stack gap="base">
+                      <s-heading>Dashboard Card Icons</s-heading>
+                      <s-text>Custom images for the summary cards at the top of your dashboard. (Recommended size: 24px x 24px).</s-text>
+                      
+                      <s-divider />
+
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="Recent Order Icon URL"
+                          value={settings.cb_recent_order_icon_url || ""}
+                          onInput={(e: any) => updateSetting("cb_recent_order_icon_url", e.target.value)}
+                        />
+                        <s-text-field
+                          label="Days Till Run Out Icon URL"
+                          value={settings.cb_days_run_out_icon_url || ""}
+                          onInput={(e: any) => updateSetting("cb_days_run_out_icon_url", e.target.value)}
+                        />
+                      </s-grid>
+
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="Rewards Card Icon URL"
+                          value={settings.cb_rewards_card_icon_url || ""}
+                          onInput={(e: any) => updateSetting("cb_rewards_card_icon_url", e.target.value)}
+                        />
+                        <s-text-field
+                          label="Prescription Icon URL"
+                          value={settings.cb_prescription_icon_url || ""}
+                          onInput={(e: any) => updateSetting("cb_prescription_icon_url", e.target.value)}
+                        />
+                      </s-grid>
+                    </s-stack>
+                  </s-box>
+                  
+                </s-stack>
+              )}
 
               {/* Save Button Container */}
               <s-box paddingBlockStart="large">

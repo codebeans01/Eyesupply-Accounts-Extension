@@ -7,11 +7,12 @@ import {
   LAYOUT_768_4COL
 } from "../../constants";
 import { type Order, type CustomerSummary } from "../../interface";
-import { getNumericId } from "../../helpers";
+import { getNumericId, maskPatientId} from "../../helpers";
+
 
 interface ModalsProps {
   ongoingOrders: Order[];
-  customStatuses: Record<string, string>;
+  customStatuses: Record<string, any>;
   reorderLoadingId: string | null;
   onReorder: (orderId: string, orderName: string, modalId: string) => void;
   api: any;
@@ -54,6 +55,114 @@ export function Modals({
 }: ModalsProps) {
   return (
     <Fragment>
+
+
+      {isAllOrdersModalVisible && (
+        <s-modal id="all-orders-modal" heading="Track Your Orders" size="max">
+          <s-query-container>
+            <s-stack gap="large" alignItems="center">
+              <s-box padding="large" background="base" border="base" borderRadius="large" inlineSize="100%">
+                {ongoingOrders.length !== 0 ? (
+                <s-stack gap="large">
+                  <s-grid gridTemplateColumns="2fr 1fr 1fr 1fr" display={DISPLAY_768_GRID} alignItems="center" paddingInline="base">
+                    <s-text type="strong" tone="neutral">Product</s-text>
+                    <s-text type="strong" tone="neutral">Status</s-text>
+                    <s-text type="strong" tone="neutral">Price</s-text>
+                    <s-text type="strong" tone="neutral">Action</s-text>
+                  </s-grid>
+                  <s-box display={DISPLAY_768_GRID}>
+                    <s-divider></s-divider>
+                  </s-box>
+                  {ongoingOrders.map((order) => {
+                    const fulfillmentStatus = order.fulfillmentStatus || 'UNFULFILLED';
+                    const displayStatus = (fulfillmentStatus.charAt(0) + fulfillmentStatus.slice(1).toLowerCase()).replace(/_/g, ' ');
+                    const totalQuantity = (order.lineItems || []).reduce((acc, item) => acc + (item.quantity || 0), 0);
+                    const orderPrice = order.totalPrice && api.i18n ? api.i18n.formatNumber(Number(order.totalPrice.amount), { precision: 2 }) + " " + order.totalPrice.currencyCode : "";
+
+                    return (
+                      <s-box key={order.id} padding="base" border="base" borderRadius="large">
+                        <s-stack gap="base">
+                          <s-grid gridTemplateColumns="2fr 1fr 1fr 1fr" display={DISPLAY_768_GRID} alignItems="center" gap="base">
+                            <s-clickable onClick={() => api.navigation.navigate(`shopify://customer-account/orders/${getNumericId(order.id)}`)}>
+                              <s-stack direction="inline" gap="base" alignItems="center">
+                                <s-box borderRadius="base" overflow="hidden" inlineSize="56px" blockSize="56px">
+                                  {order.lineItems?.[0]?.image ? (
+                                    <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name}></s-image>
+                                  ) : (
+                                    <s-grid alignItems="center" blockSize="100%">
+                                      <s-icon type="image" tone="neutral"></s-icon>
+                                    </s-grid>
+                                  )}
+                                </s-box>
+                                <s-stack gap="small-100">
+                                  <s-text type="strong">{order.name}</s-text>
+                                  <s-text tone="neutral">{totalQuantity} items</s-text>
+                                </s-stack>
+                              </s-stack>
+                            </s-clickable>
+                            <s-stack gap="small-100">
+                              <s-text type="strong">{customStatuses[order.id]?.public_name || displayStatus}</s-text>
+                              <s-text tone="neutral">{order.processedAt ? new Date(order.processedAt).toLocaleDateString("en-GB") : ""}</s-text>
+                            </s-stack>
+                            <s-text type="strong">{orderPrice}</s-text>
+                            <s-button 
+                              variant="secondary" 
+                              onClick={() => onReorder(order.id, order.name, 'all-orders-modal')} 
+                              loading={reorderLoadingId === order.id} 
+                              disabled={reorderLoadingId !== null}
+                            >
+                              Reorder
+                            </s-button>
+                          </s-grid>
+
+                          <s-grid gridTemplateColumns="1fr auto" display={DISPLAY_768_NONE_GRID} gap="small">
+                            <s-clickable onClick={() => api.navigation.navigate(`shopify://customer-account/orders/${getNumericId(order.id)}`)}>
+                              <s-stack direction="inline" gap="base">
+                                <s-box borderRadius="base" overflow="hidden" inlineSize="52px" blockSize="52px">
+                                  {order.lineItems?.[0]?.image ? (
+                                    <s-image src={order.lineItems[0].image.url} alt={order.lineItems[0].name}></s-image>
+                                  ) : (
+                                    <s-grid alignItems="center" blockSize="100%">
+                                      <s-icon type="image" tone="neutral"></s-icon>
+                                    </s-grid>
+                                  )}
+                                </s-box>
+                                <s-stack gap="small-100">
+                                  <s-text type="strong">{order.name}</s-text>
+                                  <s-text tone="neutral">{totalQuantity} items</s-text>
+                                  <s-text>{customStatuses[order.id]?.public_name || displayStatus}</s-text>
+                                  <s-text tone="neutral">{order.processedAt ? new Date(order.processedAt).toLocaleDateString("en-GB") : ""}</s-text>
+                                </s-stack>
+                              </s-stack>
+                            </s-clickable>
+                            <s-stack alignItems="end" gap="small">
+                              <s-text type="strong">{orderPrice}</s-text>
+                              <s-button 
+                                variant="secondary" 
+                                onClick={() => onReorder(order.id, order.name, 'all-orders-modal')} 
+                                loading={reorderLoadingId === order.id} 
+                                disabled={reorderLoadingId !== null}
+                              >
+                                Reorder
+                              </s-button>
+                            </s-stack>
+                          </s-grid>
+                        </s-stack>
+                      </s-box>
+                    );
+                  })}
+                </s-stack>
+              ) : (
+                <s-stack padding="base" direction="inline" alignItems="center" justifyContent="center">
+                  <s-text>No orders found.</s-text>
+                </s-stack>
+              )}
+            </s-box>
+          </s-stack>
+        </s-query-container>
+      </s-modal>
+      )}
+
       {isLineItemsModalVisible && (
       <s-modal id="order-line-items-modal" heading={lineItemsCount + " items"} size="max">
         <s-query-container>
@@ -178,7 +287,7 @@ export function Modals({
                 </s-stack>
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Patient ID Number</s-text>
-                  <s-text type="strong">{customer?.patientIdNumber || "Not provided"}</s-text>
+                  <s-text type="strong">{maskPatientId(customer?.patientIdNumber) || "Not provided"}</s-text>
                 </s-stack>
               </s-grid>
             </s-stack>

@@ -629,13 +629,13 @@ export function ProfileSkeleton() {
                     blockSize="1px"
                   />
                   <s-stack direction="block" gap="small">
-                    {/* "My Loyalty Points  39153" */}
+                    {/* "Use on your next order - [points]" */}
                     <s-grid gridTemplateColumns="1fr auto" gap="small" alignItems="center">
                       <s-grid-item>
                         <s-box
                           background="subdued"
                           borderRadius="base"
-                          inlineSize="65%"
+                          inlineSize="80%"
                           blockSize="13px"
                           border="base"
                         />
@@ -644,23 +644,17 @@ export function ProfileSkeleton() {
                         <s-box
                           background="subdued"
                           borderRadius="base"
-                          inlineSize="44px"
+                          inlineSize="60px"
                           blockSize="13px"
                           border="base"
                         />
                       </s-grid-item>
                     </s-grid>
+                    {/* "Earn & Redeem" */}
                     <s-box
                       background="subdued"
                       borderRadius="base"
                       inlineSize="40%"
-                      blockSize="13px"
-                      border="base"
-                    />
-                    <s-box
-                      background="subdued"
-                      borderRadius="base"
-                      inlineSize="70%"
                       blockSize="13px"
                       border="base"
                     />

@@ -37,8 +37,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.warn("[Proxy] Missing ORDER_STATUS_API_URL or ORDER_STATUS_API_KEY environment variable");
       return errorResponse("Server configuration error", { status: 500, cors: corsWrapper });
     } 
-    
-    console.log("[Proxy] Fetching custom order statuses for IDs:", order_ids);
+  
 
     const response = await fetch(API_URL, {
       method: "POST",
