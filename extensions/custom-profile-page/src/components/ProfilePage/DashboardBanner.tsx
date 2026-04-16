@@ -35,9 +35,23 @@ export function DashboardBanner({
         <s-box background="subdued" borderRadius="base" padding="base">
           <s-grid gridTemplateColumns={LAYOUT_768_2COL} gap="base" alignItems="center">
             <s-grid-item>
-              <s-stack direction="block" gap="small" padding="small">
-                <s-heading>{bannerTitle}</s-heading>
-                <s-text tone="neutral">{bannerSubtitle}</s-text>
+              <s-stack direction="block" gap="none" padding="small">
+                <s-stack direction="block" gap="base">
+                  {bannerTitle.split(/<br\s*\/?>/gi).map((line, i) => (
+                    i === 0 ? (
+                      <s-heading key={i}>{line || "\u00A0"}</s-heading>
+                    ) : (
+                      <s-text key={i} type="strong" tone="neutral">{line || "\u00A0"}</s-text>
+                    )
+                  ))}
+                </s-stack>
+                {bannerSubtitle && (
+                  <s-stack direction="block" gap="base">
+                    {bannerSubtitle.split(/<br\s*\/?>/gi).map((line, i) => (
+                      <s-text key={i} tone="neutral">{line || "\u00A0"}</s-text>
+                    ))}
+                  </s-stack>
+                )}
               </s-stack>
             </s-grid-item>
             <s-grid-item>

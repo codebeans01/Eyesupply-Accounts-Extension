@@ -509,12 +509,13 @@ export default function SettingsPage() {
                   <s-box background="base" border="base" borderRadius="large" padding="base">
                     <s-stack gap="base">
                       <s-heading>Welcome Banner Title</s-heading>
-                      <s-text-field
+                      <s-text-area
                         label="Welcome Banner Title"
                         value={settings.cb_banner_title || ""}
                         onInput={(e: any) => updateSetting("cb_banner_title", e.target.value)}
-                        placeholder="Welcome Back"
-                      />
+                        rows={3}
+                      ></s-text-area>
+
                       <s-divider />
                       <s-heading>Welcome Image & Branding</s-heading>
                     

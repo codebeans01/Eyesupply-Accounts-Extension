@@ -56,6 +56,9 @@ export function ProfilePage({ api }: ApiProps) {
         if (data.customer) {
           setCustomer(data.customer);
           setOrders(data.orders || []);
+          if (data.orders && data.orders.length > 0) {
+            setSelectedOrder(data.orders[0]);
+          }
           setOngoingOrders(additionalOrders.orders || []);
           if (data.myshopifyDomain) setMyshopifyDomain(data.myshopifyDomain);
          
@@ -120,8 +123,11 @@ export function ProfilePage({ api }: ApiProps) {
     if (!text) return "";
     let resolved = text;
     resolved = resolved.replace(/\{\{customer\.first_name\}\}/g, customer?.firstName || "");
+    resolved = resolved.replace(/\{\{first_name\}\}/g, customer?.firstName || "");
     resolved = resolved.replace(/\{\{customer\.last_name\}\}/g, customer?.lastName || "");
+    resolved = resolved.replace(/\{\{last_name\}\}/g, customer?.lastName || "");
     resolved = resolved.replace(/\{\{customer\.points\}\}/g, points !== null ? new Intl.NumberFormat().format(points) : "...");
+    resolved = resolved.replace(/\{\{points\}\}/g, points !== null ? new Intl.NumberFormat().format(points) : "...");
     resolved = resolved.replace(/\{\{customer\.medical_aid_number\}\}/g, customer?.medicalAidNumber || "Not provided");
     const rawPatientId = customer?.patientIdNumber || "";
     const maskedId = maskPatientId(rawPatientId);
@@ -294,7 +300,7 @@ export function ProfilePage({ api }: ApiProps) {
   const statPrescriptionTitle = (dynamicSettings?.cb_stat_prescription_title as string) || "Prescription Expiry";
   const rewardsPageUrl = (dynamicSettings?.cb_rewards_page_url as string) || "/pages/rewards";
   const bannerTitle = resolve((dynamicSettings?.cb_banner_title as string) || "Welcome Back");
-  const bannerSubtitle = resolve((dynamicSettings?.cb_banner_subtitle as string) || "{{customer.first_name}} {{customer.last_name}}");
+  const bannerSubtitle = resolve((dynamicSettings?.cb_banner_subtitle as string) || (dynamicSettings?.cb_banner_title ? "" : "{{first_name}} {{last_name}}"));
   const bannerImageUrl = (dynamicSettings?.cb_banner_image_url as string) || welcomeImageUrl;
   const storefrontBase = myshopifyDomain ? `https://${myshopifyDomain}` : "";
   const reviewTarget = '#' + (dynamicSettings?.cb_review_target as string || DEFAULT_SETTINGS.cb_review_target);
