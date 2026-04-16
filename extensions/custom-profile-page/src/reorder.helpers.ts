@@ -1,20 +1,4 @@
-export interface CartItem {
-  variantId: string; // ✅ Full GID format for Storefront API
-  numericVariantId: string; // Kept for compatibility / fallback
-  quantity: number;
-  customAttributes: { key: string; value: string }[];
-}
-
-export interface MissingItem {
-  name: string;
-  image?: string;
-}
-
-export interface ReorderResult {
-  redirectUrl: string | null;
-  missingItems: MissingItem[];
-  orderName?: string;
-}
+import { CartItem, MissingItem } from "./interface";
 
 interface LineItem {
   title: string;

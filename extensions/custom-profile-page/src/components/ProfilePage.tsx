@@ -1,4 +1,3 @@
-/** @jsx h */
 import { h, Fragment } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
@@ -7,7 +6,7 @@ import {
   DEFAULT_SETTINGS,
   REVIEW_PAGE_SIZE
 } from "../constants";
-import { type Order, type MissingItem, type DashboardSettings, type NavLink } from "../interface";
+import { type Order, type MissingItem, type DashboardSettings, type NavLink, CustomOrderStatusData, ApiProps } from "../interface";
 import { loadCustomerData, fetchAdditionalOrders } from "../loadCustomerData";
 import { fetchReorderResult } from "../reorder.service";
 import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
@@ -20,11 +19,8 @@ import { NavigationSections } from "./ProfilePage/NavigationSections";
 import { Modals } from "./ProfilePage/Modals";
 import { ProfileSkeleton } from "./ProfilePage/ProfileSkeleton";
 
-interface ProfilePageProps {
-  api: any;
-}
 
-export function ProfilePage({ api }: ProfilePageProps) {
+export function ProfilePage({ api }: ApiProps) {
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -41,7 +37,7 @@ export function ProfilePage({ api }: ProfilePageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isPointsLoading, setIsPointsLoading] = useState(false);
-  const [customStatuses, setCustomStatuses] = useState<Record<string, string>>({});
+  const [customStatuses, setCustomStatuses] = useState<Record<string, CustomOrderStatusData>>({});
   const [isLineItemsModalVisible, setIsLineItemsModalVisible] = useState(true);
   const [isAllOrdersModalVisible, setIsAllOrdersModalVisible] = useState(true);
 

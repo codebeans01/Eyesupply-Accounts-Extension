@@ -612,7 +612,7 @@ export default function SettingsPage() {
                       
                       <s-stack gap="base">
                         <s-text type="strong">Exclude Variant IDs</s-text>
-                        <s-text tone="subdued">Products with these variant IDs will be skipped during reorder.</s-text>
+                        <s-text tone="neutral">Products with these variant IDs will be skipped during reorder.</s-text>
                         
                         <s-stack gap="small" direction="inline" alignItems="end">
                           <s-text-field
@@ -623,7 +623,6 @@ export default function SettingsPage() {
                           />
                           <s-button
                             variant="secondary"
-                            size="slim"
                             onClick={handleSelectVariants}
                           >
                             Select Products

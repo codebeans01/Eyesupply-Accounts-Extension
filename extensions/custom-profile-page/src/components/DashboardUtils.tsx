@@ -1,4 +1,3 @@
-/** @jsx h */
 import { h } from "preact";
 
 export function renderReorderBannerDescription(textStr: string, olderOrderName: string | null, api: any, externalReorderLink: string | null) {

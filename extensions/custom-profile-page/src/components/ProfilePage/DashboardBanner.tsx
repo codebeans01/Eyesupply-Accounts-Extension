@@ -5,19 +5,7 @@ import {
   SIZE_600_RESP_200,
   SIZE_600_RESP_100
 } from "../../constants";
-
-interface DashboardBannerProps {
-  bannerEnabled: boolean;
-  bannerTitle: string;
-  bannerSubtitle: string;
-  bannerImageUrl: string;
-  showReorderWarning: boolean;
-  reorderBannerHeading?: string;
-  reorderBannerDescription?: string;
-  olderOrderName: string | null;
-  api: any;
-  externalReorderLink: string | null;
-}
+import { DashboardBannerProps } from "../../interface";
 
 export function DashboardBanner({
   bannerEnabled,

@@ -3,23 +3,7 @@ import {
   LAYOUT_768_2COL_STACK,
   LAYOUT_768_4COL_BLOCK
 } from "../../constants";
-
-interface NavigationSectionsProps {
-  sections: any[];
-  resolveDynamicValue: (key: string) => string;
-  resolveDynamicTone?: (key: string) => "neutral" | "success" | "warning" | "critical" | "info" | "custom";
-  reviewProducts: any[];
-  allReviewProductsCount: number;
-  REVIEW_PAGE_SIZE: number;
-  remainingReviewCount: number;
-  storefrontBase: string;
-  reviewTarget: string;
-  onReorder?: (id: string, name: string) => void;
-  reorderLoadingId?: string | null;
-  lastOrder?: any;
-  showReviewProducts?: boolean;
-  reviewSubheading?: string;
-}
+import { NavigationSectionsProps } from "../../interface";
 
 export function NavigationSections({
   sections,

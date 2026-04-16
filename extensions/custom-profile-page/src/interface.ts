@@ -1,3 +1,7 @@
+export interface ApiProps {
+  api: any;
+}
+
 export interface Money {
   amount: string;
   currencyCode: string;
@@ -64,7 +68,7 @@ export interface LoadCustomerDataParams {
 }
 
 // Optional: strongly typed GraphQL response
-interface GraphQLError {
+export interface GraphQLError {
   message: string;
   extensions?: {
     code?: string;
@@ -205,6 +209,13 @@ export interface NavLink {
   sub?: string;
 }
 
+export interface CartItem {
+  variantId: string; // ✅ Full GID format for Storefront API
+  numericVariantId: string; // Kept for compatibility / fallback
+  quantity: number;
+  customAttributes: { key: string; value: string }[];
+}
+
 export interface MissingItem {
   name: string;
   image?: string;
@@ -239,7 +250,7 @@ export interface DashboardSettings {
   cb_show_default_nav_links?: boolean;
   cb_reorder_banner_heading?: string;
   cb_reorder_banner_description?: string;
-  section_order?: string[];
+  section_order?: string[] | string;
   cb_hide_track_order_reorder?: boolean;
   cb_stat_recent_order_title?: string;
   cb_stat_reorder_btn_label?: string;
@@ -265,8 +276,8 @@ export interface DashboardSettings {
 export interface ReorderResult {
   redirectUrl: string | null;
   missingItems: MissingItem[];
+  orderName?: string;
 }
-
 
 
 export interface OrderStatusHistoryItem {
@@ -290,3 +301,116 @@ export interface CustomOrderStatusResponse {
     [key: string]: any;
   }>;
 }
+
+
+export interface CustomOrderStatusData {
+  public_name: string;
+  history: OrderStatusHistoryItem[];
+}
+
+export interface OngoingOrder {
+  id: string;
+  name: string;
+  createdAt: string;
+  email: string;
+  totalPrice: string;
+  currencyCode: string;
+  fulfillmentStatus: string;
+  financialStatus: string;
+  lineItemsCount: number;
+  image: string | null;
+  currentStatus: string | null;
+}
+
+export interface OngoingOrdersResponse {
+  orders: OngoingOrder[];
+  authenticated: boolean;
+  statuses: any[];
+}
+
+
+
+export interface ModalsProps {
+  ongoingOrders: Order[];
+  customStatuses: Record<string, any>;
+  reorderLoadingId: string | null;
+  onReorder: (orderId: string, orderName: string, modalId: string) => void;
+  api: any;
+  selectedOrder: Order | null;
+  lineItemsCount: number;
+  cbSearchEnabled: boolean;
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+  showTopReorder: boolean;
+  showBottomReorder: boolean;
+  reorderButtonPosition: string;
+  allReviewProducts: any[];
+  storefrontBase: string;
+  reviewTarget: string;
+  isAllOrdersModalVisible: boolean;
+  isLineItemsModalVisible: boolean;
+  customer: CustomerSummary | null;
+}
+
+export interface NavigationSectionsProps {
+  sections: any[];
+  resolveDynamicValue: (key: string) => string;
+  resolveDynamicTone?: (key: string) => "neutral" | "success" | "warning" | "critical" | "info" | "custom";
+  reviewProducts: any[];
+  allReviewProductsCount: number;
+  REVIEW_PAGE_SIZE: number;
+  remainingReviewCount: number;
+  storefrontBase: string;
+  reviewTarget: string;
+  onReorder?: (id: string, name: string) => void;
+  reorderLoadingId?: string | null;
+  lastOrder?: any;
+  showReviewProducts?: boolean;
+  reviewSubheading?: string;
+}
+
+export interface DashboardBannerProps {
+  bannerEnabled: boolean;
+  bannerTitle: string;
+  bannerSubtitle: string;
+  bannerImageUrl: string;
+  showReorderWarning: boolean;
+  reorderBannerHeading?: string;
+  reorderBannerDescription?: string;
+  olderOrderName: string | null;
+  api: any;
+  externalReorderLink: string | null;
+}
+
+export interface StatCardsProps {
+  orders: any[];
+  recentOrderItemsCount: number;
+  daysRemaining: number | null;
+  reorderLoadingId: string | null;
+  onReorder: (id: string, name: string) => void;
+  onShowRecentOrderDetails: () => void;
+  // From original StatCards
+  pointsDisplay: string;
+  prescriptionExpiry: string;
+  tags: string[];
+  ordersCount: number;
+  recentOrderIconUrl?: string;
+  rewardsCardIconUrl?: string;
+  prescriptionIconUrl?: string;
+  daysRunOutIconUrl?: string;
+  statRecentOrderTitle?: string;
+  statReorderBtnLabel?: string;
+  statPastOrdersBtnLabel?: string;
+  statShowReorderBtn?: boolean;
+  statShowPastOrdersBtn?: boolean;
+  statShowReorderNowBtn?: boolean;
+  statCoveredUntilText?: string;
+  statDaysRemainingText?: string;
+  statReorderNowBtnLabel?: string;
+  statLoyaltyTitle?: string;
+  statLoyaltyLinkText?: string;
+  statPrescriptionTitle?: string;
+  rewardsPageUrl?: string;
+}
+
+

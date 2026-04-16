@@ -3,42 +3,6 @@ import { fetchWithRetry, mapOrderNode} from "./helpers";
 import { CustomerDataQueryResponse, CustomerSummary, GraphQLResponse, LoadCustomerDataParams, LoadCustomerDataResult, Order, Prescription, PageInfo } from "./interface";
 import { APP_URL, API_VERSION } from "./constants";
 
-// Helper to parse a single prescription node
-const parsePrescriptionNode = (ref: any): Prescription => {
-  const gids: string[] = [];
-  const imageFieldKeys = ["image_pdf_url", "prescription_file", "file", "imagePdfUrl", "prescriptionFile"];
-  
-  imageFieldKeys.forEach(key => {
-    // Try field object (from fragment alias)
-    const f = (ref as any)[key];
-    if (f) {
-      // Check for direct value starting with http (not common for file fields)
-      if (typeof f === 'object' && f.value && f.value.startsWith("http")) gids.push(f.value);
-      else if (typeof f === 'string' && f.startsWith("http")) gids.push(f);
-      
-      // Check for reference object (from our updated query)
-      if (f.reference?.url) gids.push(f.reference.url);
-      else if (f.reference?.image?.url) gids.push(f.reference.image.url);
-      
-      // Check for references nodes (if it was a list)
-      if (f.references?.nodes) {
-        f.references.nodes.forEach((n: any) => {
-          const url = n.url || n.image?.url;
-          if (url) gids.push(url);
-        });
-      }
-    }
-  });
-
-  return {
-    id: ref.id,
-    handle: ref.handle || "",
-    status: ref.status?.value || "Active",
-    expiry_date: ref.expiryDate?.value || undefined,
-    image_urls: gids.length > 0 ? Array.from(new Set(gids)) : undefined,
-  };
-};
-
 export async function loadCustomerData(
   api: any,
   params: LoadCustomerDataParams = {},
@@ -73,9 +37,6 @@ export async function loadCustomerData(
 
   const customer = json.data?.customer ?? null;
   const myshopifyDomain = json.data?.shop?.myshopifyDomain;
-
-    console.log('myshopifyDomain',myshopifyDomain)
-    console.log('shopdata',json.data?.shop)
 
   if (!customer) {
     return {

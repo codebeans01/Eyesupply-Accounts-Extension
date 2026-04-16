@@ -2,17 +2,15 @@ import { h, Fragment } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
 import { fetchAdditionalOrders, loadCustomerData } from "../loadCustomerData";
-import { fetchCustomOrderStatuses, type CustomOrderStatusData } from "../ongoingOrders.service";
+import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
 import { fetchReorderResult } from "../reorder.service";
 import { getNumericId, getSettings } from "../helpers";
-import { type Order, type DashboardSettings } from "../interface";
+import { type Order, type DashboardSettings, CustomOrderStatusData, ApiProps } from "../interface";
 import { DEFAULT_SETTINGS, DISPLAY_768_GRID, DISPLAY_768_NONE_GRID } from "../constants";
 
-interface TrackOrderPageProps {
-  api: any;
-}
 
-export function TrackOrderPage({ api }: TrackOrderPageProps) {
+
+export function TrackOrderPage({ api }: ApiProps) {
   const [loading, setLoading] = useState(true);
   const [ongoingOrders, setOngoingOrders] = useState<Order[]>([]);
   const [customStatuses, setCustomStatuses] = useState<Record<string, CustomOrderStatusData>>({});

@@ -1,36 +1,11 @@
-/** @jsx h */
-/** @jsxFrag Fragment */
 import { h, Fragment } from "preact";
 import { 
   DISPLAY_768_GRID,
   DISPLAY_768_NONE_GRID,
   LAYOUT_768_4COL
 } from "../../constants";
-import { type Order, type CustomerSummary } from "../../interface";
+import { type ModalsProps } from "../../interface";
 import { getNumericId, maskPatientId} from "../../helpers";
-
-
-interface ModalsProps {
-  ongoingOrders: Order[];
-  customStatuses: Record<string, any>;
-  reorderLoadingId: string | null;
-  onReorder: (orderId: string, orderName: string, modalId: string) => void;
-  api: any;
-  selectedOrder: Order | null;
-  lineItemsCount: number;
-  cbSearchEnabled: boolean;
-  searchQuery: string;
-  setSearchQuery: (val: string) => void;
-  showTopReorder: boolean;
-  showBottomReorder: boolean;
-  reorderButtonPosition: string;
-  allReviewProducts: any[];
-  storefrontBase: string;
-  reviewTarget: string;
-  isAllOrdersModalVisible: boolean;
-  isLineItemsModalVisible: boolean;
-  customer: CustomerSummary | null;
-}
 
 export function Modals({
   ongoingOrders,

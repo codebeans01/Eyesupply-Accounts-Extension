@@ -1,8 +1,8 @@
 import { ORDER_LINE_ITEMS_QUERY, CART_CREATE_MUTATION } from "./graphql-query";
 import { partitionLineItems, buildCartPermalink } from "./reorder.helpers";
-import type { ReorderResult } from "./reorder.helpers";
 import { fetchWithRetry } from "./helpers";
 import { API_VERSION } from "./constants";
+import type { ReorderResult } from "./interface";
 
 const CUSTOMER_ACCOUNT_ENDPOINT = `shopify://customer-account/api/${API_VERSION}/graphql.json`;
 const STOREFRONT_ENDPOINT = `shopify://storefront/api/${API_VERSION}/graphql.json`;

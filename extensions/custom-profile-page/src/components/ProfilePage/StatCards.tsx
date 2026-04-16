@@ -1,42 +1,10 @@
-/** @jsx h */
 import { h } from "preact";
 import { 
   LAYOUT_768_2COL_STACK,
   LAYOUT_500_3COL
 } from "../../constants";
-import { calculateDaysRemaining, formatDateString, getPrescriptionStatus } from "../../helpers";
-
-interface StatCardsProps {
-  // From original QuickActions
-  orders: any[];
-  recentOrderItemsCount: number;
-  daysRemaining: number | null;
-  reorderLoadingId: string | null;
-  onReorder: (id: string, name: string) => void;
-  onShowRecentOrderDetails: () => void;
-  // From original StatCards
-  pointsDisplay: string;
-  prescriptionExpiry: string;
-  tags: string[];
-  ordersCount: number;
-  recentOrderIconUrl?: string;
-  rewardsCardIconUrl?: string;
-  prescriptionIconUrl?: string;
-  daysRunOutIconUrl?: string;
-  statRecentOrderTitle?: string;
-  statReorderBtnLabel?: string;
-  statPastOrdersBtnLabel?: string;
-  statShowReorderBtn?: boolean;
-  statShowPastOrdersBtn?: boolean;
-  statShowReorderNowBtn?: boolean;
-  statCoveredUntilText?: string;
-  statDaysRemainingText?: string;
-  statReorderNowBtnLabel?: string;
-  statLoyaltyTitle?: string;
-  statLoyaltyLinkText?: string;
-  statPrescriptionTitle?: string;
-  rewardsPageUrl?: string;
-}
+import { formatDateString, getPrescriptionStatus } from "../../helpers";
+import { StatCardsProps } from "../../interface";
 
 export function StatCards({
   orders,

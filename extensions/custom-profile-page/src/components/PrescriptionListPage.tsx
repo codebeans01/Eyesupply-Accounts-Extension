@@ -1,12 +1,8 @@
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
 import { fetchAdditionalPrescriptions, loadPrescriptions } from "../loadCustomerData";
-import { type Prescription, type PageInfo } from "../interface";
+import { type Prescription, type PageInfo, type ApiProps } from "../interface";
 import { getNumericId } from "../helpers";
-
-interface PrescriptionListPageProps {
-  api: any;
-}
 
 const MOBILE_ONLY_LABEL = "@container (inline-size > 400px) none, auto";
 const DESKTOP_ONLY_HEADER = "@container (inline-size > 400px) auto, none";
@@ -38,7 +34,7 @@ const DocumentLink = ({ url }: { url: string }) => {
   );
 };
 
-export function PrescriptionListPage({ api }: PrescriptionListPageProps) {
+export function PrescriptionListPage({ api }: ApiProps) {
   const [loading, setLoading] = useState(true);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);

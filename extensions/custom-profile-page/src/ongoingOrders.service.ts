@@ -1,30 +1,5 @@
 import { fetchCustomOrderStatusesProxy, getNumericId } from "./helpers";
-import { CustomOrderStatusResponse, OrderStatusHistoryItem } from "./interface";
-
-export interface CustomOrderStatusData {
-  public_name: string;
-  history: OrderStatusHistoryItem[];
-}
-
-export interface OngoingOrder {
-  id: string;
-  name: string;
-  createdAt: string;
-  email: string;
-  totalPrice: string;
-  currencyCode: string;
-  fulfillmentStatus: string;
-  financialStatus: string;
-  lineItemsCount: number;
-  image: string | null;
-  currentStatus: string | null;
-}
-
-export interface OngoingOrdersResponse {
-  orders: OngoingOrder[];
-  authenticated: boolean;
-  statuses: any[];
-}
+import { CustomOrderStatusData, CustomOrderStatusResponse } from "./interface";
 
 /**
  * Fetch real-time statuses from the custom order status API via proxy

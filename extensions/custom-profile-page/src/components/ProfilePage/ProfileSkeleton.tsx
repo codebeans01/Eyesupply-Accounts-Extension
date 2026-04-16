@@ -57,7 +57,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="24px"
                         blockSize="24px"
                         border="base"
@@ -121,7 +121,7 @@ export function ProfileSkeleton() {
                   <s-grid-item>
                     <s-box
                       background="subdued"
-                      borderRadius="large-200"
+                      borderRadius="large-100"
                       inlineSize="24px"
                       blockSize="24px"
                       border="base"
@@ -163,7 +163,7 @@ export function ProfileSkeleton() {
                   <s-grid-item>
                     <s-box
                       background="subdued"
-                      borderRadius="large-200"
+                      borderRadius="large-100"
                       inlineSize="20px"
                       blockSize="20px"
                       border="base"
@@ -201,7 +201,7 @@ export function ProfileSkeleton() {
                   <s-grid-item>
                     <s-box
                       background="subdued"
-                      borderRadius="large-200"
+                      borderRadius="large-100"
                       inlineSize="20px"
                       blockSize="20px"
                       border="base"
@@ -262,7 +262,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="20px"
                         blockSize="20px"
                         border="base"
@@ -340,7 +340,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="20px"
                         blockSize="20px"
                         border="base"
@@ -390,7 +390,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="20px"
                         blockSize="20px"
                         border="base"
@@ -565,7 +565,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="20px"
                         blockSize="20px"
                         border="base"
@@ -615,7 +615,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="20px"
                         blockSize="20px"
                         border="base"
@@ -682,7 +682,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="20px"
                         blockSize="20px"
                         border="base"
@@ -916,7 +916,7 @@ export function ProfileSkeleton() {
                     <s-grid-item>
                       <s-box
                         background="subdued"
-                        borderRadius="large-200"
+                        borderRadius="large-100"
                         inlineSize="20px"
                         blockSize="20px"
                         border="base"
