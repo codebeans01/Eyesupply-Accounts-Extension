@@ -402,15 +402,40 @@ export default function SettingsPage() {
         type: "product",
         multiple: true,
         action: "select",
+        filter: {
+          hidden: true,
+          draft: false,
+          archived: false,
+        },
       });
 
-      if (selection) {
-        const selectedIds = selection.map((v: any) => v.id.split("/").pop());
+      if (selection && selection.length > 0) {
+        // Extract all variant IDs from selected products
+        const selectedVariantIds: string[] = [];
+        
+        selection.forEach((product: any) => {
+          if (product.variants && product.variants.length > 0) {
+            // Extract variant IDs from variants array
+            product.variants.forEach((variant: any) => {
+              if (variant.id) {
+                // Extract numeric ID from gid format (e.g., "gid://shopify/ProductVariant/123456")
+                const numericId = variant.id.split("/").pop();
+                if (numericId) {
+                  selectedVariantIds.push(numericId);
+                }
+              }
+            });
+          }
+        });
+        
+        console.log('selectedVariantIds', selectedVariantIds);
+        
         const currentIds = settings.exclude_variant_ids 
           ? settings.exclude_variant_ids.split(",").map((s: string) => s.trim()) 
           : [];
         
-        const combined = Array.from(new Set([...currentIds, ...selectedIds])).filter(Boolean).join(", ");
+        // Combine current and new IDs, remove duplicates
+        const combined = Array.from(new Set([...currentIds, ...selectedVariantIds])).filter(Boolean).join(", ");
         updateSetting("exclude_variant_ids", combined);
       }
     }
@@ -515,7 +540,7 @@ export default function SettingsPage() {
                       <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                         <s-stack gap="none">
                           <s-text type="strong">Enable Search Bar</s-text>
-                          <s-text>Show a search input on the customer dashboard.</s-text>
+                          <s-text>Show a search input in the line item modal for the Most Recent Order on the customer dashboard</s-text>
                         </s-stack>
                         <s-checkbox 
                           checked={settings.cb_search_enable !== false} 
@@ -585,15 +610,25 @@ export default function SettingsPage() {
                     
                       <s-divider />
                       
-                      <s-stack gap="small" direction="inline" alignItems="end">
-                       
+                      <s-stack gap="base">
+                        <s-text type="strong">Exclude Variant IDs</s-text>
+                        <s-text tone="subdued">Products with these variant IDs will be skipped during reorder.</s-text>
+                        
+                        <s-stack gap="small" direction="inline" alignItems="end">
                           <s-text-field
-                            label="Exclude Variant IDs"
+                            label="Variant IDs (comma-separated)"
                             value={settings.exclude_variant_ids || ""}
                             onInput={(e: any) => updateSetting("exclude_variant_ids", e.target.value)}
+                            placeholder="e.g., 51453457137954, 12345678901234"
                           />
-                        
-                        
+                          <s-button
+                            variant="secondary"
+                            size="slim"
+                            onClick={handleSelectVariants}
+                          >
+                            Select Products
+                          </s-button>
+                        </s-stack>
                       </s-stack>
                       
                       
@@ -689,7 +724,7 @@ export default function SettingsPage() {
                             label={`${navSection.title} Icon URL`}
                             value={settings[`cb_${navSection.id}_icon_url`] || ""}
                             onInput={(e: any) => updateSetting(`cb_${navSection.id}_icon_url`, e.target.value)}
-                            placeholder="https://example.com/icon.png"
+                            placeholder="https://example.com/icon.png (Recommended size: 24px x 24px)"
                         />
                         {navSection.id === 'reviews' && (
                           <>
@@ -912,7 +947,7 @@ export default function SettingsPage() {
                       </s-grid>
                     </s-stack>
                   </s-box>
-                  
+
                 </s-stack>
               )}
 

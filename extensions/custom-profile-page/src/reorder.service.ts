@@ -11,6 +11,7 @@ const STOREFRONT_ENDPOINT = `shopify://storefront/api/${API_VERSION}/graphql.jso
  * Customer Account API se order fetch karke aur Storefront Cart API se 
  * naya cart create karke ReorderResult return karta hai.
  * Yeh method custom attributes ko bhi preserve karta hai.
+ * Out-of-stock variants automatically missingItems mein jate hain.
  */
 export async function fetchReorderResult(
   orderId: string,
@@ -18,10 +19,12 @@ export async function fetchReorderResult(
   excludeTrial: boolean = false,
   excludeVariantIds: string = ""
 ): Promise<ReorderResult> {
+  
   // 1. Fetch Order Line Items using Customer Account API
   const orderBody = JSON.stringify({
     query: ORDER_LINE_ITEMS_QUERY,
     variables: { orderId: orderId },
+    _cacheBuster: Date.now(),
   });
 
   const orderResponse = await fetchWithRetry(CUSTOMER_ACCOUNT_ENDPOINT, {
@@ -58,7 +61,6 @@ export async function fetchReorderResult(
     return { redirectUrl: null, missingItems, orderName };
   }
 
-  // 3. Create Cart via Storefront API to preserve attributes
   const cartInput = {
     lines: cartItems.map(item => ({
       merchandiseId: item.variantId,
@@ -78,7 +80,9 @@ export async function fetchReorderResult(
       variables: { input: cartInput }
     }),
   });
+
   if (!cartResponse.ok) {
+    console.warn("[reorder.service] Storefront Cart API failed, falling back to permalink");
     return { 
       redirectUrl: buildCartPermalink(shopDomain, cartItems), 
       missingItems, 
@@ -88,6 +92,8 @@ export async function fetchReorderResult(
 
   const cartJson = cartResponse.data as any;
   if (cartJson.errors?.length || cartJson.data?.cartCreate?.userErrors?.length) {
+    const errorMsg = cartJson.errors?.[0]?.message || cartJson.data?.cartCreate?.userErrors?.[0]?.message;
+    console.warn("[reorder.service] Cart creation error:", errorMsg, "Falling back to permalink");
     return { 
       redirectUrl: buildCartPermalink(shopDomain, cartItems), 
       missingItems, 
@@ -96,5 +102,6 @@ export async function fetchReorderResult(
   }
 
   const redirectUrl = cartJson.data.cartCreate.cart.checkoutUrl;
+
   return { redirectUrl, missingItems, orderName };
 }
