@@ -5,6 +5,7 @@ import { fetchAdditionalOrders, loadCustomerData } from "../loadCustomerData";
 import { fetchCustomOrderStatuses } from "../ongoingOrders.service";
 import { fetchReorderResult } from "../reorder.service";
 import { getNumericId, getSettings } from "../helpers";
+import { TrackOrderSkeleton } from "./TrackOrderSkeleton";
 import { type Order, type DashboardSettings, CustomOrderStatusData, ApiProps } from "../interface";
 import { DEFAULT_SETTINGS, DISPLAY_768_GRID, DISPLAY_768_NONE_GRID } from "../constants";
 
@@ -106,16 +107,7 @@ export function TrackOrderPage({ api }: ApiProps) {
   };
 
   if (loading) {
-    return (
-      <s-page heading="Track Your Orders">
-        <s-box padding="base">
-          <s-stack gap="base" alignItems="center">
-            <s-spinner accessibilityLabel="Loading" />
-            <s-text>Loading...</s-text>
-          </s-stack>
-        </s-box>
-      </s-page>
-    );
+    return <TrackOrderSkeleton />;
   }
 
   return (

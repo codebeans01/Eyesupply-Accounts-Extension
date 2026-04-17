@@ -3,6 +3,7 @@ import '@shopify/ui-extensions/preact';
 import { fetchAdditionalPrescriptions, loadPrescriptions } from "../loadCustomerData";
 import { type Prescription, type PageInfo, type ApiProps, type DashboardSettings } from "../interface";
 import { getNumericId, getSettings } from "../helpers";
+import { PrescriptionSkeleton } from "./PrescriptionSkeleton";
 import { DEFAULT_SETTINGS } from "../constants";
 
 const MOBILE_ONLY_LABEL = "@container (inline-size > 400px) none, auto";
@@ -106,16 +107,7 @@ export function PrescriptionListPage({ api }: ApiProps) {
   };
 
   if (loading) {
-    return (
-      <s-page heading="My Prescriptions">
-        <s-box padding="base">
-          <s-stack gap="base" alignItems="center">
-            <s-spinner accessibilityLabel="Loading" />
-            <s-text>Loading...</s-text>
-          </s-stack>
-        </s-box>
-      </s-page>
-    );
+    return <PrescriptionSkeleton />;
   }
 
   if (error) {

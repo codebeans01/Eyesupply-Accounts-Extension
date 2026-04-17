@@ -592,22 +592,21 @@ export default function SettingsPage() {
                       <s-heading>Welcome Image & Branding</s-heading>
                     
                       <s-text-field
-                        label="Welcome Image URL"
+                        label="Welcome Image URL (Recommended size: 500 × 230 px)"
                         value={settings.cb_welcome_image_url || ""}
                         onInput={(e: any) => updateSetting("cb_welcome_image_url", e.target.value)}
                         placeholder="https://cdn.shopify.com/..."
                       />
                       
                       {settings.cb_welcome_image_url && (
-                        <s-box inlineSize="auto" borderRadius="base" overflow="hidden" border="base">
+                        <s-box maxInlineSize="500px" blockSize="230px" borderRadius="base" overflow="hidden" border="base">
                           <s-image 
                             src={settings.cb_welcome_image_url} 
                             alt="Welcome Preview" 
                             loading="lazy" 
-                            objectFit="contain"
-                            inlineSize="auto"
-                            maxInlineSize="100%"
-                            blockSize="auto"
+                            objectFit="cover"
+                            inlineSize="100%"
+                            blockSize="100%"
                           />
                         </s-box>
                       )}
@@ -799,7 +798,7 @@ export default function SettingsPage() {
                       <s-box key={index} background="base" border="base" borderRadius="large" padding="base">
                         <s-stack gap="base">
                           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                            <s-text type="strong">Banner #{index + 1}</s-text>
+                            <s-text type="strong">Banner #{index + 1} (Recommended banner size: 1120 × 370 px.)</s-text>
                             <s-stack direction="inline" gap="small" alignItems="center">
                                <s-checkbox 
                                 checked={banner.enable === true} 
@@ -808,7 +807,6 @@ export default function SettingsPage() {
                               <s-button variant="tertiary" tone="critical" onClick={() => removeBanner(index)} icon="delete" />
                             </s-stack>
                           </s-stack>
-                          
                           <s-divider />
 
                           <s-text-field

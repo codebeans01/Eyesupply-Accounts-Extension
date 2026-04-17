@@ -164,6 +164,16 @@ export function StatCards({
                   <s-icon type="star"></s-icon>
                 )}
               </s-box>
+              <s-box inline-size="48px" block-size="48px">
+              <s-image
+                src="https://platform.smile.io/assets/customer-account-page/points-program-icon-1ca3c08c302624c1f6934ffca31eabd6eace6352a569bd46442810bec74306d5.svg"
+                alt="Rewards"
+                aspect-ratio="1/1"
+                inline-size="fill"
+                object-fit="contain"
+                loading="eager"
+              />
+            </s-box>
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="small">
