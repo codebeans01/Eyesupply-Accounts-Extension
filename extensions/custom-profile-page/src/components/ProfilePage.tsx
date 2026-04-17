@@ -378,6 +378,33 @@ export function ProfilePage({ api }: ApiProps) {
   const daysRemainingDisplay = (daysRemainingVal ? daysRemainingVal : fallback0Days) + " " + statDaysRemainingText;
   const pointsDisplay = isPointsLoading ? fallbackPointsLoading : (points ? new Intl.NumberFormat().format(points)+" pts" : fallback0Points);
 
+  const renderBanners = (position: "top" | "middle" | "bottom") => {
+    const banners = dynamicSettings.cb_promotional_banners || [];
+    
+    // Migration: If no banners array but old fields exist, include them
+    const allBanners = banners.length > 0 ? banners : (
+        dynamicSettings.cb_promotional_banner_image_url ? [
+            {
+                enable: dynamicSettings.cb_promotional_banner_enable || false,
+                imageUrl: dynamicSettings.cb_promotional_banner_image_url,
+                link: dynamicSettings.cb_promotional_banner_link,
+                position: (dynamicSettings.cb_promotional_banner_position as any) || "top"
+            }
+        ] : []
+    );
+
+    return allBanners
+        .filter(b => b.enable && b.position === position)
+        .map((b, idx) => (
+            <PromotionalBanner 
+                key={`${position}-${idx}`}
+                enable={true}
+                imageUrl={b.imageUrl || ""}
+                link={b.link}
+            />
+        ));
+  };
+
   if (loading) {
     return (
       <s-page heading="My Dashboard">
@@ -393,11 +420,7 @@ export function ProfilePage({ api }: ApiProps) {
       <s-query-container>
         <s-stack direction="block" gap="base">
           
-          <PromotionalBanner 
-            enable={dynamicSettings.cb_promotional_banner_enable && dynamicSettings.cb_promotional_banner_position === 'top'}
-            imageUrl={dynamicSettings.cb_promotional_banner_image_url || ""}
-            link={dynamicSettings.cb_promotional_banner_link}
-          />
+          {renderBanners('top')}
 
           <DashboardBanner 
             bannerEnabled={bannerEnabled}
@@ -449,11 +472,7 @@ export function ProfilePage({ api }: ApiProps) {
             fallbackPrescriptionCompleted={fallbackPrescriptionCompleted}
           />
 
-          <PromotionalBanner 
-            enable={dynamicSettings.cb_promotional_banner_enable && dynamicSettings.cb_promotional_banner_position === 'middle'}
-            imageUrl={dynamicSettings.cb_promotional_banner_image_url || ""}
-            link={dynamicSettings.cb_promotional_banner_link}
-          />
+          {renderBanners('middle')}
 
           <NavigationSections 
             sections={sections}
@@ -472,11 +491,7 @@ export function ProfilePage({ api }: ApiProps) {
             reviewSubheading={reviewSubheading}
           />
 
-          <PromotionalBanner 
-            enable={dynamicSettings.cb_promotional_banner_enable && dynamicSettings.cb_promotional_banner_position === 'bottom'}
-            imageUrl={dynamicSettings.cb_promotional_banner_image_url || ""}
-            link={dynamicSettings.cb_promotional_banner_link}
-          />
+          {renderBanners('bottom')}
         </s-stack>
       </s-query-container>
       

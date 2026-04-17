@@ -37,13 +37,13 @@ export function NavigationSections({
                 </s-stack>
               </s-grid-item>
               <s-grid-item>
-                {section.iconUrl ? (
-                  <s-box inlineSize="24px" blockSize="24px">
+                <s-box inlineSize="40px" blockSize="40px">
+                  {section.iconUrl ? (
                     <s-image src={section.iconUrl} alt={section.title}></s-image>
-                  </s-box>
-                ) : (
-                  <s-icon type={section.icon} size="base"></s-icon>
-                )}
+                  ) : (
+                    <s-icon type={section.icon} size="extra-large"></s-icon>
+                  )}
+                </s-box>
               </s-grid-item>
             </s-grid>
               

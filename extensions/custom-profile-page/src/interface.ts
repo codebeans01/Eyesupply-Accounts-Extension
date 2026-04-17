@@ -221,6 +221,13 @@ export interface MissingItem {
   image?: string;
 }
 
+export interface PromotionalBannerItem {
+  enable: boolean;
+  imageUrl: string;
+  link?: string;
+  position: "top" | "middle" | "bottom";
+}
+
 export interface DashboardSettings {
   cb_welcome_image_url: string;
   cb_review_google_url: string;
@@ -247,6 +254,7 @@ export interface DashboardSettings {
   cb_promotional_banner_image_url?: string;
   cb_promotional_banner_link?: string;
   cb_promotional_banner_position?: "top" | "middle" | "bottom";
+  cb_promotional_banners?: PromotionalBannerItem[];
   cb_banner_enabled?: boolean;
   cb_banner_title?: string;
   cb_banner_subtitle?: string;

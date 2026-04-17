@@ -1,7 +1,7 @@
 import { type DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://sponsors-char-test-messages.trycloudflare.com";
+export const APP_URL = "https://vault-begin-boat-genome.trycloudflare.com";
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;
@@ -53,6 +53,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   cb_promotional_banner_image_url: "",
   cb_promotional_banner_link: "",
   cb_promotional_banner_position: "top",
+  cb_promotional_banners: [],
   sections: {}
 };
 
@@ -66,7 +67,7 @@ export const LAYOUT_768_2COL_STACK = "@container (inline-size \x3e 768px) 1fr 1f
 export const LAYOUT_768_4COL_BLOCK = "@container (inline-size \x3e 768px) auto 1fr auto, block";
 export const LAYOUT_600_2COL = "@container (inline-size \x3e 600px) 1fr 1fr, 1fr";
 export const LAYOUT_600_4COL = "@container (inline-size \x3e 600px) auto 1fr auto 1fr, 1fr";
-export const LAYOUT_500_3COL = "@container (inline-size \x3e 500px) auto 1fr auto, 1fr";
+export const LAYOUT_500_3COL = "@container (inline-size > 500px) auto 1fr auto, 1fr";
 export const SIZE_600_RESP_200 = "@container (inline-size > 600px) 191px, 100%";
 export const SIZE_600_RESP_100 = "@container (inline-size > 600px) 117px, 150px";
 export const DISPLAY_768_GRID = "@container (inline-size \x3e 768px) grid, none";

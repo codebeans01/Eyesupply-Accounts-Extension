@@ -63,15 +63,15 @@ export function StatCards({
       {/* 1. Most Recent Order */}
       <s-grid-item>
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
-          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="base" alignItems="center">
+          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              {recentOrderIconUrl ? (
-                <s-box inlineSize="24px" blockSize="24px">
+              <s-box inlineSize="24px" blockSize="24px">
+                {recentOrderIconUrl ? (
                   <s-image src={recentOrderIconUrl} alt="Recent Order"></s-image>
-                </s-box>
-              ) : (
-                <s-icon type="cart" size="base"></s-icon>
-              )}
+                ) : (
+                  <s-icon type="cart"></s-icon>
+                )}
+              </s-box>
             </s-grid-item>
             <s-grid-item>
               <s-clickable 
@@ -117,15 +117,15 @@ export function StatCards({
       {/* 2. Days Till Run Out */}
       <s-grid-item>
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
-          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="base" alignItems="center">
+          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              {daysRunOutIconUrl ? (
-                <s-box inlineSize="24px" blockSize="24px">
+              <s-box inlineSize="24px" blockSize="24px">
+                {daysRunOutIconUrl ? (
                   <s-image src={daysRunOutIconUrl} alt="Days Till Run Out"></s-image>
-                </s-box>
-              ) : (
-                <s-icon type="calendar" size="base"></s-icon>
-              )}
+                ) : (
+                  <s-icon type="calendar"></s-icon>
+                )}
+              </s-box>
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="none">
@@ -155,15 +155,15 @@ export function StatCards({
       {/* 3. Rewards / Loyalty Points */}
       <s-grid-item>
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
-          <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
+          <s-grid gridTemplateColumns="auto 1fr auto" gap="small" alignItems="center">
             <s-grid-item>
-              {rewardsCardIconUrl ? (
-                <s-box inlineSize="24px" blockSize="24px">
+              <s-box inlineSize="24px" blockSize="24px">
+                {rewardsCardIconUrl ? (
                   <s-image src={rewardsCardIconUrl} alt="Rewards"></s-image>
-                </s-box>
-              ) : (
-                <s-icon type="star" size="base"></s-icon>
-              )}
+                ) : (
+                  <s-icon type="star"></s-icon>
+                )}
+              </s-box>
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="small">
@@ -183,15 +183,15 @@ export function StatCards({
       {/* 4. Prescription */}
       <s-grid-item>
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
-          <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
+          <s-grid gridTemplateColumns="auto 1fr auto" gap="small" alignItems="center">
             <s-grid-item>
-              {prescriptionIconUrl ? (
-                <s-box inlineSize="24px" blockSize="24px">
+              <s-box inlineSize="24px" blockSize="24px">
+                {prescriptionIconUrl ? (
                   <s-image src={prescriptionIconUrl} alt="Prescription"></s-image>
-                </s-box>
-              ) : (
-                <s-icon type="calendar" size="base"></s-icon>
-              )}
+                ) : (
+                  <s-icon type="calendar"></s-icon>
+                )}
+              </s-box>
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="small">
