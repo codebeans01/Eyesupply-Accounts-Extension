@@ -1,7 +1,7 @@
 import { type DashboardSettings } from "./interface";
 
 export const API_VERSION = "2026-01";
-export const APP_URL = "https://political-ion-bee-translations.trycloudflare.com";
+export const APP_URL = "https://sponsors-char-test-messages.trycloudflare.com";
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;
@@ -39,6 +39,20 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   cb_reorder_banner_heading: "Reordering from an older order?",
   cb_reorder_banner_description: "Because we’ve upgraded our website...",
   cb_hide_track_order_reorder: false,
+  cb_fallback_not_provided: "Not provided",
+  cb_fallback_no_orders: "No orders yet",
+  cb_fallback_points_loading: "...",
+  cb_fallback_0_points: "0 points",
+  cb_fallback_0_orders: "0 orders",
+  cb_fallback_prescription_completed: "Completed",
+  cb_fallback_0_days: "0 days",
+  cb_fallback_no_ongoing_orders: "No ongoing orders found.",
+  cb_fallback_no_prescriptions: "No prescriptions found.",
+  cb_fallback_no_items_found: "No items found.",
+  cb_promotional_banner_enable: false,
+  cb_promotional_banner_image_url: "",
+  cb_promotional_banner_link: "",
+  cb_promotional_banner_position: "top",
   sections: {}
 };
 

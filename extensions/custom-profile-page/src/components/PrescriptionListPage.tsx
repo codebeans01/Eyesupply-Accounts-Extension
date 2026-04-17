@@ -1,8 +1,9 @@
 import { useState, useEffect } from "preact/hooks";
 import '@shopify/ui-extensions/preact';
 import { fetchAdditionalPrescriptions, loadPrescriptions } from "../loadCustomerData";
-import { type Prescription, type PageInfo, type ApiProps } from "../interface";
-import { getNumericId } from "../helpers";
+import { type Prescription, type PageInfo, type ApiProps, type DashboardSettings } from "../interface";
+import { getNumericId, getSettings } from "../helpers";
+import { DEFAULT_SETTINGS } from "../constants";
 
 const MOBILE_ONLY_LABEL = "@container (inline-size > 400px) none, auto";
 const DESKTOP_ONLY_HEADER = "@container (inline-size > 400px) auto, none";
@@ -40,6 +41,7 @@ export function PrescriptionListPage({ api }: ApiProps) {
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fetchingMore, setFetchingMore] = useState(false);
+  const [dynamicSettings, setDynamicSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
 
   const sortPrescriptions = (items: Prescription[]) => {
     return [...items].sort((a, b) => {
@@ -59,7 +61,16 @@ export function PrescriptionListPage({ api }: ApiProps) {
     async function init() {
       setLoading(true);
       try {
-        const data = await loadPrescriptions(api);
+        // Fetch settings and prescriptions
+        const [settingsRes, data] = await Promise.all([
+          getSettings(api),
+          loadPrescriptions(api)
+        ]);
+
+        if (settingsRes.settings) {
+          setDynamicSettings((prev: any) => ({ ...prev, ...settingsRes.settings }));
+        }
+
         if (data.prescriptions) {
           setPrescriptions(sortPrescriptions(data.prescriptions));
           setPageInfo(data.prescriptionPageInfo || null);
@@ -211,7 +222,7 @@ export function PrescriptionListPage({ api }: ApiProps) {
               prescriptions.map(renderPrescriptionRow)
             ) : (
               <s-box padding="base">
-                <s-text tone="neutral">No prescriptions found.</s-text>
+                <s-text tone="neutral">{dynamicSettings.cb_fallback_no_prescriptions || "No prescriptions found."}</s-text>
               </s-box>
             )}
           </s-stack>

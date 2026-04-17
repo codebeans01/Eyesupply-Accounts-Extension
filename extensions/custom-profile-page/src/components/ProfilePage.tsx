@@ -16,6 +16,7 @@ import { fetchSmilePoints, maskPatientId, calculateDaysRemaining, getNumericId, 
 import { DashboardBanner } from "./ProfilePage/DashboardBanner";
 import { StatCards } from "./ProfilePage/StatCards";
 import { NavigationSections } from "./ProfilePage/NavigationSections";
+import { PromotionalBanner } from "./ProfilePage/PromotionalBanner";
 import { Modals } from "./ProfilePage/Modals";
 import { ProfileSkeleton } from "./ProfilePage/ProfileSkeleton";
 
@@ -126,18 +127,18 @@ export function ProfilePage({ api }: ApiProps) {
     resolved = resolved.replace(/\{\{first_name\}\}/g, customer?.firstName || "");
     resolved = resolved.replace(/\{\{customer\.last_name\}\}/g, customer?.lastName || "");
     resolved = resolved.replace(/\{\{last_name\}\}/g, customer?.lastName || "");
-    resolved = resolved.replace(/\{\{customer\.points\}\}/g, points !== null ? new Intl.NumberFormat().format(points) : "...");
-    resolved = resolved.replace(/\{\{points\}\}/g, points !== null ? new Intl.NumberFormat().format(points) : "...");
-    resolved = resolved.replace(/\{\{customer\.medical_aid_number\}\}/g, customer?.medicalAidNumber || "Not provided");
+    resolved = resolved.replace(/\{\{customer\.points\}\}/g, points !== null ? new Intl.NumberFormat().format(points) : fallbackPointsLoading);
+    resolved = resolved.replace(/\{\{points\}\}/g, points !== null ? new Intl.NumberFormat().format(points) : fallbackPointsLoading);
+    resolved = resolved.replace(/\{\{customer\.medical_aid_number\}\}/g, customer?.medicalAidNumber || fallbackNotProvided);
     const rawPatientId = customer?.patientIdNumber || "";
     const maskedId = maskPatientId(rawPatientId);
-    resolved = resolved.replace(/\{\{customer\.patient_id\}\}/g, maskedId || "Not provided");
+    resolved = resolved.replace(/\{\{customer\.patient_id\}\}/g, maskedId || fallbackNotProvided);
     
     const daysRemaining = calculateDaysRemaining(customer?.daysTillRunOut);
-    resolved = resolved.replace(/\{\{customer\.days_till_run_out\}\}/g, daysRemaining !== null ? daysRemaining.toString() : "...");
+    resolved = resolved.replace(/\{\{customer\.days_till_run_out\}\}/g, daysRemaining !== null ? daysRemaining.toString() : fallbackPointsLoading);
     
     const lastOrder = (orders.length !== 0) ? orders[0] : null;
-    resolved = resolved.replace(/\{\{last_order_name\}\}/g, lastOrder?.name || "No orders yet");
+    resolved = resolved.replace(/\{\{last_order_name\}\}/g, lastOrder?.name || fallbackNoOrders);
 
     return resolved;
   }
@@ -145,25 +146,29 @@ export function ProfilePage({ api }: ApiProps) {
   function resolveDynamicValue(key: string) {
     if (!key) return "";
     switch (key) {
-      case "orderStatus": return (ongoingOrders.length !== 0) ? `${ongoingOrders.length} orders` : "0 orders";
-      case "prescriptionStatus": return customer?.prescription?.status || "Completed"; 
-      case "medicalAidNumber": return customer?.medicalAidNumber || "Not provided";
-      case "medicalAidPlan": return customer?.medicalAidPlan || "Plan";
-      case "medicalAidName": return customer?.medicalAidName || "Medical Aid Name";
-      case "patientIdNumber": return customer?.patientIdNumber ? maskPatientId(customer.patientIdNumber) : "Not provided";
-      case "loyaltyPoints": return isPointsLoading ? "..." : (points !== null ? new Intl.NumberFormat().format(points) + " points" : "0 points");
+      case "orderStatus": return (ongoingOrders.length > 0) ? `${ongoingOrders.length} orders` : fallback0Orders;
+      case "prescriptionStatus": return customer?.prescription?.status || fallbackPrescriptionCompleted; 
+      case "medicalAidNumber": return customer?.medicalAidNumber || fallbackNotProvided;
+      case "medicalAidPlan": return customer?.medicalAidPlan || fallbackNotProvided;
+      case "medicalAidName": return customer?.medicalAidName || fallbackNotProvided;
+      case "patientIdNumber": return customer?.patientIdNumber ? maskPatientId(customer.patientIdNumber) : fallbackNotProvided;
+      case "loyaltyPoints": return isPointsLoading ? fallbackPointsLoading : (points ? new Intl.NumberFormat().format(points) + " pts" : fallback0Points);
       case "daysRemaining": {
         const days = calculateDaysRemaining(customer?.daysTillRunOut);
-        return days !== null ? `${days} days` : "0 days";
+        const statDaysRemainingText = (dynamicSettings?.cb_stat_days_remaining_text as string) || "days";
+        return days 
+          ? `${days} ${statDaysRemainingText}` 
+          : (fallback0Days || `0 ${statDaysRemainingText}`);
       }
       case "prescriptionExpiryDate": {
-        return formatDateString(customer?.prescription?.expiry_date) || "Not provided";
+        return formatDateString(customer?.prescription?.expiry_date) || fallbackNotProvided;
       }
       case "prescriptionExpiryStatus": {
         const { text } = getPrescriptionStatus(
           customer?.prescription?.expiry_date,
           orders?.length || 0,
-          customer?.tags || []
+          customer?.tags || [] ,
+          fallbackNotProvided
         );
         return text;
       }
@@ -284,6 +289,15 @@ export function ProfilePage({ api }: ApiProps) {
   const rewardsCardIconUrl = (dynamicSettings?.cb_rewards_card_icon_url as string) || DEFAULT_SETTINGS.cb_rewards_card_icon_url;
   const prescriptionIconUrl = (dynamicSettings?.cb_prescription_icon_url as string) || DEFAULT_SETTINGS.cb_prescription_icon_url;
   const daysRunOutIconUrl = (dynamicSettings?.cb_days_run_out_icon_url as string) || DEFAULT_SETTINGS.cb_days_run_out_icon_url;
+  const fallbackNotProvided = (dynamicSettings?.cb_fallback_not_provided as string) || "Not provided";
+  const fallbackNoOrders = (dynamicSettings?.cb_fallback_no_orders as string) || "No orders yet";
+  const fallback0Orders = (dynamicSettings?.cb_fallback_0_orders as string) || "0 orders";
+  const fallback0Days = (dynamicSettings?.cb_fallback_0_days as string) || "0 days";
+  const fallbackPointsLoading = (dynamicSettings?.cb_fallback_points_loading as string) || "...";
+  const fallback0Points = (dynamicSettings?.cb_fallback_0_points as string) || "0 points";
+  const fallbackPrescriptionCompleted = (dynamicSettings?.cb_fallback_prescription_completed as string) || "Completed";
+  const fallbackNoItemsFound = (dynamicSettings?.cb_fallback_no_items_found as string) || "No items found.";
+  const fallbackNoOngoingOrders = (dynamicSettings?.cb_fallback_no_ongoing_orders as string) || "No ongoing orders found.";
 
   // Stat Card Settings
   const statRecentOrderTitle = (dynamicSettings?.cb_stat_recent_order_title as string) || "Most Recent Order";
@@ -361,8 +375,8 @@ export function ProfilePage({ api }: ApiProps) {
   const showBottomReorder = !!lineItemsCount && reorderButtonPosition.startsWith("bottom");
   const recentOrderItemsCount = (orders[0]?.lineItems || []).reduce((acc, li) => acc + (li.quantity || 0), 0);
   const daysRemainingVal = calculateDaysRemaining(customer?.daysTillRunOut);
-  const daysRemainingDisplay = (daysRemainingVal ?? "0") + " days left of lenses";
-  const pointsDisplay = isPointsLoading ? "..." : (points !== null ? new Intl.NumberFormat().format(points) + " pts" : "0 pts");
+  const daysRemainingDisplay = (daysRemainingVal ? daysRemainingVal : fallback0Days) + " " + statDaysRemainingText;
+  const pointsDisplay = isPointsLoading ? fallbackPointsLoading : (points ? new Intl.NumberFormat().format(points)+" pts" : fallback0Points);
 
   if (loading) {
     return (
@@ -379,6 +393,12 @@ export function ProfilePage({ api }: ApiProps) {
       <s-query-container>
         <s-stack direction="block" gap="base">
           
+          <PromotionalBanner 
+            enable={dynamicSettings.cb_promotional_banner_enable && dynamicSettings.cb_promotional_banner_position === 'top'}
+            imageUrl={dynamicSettings.cb_promotional_banner_image_url || ""}
+            link={dynamicSettings.cb_promotional_banner_link}
+          />
+
           <DashboardBanner 
             bannerEnabled={bannerEnabled}
             bannerTitle={bannerTitle}
@@ -400,6 +420,7 @@ export function ProfilePage({ api }: ApiProps) {
             onReorder={handleReorder}
             onShowRecentOrderDetails={() => setSelectedOrder(orders[0])}
             pointsDisplay={pointsDisplay}
+            points={points}
             prescriptionExpiry={customer?.prescription?.expiry_date || ""}
             tags={customer?.tags || []}
             ordersCount={orders?.length || 0}
@@ -420,6 +441,18 @@ export function ProfilePage({ api }: ApiProps) {
             statLoyaltyLinkText={statLoyaltyLinkText}
             statPrescriptionTitle={statPrescriptionTitle}
             rewardsPageUrl={rewardsPageUrl}
+            fallbackNotProvided={fallbackNotProvided}
+            fallback0Points={fallback0Points}
+            fallback0Days={fallback0Days}
+            fallbackNoOrders={fallbackNoOrders}
+            fallback0Orders={fallback0Orders}
+            fallbackPrescriptionCompleted={fallbackPrescriptionCompleted}
+          />
+
+          <PromotionalBanner 
+            enable={dynamicSettings.cb_promotional_banner_enable && dynamicSettings.cb_promotional_banner_position === 'middle'}
+            imageUrl={dynamicSettings.cb_promotional_banner_image_url || ""}
+            link={dynamicSettings.cb_promotional_banner_link}
           />
 
           <NavigationSections 
@@ -437,6 +470,12 @@ export function ProfilePage({ api }: ApiProps) {
             lastOrder={lastOrder}
             showReviewProducts={showReviewProducts}
             reviewSubheading={reviewSubheading}
+          />
+
+          <PromotionalBanner 
+            enable={dynamicSettings.cb_promotional_banner_enable && dynamicSettings.cb_promotional_banner_position === 'bottom'}
+            imageUrl={dynamicSettings.cb_promotional_banner_image_url || ""}
+            link={dynamicSettings.cb_promotional_banner_link}
           />
         </s-stack>
       </s-query-container>
@@ -461,6 +500,9 @@ export function ProfilePage({ api }: ApiProps) {
         isLineItemsModalVisible={isLineItemsModalVisible}
         isAllOrdersModalVisible={isAllOrdersModalVisible}
         customer={customer}
+        fallbackNotProvided={fallbackNotProvided}
+        fallbackNoOngoingOrders={fallbackNoOngoingOrders}
+        fallbackNoItemsFound={fallbackNoItemsFound}
       />
     </s-page>
   );

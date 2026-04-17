@@ -3,6 +3,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useActionData, useLoaderData, useNavigation, Form } from "react-router";
 import { authenticate } from "../shopify.server";
 import { safeGraphql } from "../utils/graphqlHandler";
+// Constants for Banner Validation
+const BANNER_IDEAL_WIDTH = 1130;
+const BANNER_IDEAL_HEIGHT = 370;
+const BANNER_IDEAL_RATIO = BANNER_IDEAL_WIDTH / BANNER_IDEAL_HEIGHT;
 
 // Default navigation structure based on the dashboard screenshot
 const DEFAULT_NAV = {
@@ -168,6 +172,13 @@ const DEFAULT_EXT_SETTINGS = {
   cb_stat_loyalty_link_text: "Earn & Redeem",
   cb_stat_prescription_title: "Prescription Expiry",
   cb_rewards_page_url: "/pages/rewards",
+  cb_fallback_not_provided: "Not provided",
+  cb_fallback_no_orders: "No orders yet",
+  cb_fallback_points_loading: "...",
+  cb_fallback_0_points: "0 points",
+  cb_fallback_0_orders: "0 orders",
+  cb_fallback_prescription_completed: "Completed",
+  cb_fallback_0_days: "0 days",
   section_order: ["orders", "profile", "rewards", "prescription", "delivery", "medical-aid", "support", "reviews"]
 };
 
@@ -257,6 +268,9 @@ export default function SettingsPage() {
 
   const [settings, setSettings] = useState<any>(initialSettings || { sections: {} });
   const [activeTab, setActiveTab] = useState("general");
+  const [imageDims, setImageDims] = useState<{ width: number; height: number } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [imageValMsg, setImageValMsg] = useState<{ text: string; tone: "success" | "warning" | "critical" | "" }>({ text: "", tone: "" });
 
   const TABS = [
     { id: "general", label: "General settings", icon: "settings" },
@@ -270,7 +284,46 @@ export default function SettingsPage() {
     { id: "rewards", label: "Rewards", icon: "star" },
     { id: "reviews", label: "Reviews", icon: "chat" },
     { id: "support", label: "Support", icon: "question-circle" },
+    { id: "promotional-banner", label: "Promotional Banner", icon: "megaphone" },
+    { id: "error-handling", label: "Error Handling", icon: "alert-triangle" },
   ];
+
+  useEffect(() => {
+    const imageUrl = settings.cb_promotional_banner_image_url;
+    if (!imageUrl) {
+        setImageDims(null);
+        setImageValMsg({ text: "", tone: "" });
+        setIsValidating(false);
+        return;
+    }
+
+    setIsValidating(true);
+    const img = new Image();
+    img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        setImageDims({ width: w, height: h });
+        setIsValidating(false);
+        
+        const currentRatio = w / h;
+        
+        if (w === BANNER_IDEAL_WIDTH && h === BANNER_IDEAL_HEIGHT) {
+            setImageValMsg({ text: `Perfect! Dimensions match precisely ${BANNER_IDEAL_WIDTH}x${BANNER_IDEAL_HEIGHT}.`, tone: "success" });
+        } else if (w < BANNER_IDEAL_WIDTH) {
+            setImageValMsg({ text: `Detected: ${w}x${h}px. Quality may be low. Recommended width is at least ${BANNER_IDEAL_WIDTH}px.`, tone: "critical" });
+        } else if (Math.abs(currentRatio - BANNER_IDEAL_RATIO) > 0.1) {
+            setImageValMsg({ text: `Detected: ${w}x${h}px. Aspect ratio is off! Ideal shape is ${BANNER_IDEAL_WIDTH}x${BANNER_IDEAL_HEIGHT} (roughly 3:1).`, tone: "warning" });
+        } else {
+             setImageValMsg({ text: `Detected: ${w}x${h}px. Resolution and shape are good for the banner.`, tone: "success" });
+        }
+    };
+    img.onerror = () => {
+        setImageDims(null);
+        setIsValidating(false);
+        setImageValMsg({ text: "Error: Unable to load the image. Please verify the URL.", tone: "critical" });
+    };
+    img.src = imageUrl;
+  }, [settings.cb_promotional_banner_image_url]);
 
   useEffect(() => {
     if (actionData?.ok) {
@@ -702,6 +755,152 @@ export default function SettingsPage() {
                 </>
               )}
 
+              {activeTab === "promotional-banner" && (
+                <>
+                  <s-heading>Promotional Banner</s-heading>
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
+                    <s-stack gap="base">
+                      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                        <s-stack gap="none">
+                          <s-text type="strong">Enable Promotional Banner</s-text>
+                          <s-text>Toggle the visibility of the promotional banner on the customer dashboard.</s-text>
+                        </s-stack>
+                        <s-checkbox 
+                          checked={settings.cb_promotional_banner_enable === true} 
+                          onChange={(e: any) => updateSetting("cb_promotional_banner_enable", e.target.checked)} 
+                        />
+                      </s-stack>
+                      
+                      <s-divider />
+
+                      <s-text-field
+                        label="Banner Image URL"
+                        value={settings.cb_promotional_banner_image_url || ""}
+                        onInput={(e: any) => updateSetting("cb_promotional_banner_image_url", e.target.value)}
+                        placeholder="https://cdn.shopify.com/..."
+                      />
+                      <s-text>Recommended size: 1130x370 pixels for best resolution.</s-text>
+                      
+                      {isValidating && <s-text>Checking image resolution...</s-text>}
+
+                      {!isValidating && imageValMsg.text && (
+                        <s-stack direction="inline" gap="small" alignItems="center">
+                          <s-icon type={imageValMsg.tone === "success" ? "alert-circle" : (imageValMsg.tone === "critical" ? "alert-circle" : "alert-triangle")} />
+                          <s-text tone={imageValMsg.tone}>{imageValMsg.text}</s-text>
+                        </s-stack>
+                      )}
+
+                      {settings.cb_promotional_banner_image_url && (
+                        <s-box borderRadius="large" overflow="hidden" padding="none" inlineSize="auto" maxInlineSize="100%" border="none">
+                          <s-image 
+                            src={settings.cb_promotional_banner_image_url} 
+                            alt="Banner Preview" 
+                            objectFit="contain"
+                            inlineSize="auto"
+                          />
+                        </s-box>
+                      )}
+
+                      <s-divider />
+
+                      <s-text-field
+                        label="Banner Link URL"
+                        value={settings.cb_promotional_banner_link || ""}
+                        onInput={(e: any) => updateSetting("cb_promotional_banner_link", e.target.value)}
+                        placeholder="https://eyesupply.co.za/collections/..."
+                      />
+
+                      <s-divider />
+
+                      <s-select 
+                        label="Banner Position" 
+                        value={settings.cb_promotional_banner_position || "top"} 
+                        onInput={(e: any) => updateSetting("cb_promotional_banner_position", e.target.value)}
+                      >
+                        <s-option value="top">Top (Above Welcome Banner)</s-option>
+                        <s-option value="middle">Middle (Between Stats and Navigation)</s-option>
+                        <s-option value="bottom">Bottom (Below Navigation sections)</s-option>
+                      </s-select>
+                    </s-stack>
+                  </s-box>
+                </>
+              )}
+
+              {activeTab === "error-handling" && (
+                <>
+                  <s-heading>{ "Error Handling & Fallbacks" }</s-heading>
+                  <s-box background="base" border="base" borderRadius="large" padding="base">
+                    <s-stack gap="base">
+                      <s-heading>Data Fallbacks</s-heading>
+                      <s-text>Customize the text that appears when data is missing or loading.</s-text>
+                      <s-divider />
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="Default 'Not provided' text"
+                          value={settings.cb_fallback_not_provided || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_not_provided", e.target.value)}
+                        />
+                        <s-text-field
+                          label="'No orders yet' text"
+                          value={settings.cb_fallback_no_orders || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_no_orders", e.target.value)}
+                        />
+                      </s-grid>
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="'0 orders' text"
+                          value={settings.cb_fallback_0_orders || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_0_orders", e.target.value)}
+                        />
+                         <s-text-field
+                          label="'0 days remaining' text"
+                          value={settings.cb_fallback_0_days || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_0_days", e.target.value)}
+                        />
+                      </s-grid>
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="'Points Loading' text"
+                          value={settings.cb_fallback_points_loading || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_points_loading", e.target.value)}
+                        />
+                        <s-text-field
+                          label="'0 points' text"
+                          value={settings.cb_fallback_0_points || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_0_points", e.target.value)}
+                        />
+                      </s-grid>
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                         <s-text-field
+                          label="Default Prescription Status"
+                          value={settings.cb_fallback_prescription_completed || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_prescription_completed", e.target.value)}
+                        />
+                      </s-grid>
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="'No ongoing orders' text"
+                          value={settings.cb_fallback_no_ongoing_orders || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_no_ongoing_orders", e.target.value)}
+                        />
+                        <s-text-field
+                          label="'No prescriptions' text"
+                          value={settings.cb_fallback_no_prescriptions || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_no_prescriptions", e.target.value)}
+                        />
+                      </s-grid>
+                      <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                        <s-text-field
+                          label="'No items found' text"
+                          value={settings.cb_fallback_no_items_found || ""}
+                          onInput={(e: any) => updateSetting("cb_fallback_no_items_found", e.target.value)}
+                        />
+                      </s-grid>
+                    </s-stack>
+                  </s-box>
+                </>
+              )}
+
               {DEFAULT_NAV.sections.map((navSection: any) => {
                 if (activeTab !== navSection.id) return null;
                 const currentSection = (settings.sections && settings.sections[navSection.id]) || { title: "", links: [] };
@@ -714,7 +913,7 @@ export default function SettingsPage() {
                       <s-stack gap="base">
                         <s-text type="strong">Section Content</s-text>
                         <s-text-field
-                          label="Section Title Override"
+                          label="Section Title"
                           value={currentSection.title || ""}
                           onInput={(e: any) => updateSectionTitle(navSection.id, e.target.value)}
                           placeholder={navSection.title}

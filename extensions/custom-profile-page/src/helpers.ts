@@ -604,7 +604,8 @@ export function formatDateString(dateStr?: string | null): string | null {
 export function getPrescriptionStatus(
   prescriptionExpiry: string | null | undefined,
   ordersCount: number,
-  tags: string[]
+  tags: string[],
+  fallback: string = "Not provided"
 ): { text: string; tone: "neutral" | "success" | "warning" | "critical" } {
   const daysLeft = (prescriptionExpiry === "-") 
     ? "-" 
@@ -626,7 +627,7 @@ export function getPrescriptionStatus(
   };
 
   const statusText = isLoyalCustomer ? statusLabels.loyalty : 
-    daysLeft === null ? "Not provided" : 
+    daysLeft === null ? fallback : 
     typeof daysLeft !== 'number' ? "-" : 
     daysLeft >= 60 ? statusLabels.all :
     daysLeft >= 30 ? statusLabels.soon :

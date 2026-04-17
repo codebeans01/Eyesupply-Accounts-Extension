@@ -243,6 +243,10 @@ export interface DashboardSettings {
   cb_review_subheading?: string;
   cb_show_default_nav: boolean;
   cb_show_review_products: boolean;
+  cb_promotional_banner_enable?: boolean;
+  cb_promotional_banner_image_url?: string;
+  cb_promotional_banner_link?: string;
+  cb_promotional_banner_position?: "top" | "middle" | "bottom";
   cb_banner_enabled?: boolean;
   cb_banner_title?: string;
   cb_banner_subtitle?: string;
@@ -265,6 +269,16 @@ export interface DashboardSettings {
   cb_stat_loyalty_link_text?: string;
   cb_stat_prescription_title?: string;
   cb_rewards_page_url?: string;
+  cb_fallback_not_provided?: string;
+  cb_fallback_no_orders?: string;
+  cb_fallback_points_loading?: string;
+  cb_fallback_0_points?: string;
+  cb_fallback_0_orders?: string;
+  cb_fallback_prescription_completed?: string;
+  cb_fallback_0_days?: string;
+  cb_fallback_no_ongoing_orders?: string;
+  cb_fallback_no_prescriptions?: string;
+  cb_fallback_no_items_found?: string;
   sections?: Record<string, {
     id: string;
     title?: string;
@@ -350,6 +364,9 @@ export interface ModalsProps {
   isAllOrdersModalVisible: boolean;
   isLineItemsModalVisible: boolean;
   customer: CustomerSummary | null;
+  fallbackNotProvided?: string;
+  fallbackNoOngoingOrders?: string;
+  fallbackNoItemsFound?: string;
 }
 
 export interface NavigationSectionsProps {
@@ -411,6 +428,13 @@ export interface StatCardsProps {
   statLoyaltyLinkText?: string;
   statPrescriptionTitle?: string;
   rewardsPageUrl?: string;
+  fallbackNotProvided?: string;
+  fallback0Points?: string;
+  fallback0Days?: string;
+  fallbackNoOrders?: string;
+  fallback0Orders?: string;
+  fallbackPrescriptionCompleted?: string;
+  points?: number | null;
 }
 
 

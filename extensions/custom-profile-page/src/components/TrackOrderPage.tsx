@@ -284,7 +284,7 @@ export function TrackOrderPage({ api }: ApiProps) {
               </s-stack>
             ) : (
               <s-stack padding="base" direction="inline" alignItems="center" justifyContent="center">
-                <s-text tone="neutral">No ongoing orders found.</s-text>
+                <s-text tone="neutral">{dynamicSettings.cb_fallback_no_ongoing_orders || "No ongoing orders found."}</s-text>
               </s-stack>
             )}
           </s-box>

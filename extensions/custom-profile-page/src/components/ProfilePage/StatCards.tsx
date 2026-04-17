@@ -33,10 +33,17 @@ export function StatCards({
   statLoyaltyTitle = "My Loyalty Points",
   statLoyaltyLinkText = "Earn & Redeem",
   statPrescriptionTitle = "Prescription Expiry",
-  rewardsPageUrl = "/pages/rewards"
+  rewardsPageUrl = "/pages/rewards",
+  fallbackNotProvided,
+  fallback0Points,
+  fallback0Days,
+  fallbackNoOrders,
+  fallback0Orders,
+  fallbackPrescriptionCompleted,
+  points
 }: StatCardsProps) {
   const firstOrder = orders[0];
-  const { text: statusText, tone } = getPrescriptionStatus(prescriptionExpiry, ordersCount, tags);
+  const { text: statusText, tone } = getPrescriptionStatus(prescriptionExpiry, ordersCount, tags, fallbackPrescriptionCompleted);
 
   const formattedExpiry = formatDateString(prescriptionExpiry);
   
@@ -74,8 +81,8 @@ export function StatCards({
               >
                 <s-stack direction="block" gap="none">
                   <s-text tone="neutral">{statRecentOrderTitle}</s-text>
-                  <s-text type="strong" tone="info">{firstOrder?.name || "#1111"}</s-text>
-                  <s-text tone="neutral">{recentOrderItemsCount + " items"}</s-text>
+                  <s-text type="strong" tone="info">{firstOrder?.name || fallbackNoOrders}</s-text>
+                  <s-text tone="neutral">{(recentOrderItemsCount || 0) > 0 ? recentOrderItemsCount + " items" : fallback0Orders}</s-text>
                 </s-stack>
               </s-clickable>
             </s-grid-item>
@@ -123,7 +130,11 @@ export function StatCards({
             <s-grid-item>
               <s-stack direction="block" gap="none">
                 <s-text type="strong">{statCoveredUntilText} {coveredUntil || "..."}</s-text>
-                <s-text tone="neutral">{daysRemaining ?? "0"} {statDaysRemainingText}</s-text>
+                <s-text tone="neutral">
+                  {daysRemaining 
+                    ? `${daysRemaining} ${statDaysRemainingText}` 
+                    : (fallback0Days || `0 ${statDaysRemainingText}`)}
+                </s-text>
               </s-stack>
             </s-grid-item>
             <s-grid-item>
@@ -163,7 +174,7 @@ export function StatCards({
               </s-stack>
             </s-grid-item>
             <s-grid-item>
-              <s-heading>{pointsDisplay}</s-heading>
+              <s-heading>{points ? pointsDisplay : (fallback0Points || pointsDisplay)}</s-heading>
             </s-grid-item>
           </s-grid>
         </s-box>

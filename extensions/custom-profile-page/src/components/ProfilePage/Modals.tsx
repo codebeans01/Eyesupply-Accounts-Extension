@@ -27,6 +27,9 @@ export function Modals({
   isAllOrdersModalVisible,
   isLineItemsModalVisible,
   customer,
+  fallbackNotProvided = "Not provided",
+  fallbackNoOngoingOrders = "No orders found.",
+  fallbackNoItemsFound = "No items found."
 }: ModalsProps) {
   return (
     <Fragment>
@@ -129,7 +132,7 @@ export function Modals({
                 </s-stack>
               ) : (
                 <s-stack padding="base" direction="inline" alignItems="center" justifyContent="center">
-                  <s-text>No orders found.</s-text>
+                  <s-text>{fallbackNoOngoingOrders}</s-text>
                 </s-stack>
               )}
             </s-box>
@@ -185,7 +188,7 @@ export function Modals({
             </s-box>
             ) : (
               <s-stack padding="base" direction="inline" alignItems="center" justifyContent="center">
-                <s-text>No items found.</s-text>
+                <s-text>{fallbackNoItemsFound}</s-text>
               </s-stack>
             )}
 
@@ -247,22 +250,22 @@ export function Modals({
               <s-grid gridTemplateColumns="1fr 1fr" gap="base">
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Medical Aid Number</s-text>
-                  <s-text type="strong">{customer?.medicalAidNumber || "Not provided"}</s-text>
+                  <s-text type="strong">{customer?.medicalAidNumber || fallbackNotProvided}</s-text>
                 </s-stack>
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Medical Aid Plan</s-text>
-                  <s-text type="strong">{customer?.medicalAidPlan || "Plan"}</s-text>
+                  <s-text type="strong">{customer?.medicalAidPlan || fallbackNotProvided}</s-text>
                 </s-stack>
               </s-grid>
               <s-divider></s-divider>
               <s-grid gridTemplateColumns="1fr 1fr" gap="base">
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Medical Aid Name</s-text>
-                  <s-text type="strong">{customer?.medicalAidName || "Medical Aid Name"}</s-text>
+                  <s-text type="strong">{customer?.medicalAidName || fallbackNotProvided}</s-text>
                 </s-stack>
                 <s-stack gap="small-100">
                   <s-text tone="neutral">Patient ID Number</s-text>
-                  <s-text type="strong">{maskPatientId(customer?.patientIdNumber) || "Not provided"}</s-text>
+                  <s-text type="strong">{maskPatientId(customer?.patientIdNumber) || fallbackNotProvided}</s-text>
                 </s-stack>
               </s-grid>
             </s-stack>
