@@ -2,8 +2,7 @@ import { h } from "preact";
 import { renderReorderBannerDescription } from "../DashboardUtils";
 import { 
   LAYOUT_768_2COL,
-  SIZE_600_RESP_200,
-  SIZE_600_RESP_100
+  SIZE_600_RESP_200
 } from "../../constants";
 import { DashboardBannerProps } from "../../interface";
 
@@ -58,7 +57,6 @@ export function DashboardBanner({
               <s-stack direction="block" alignItems="center">
                 <s-box 
                   inlineSize={SIZE_600_RESP_200}  
-                  blockSize={SIZE_600_RESP_100}
                   borderRadius="large" 
                   overflow="hidden"
                 >
@@ -66,7 +64,7 @@ export function DashboardBanner({
                     src={bannerImageUrl} 
                     alt="Welcome" 
                     loading="lazy" 
-                    objectFit="cover"
+                    aspectRatio="16/9"
                   ></s-image>
                 </s-box>
               </s-stack>

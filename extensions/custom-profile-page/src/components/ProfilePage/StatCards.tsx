@@ -65,13 +65,15 @@ export function StatCards({
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
           <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              <s-box inlineSize="24px" blockSize="24px">
-                {recentOrderIconUrl ? (
-                  <s-image src={recentOrderIconUrl} alt="Recent Order"></s-image>
-                ) : (
-                  <s-icon type="cart"></s-icon>
-                )}
-              </s-box>
+              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+                <s-box inlineSize="48px" blockSize="48px">
+                  {recentOrderIconUrl ? (
+                    <s-image src={recentOrderIconUrl} alt="Recent Order" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
+                  ) : (
+                    <s-icon type="cart" size="large-100"></s-icon>
+                  )}
+                </s-box>
+              </s-stack>
             </s-grid-item>
             <s-grid-item>
               <s-clickable 
@@ -119,13 +121,15 @@ export function StatCards({
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
           <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              <s-box inlineSize="24px" blockSize="24px">
-                {daysRunOutIconUrl ? (
-                  <s-image src={daysRunOutIconUrl} alt="Days Till Run Out"></s-image>
-                ) : (
-                  <s-icon type="calendar"></s-icon>
-                )}
-              </s-box>
+              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+                <s-box inlineSize="48px" blockSize="48px">
+                  {daysRunOutIconUrl ? (
+                    <s-image src={daysRunOutIconUrl} alt="Days Till Run Out" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
+                  ) : (
+                    <s-icon type="calendar" size="large-100"></s-icon>
+                  )}
+                </s-box>
+              </s-stack>
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="none">
@@ -155,25 +159,17 @@ export function StatCards({
       {/* 3. Rewards / Loyalty Points */}
       <s-grid-item>
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
-          <s-grid gridTemplateColumns="auto 1fr auto" gap="small" alignItems="center">
+          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              <s-box inlineSize="24px" blockSize="24px">
-                {rewardsCardIconUrl ? (
-                  <s-image src={rewardsCardIconUrl} alt="Rewards"></s-image>
-                ) : (
-                  <s-icon type="star"></s-icon>
-                )}
-              </s-box>
-              <s-box inline-size="48px" block-size="48px">
-              <s-image
-                src="https://platform.smile.io/assets/customer-account-page/points-program-icon-1ca3c08c302624c1f6934ffca31eabd6eace6352a569bd46442810bec74306d5.svg"
-                alt="Rewards"
-                aspect-ratio="1/1"
-                inline-size="fill"
-                object-fit="contain"
-                loading="eager"
-              />
-            </s-box>
+              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+                <s-box inlineSize="48px" blockSize="48px">
+                  {rewardsCardIconUrl ? (
+                    <s-image src={rewardsCardIconUrl} alt="Rewards" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
+                  ) : (
+                    <s-icon type="star" size="large-100"></s-icon>
+                  )}
+                </s-box>
+              </s-stack>
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="small">
@@ -193,15 +189,17 @@ export function StatCards({
       {/* 4. Prescription */}
       <s-grid-item>
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
-          <s-grid gridTemplateColumns="auto 1fr auto" gap="small" alignItems="center">
+          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center" justifyContent="center">
             <s-grid-item>
-              <s-box inlineSize="24px" blockSize="24px">
-                {prescriptionIconUrl ? (
-                  <s-image src={prescriptionIconUrl} alt="Prescription"></s-image>
-                ) : (
-                  <s-icon type="calendar"></s-icon>
-                )}
-              </s-box>
+              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+                <s-box inlineSize="48px" blockSize="48px">
+                  {prescriptionIconUrl ? (
+                    <s-image src={prescriptionIconUrl} alt="Prescription" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
+                  ) : (
+                    <s-icon type="calendar" size="large-100"></s-icon>
+                  )}
+                </s-box>
+              </s-stack>
             </s-grid-item>
             <s-grid-item>
               <s-stack direction="block" gap="small">

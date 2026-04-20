@@ -25,8 +25,6 @@ export function PromotionalBanner({ enable, imageUrl, link }: PromotionalBannerP
           loading="lazy" 
           objectFit="contain"
           inlineSize="auto"
-          maxInlineSize="100%"
-          blockSize="auto"
         ></s-image>
       </s-box>
     </s-stack>
