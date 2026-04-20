@@ -13,7 +13,8 @@ database.sqlite
 .env
 .env.*
 PROJECT_OVERVIEW.md
-
+/.agent
+/document
 
 
 
