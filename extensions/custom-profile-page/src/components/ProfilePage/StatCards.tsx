@@ -65,7 +65,7 @@ export function StatCards({
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
           <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+              <s-stack direction="block" alignItems="start" blockSize="100%">
                 <s-box inlineSize="48px" blockSize="48px">
                   {recentOrderIconUrl ? (
                     <s-image src={recentOrderIconUrl} alt="Recent Order" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
@@ -121,7 +121,7 @@ export function StatCards({
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
           <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+              <s-stack direction="block" alignItems="start" blockSize="100%">
                 <s-box inlineSize="48px" blockSize="48px">
                   {daysRunOutIconUrl ? (
                     <s-image src={daysRunOutIconUrl} alt="Days Till Run Out" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
@@ -161,7 +161,7 @@ export function StatCards({
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
           <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+              <s-stack direction="block" alignItems="start" blockSize="100%">
                 <s-box inlineSize="48px" blockSize="48px">
                   {rewardsCardIconUrl ? (
                     <s-image src={rewardsCardIconUrl} alt="Rewards" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
@@ -189,9 +189,9 @@ export function StatCards({
       {/* 4. Prescription */}
       <s-grid-item>
         <s-box background="subdued" borderRadius="base" padding="base" blockSize="100%">
-          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center" justifyContent="center">
+          <s-grid gridTemplateColumns={LAYOUT_500_3COL} gap="small" alignItems="center">
             <s-grid-item>
-              <s-stack direction="block" alignItems="center" justifyContent="center" blockSize="100%">
+              <s-stack direction="block" alignItems="start" blockSize="100%">
                 <s-box inlineSize="48px" blockSize="48px">
                   {prescriptionIconUrl ? (
                     <s-image src={prescriptionIconUrl} alt="Prescription" inlineSize="fill" aspectRatio="1/1" objectFit="contain"></s-image>
